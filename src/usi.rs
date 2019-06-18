@@ -557,6 +557,7 @@ pub fn cmd_loop() {
             "read_csa_dirs_and_output_sfen" => read_csa_dirs_and_output_sfen(&args[1..]),
             "read_hcp" => read_hcp(&args[1..]),
             "read_sfen_and_output_hcp" => read_sfen_and_output_hcp(&args[1..]),
+            "wait" => thread_pool.wait_for_search_finished(),
             "write_eval" => {
                 if is_ready {
                     match write_evaluate_files() {
