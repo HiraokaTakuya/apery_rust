@@ -1,0 +1,15 @@
+[package]
+name = "apery"
+version = "1.0.0"
+authors = ["HiraokaTakuya <hiraoka64@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+custom_derive = "*"
+derive_more = "*"
+enum_derive = "*"
+lazy_static = "*"
+num = "*"
+rand = "*"
+rayon = "*"
+regex = "*"
