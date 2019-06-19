@@ -9,7 +9,7 @@ This requires a USI-compatible GUI (e.g. Shogidokoro, ShogiGUI, MyShogi).
 This requires the evaluation function binaries as a submodule.
 Use this command If you have not have the evaluation function binaries at apery/eval/.
 ```bash
-cd apery
+cd apery_rust
 git submodule init
 git submodule update
 ```
@@ -17,7 +17,7 @@ git submodule update
 If you have evaluation function binaries, Apery can run.
 The following is a sample command to run Apery.
 ```bash
-cd apery
+cd apery_rust
 cargo run --release
 isready
 go byoyomi 5000
@@ -36,6 +36,35 @@ cargo install --path .
 ## Uninstall
 
 cargo uninstall apery
+
+## Profile
+
+The following is a sample of how to use the profiler for Ubuntu.
+
+- Install valgrind, kcachegrind
+```bash
+sudo apt install -y valgrind kcachegrind
+```
+
+- Add the following to apery_rust/Cargo.toml
+```
+[profile.release]
+debug = true
+```
+
+- Do the following commands.
+```bash
+# Build and run apery.
+cd apery_rust
+cargo build --release
+valgrind --tool=callgrind ./target/release/apery <<EOF
+isready
+go byoyomi 60000
+wait
+EOF
+# Show the profiling result.
+kcachegrind callgrind.out.???? # ???? is some number.
+```
 
 ## License
 
