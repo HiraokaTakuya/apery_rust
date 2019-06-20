@@ -106,6 +106,7 @@ impl TranspositionTable {
     }
     pub fn resize(&mut self, mega_byte_size: usize, thread_pool: &mut ThreadPool) {
         thread_pool.wait_for_search_finished();
+        let mega_byte_size = (mega_byte_size + 1).next_power_of_two() >> 1;
         let cluster_count = mega_byte_size * 1024 * 1024 / std::mem::size_of::<TTCluster>();
         // self.table can be very large and takes much time to clear, so parallelize self.clear().
         self.table.clear();
