@@ -1492,6 +1492,7 @@ impl ThreadPool {
         usi_options: &UsiOptions,
         ponder_mode: bool,
     ) {
+        let mut limits = limits;
         self.wait_for_search_finished();
         self.stop.store(false, Ordering::Relaxed);
         self.stop_on_ponderhit.store(false, Ordering::Relaxed);
@@ -1499,7 +1500,7 @@ impl ThreadPool {
         self.timeman
             .lock()
             .unwrap()
-            .init(usi_options, &limits, pos.side_to_move(), pos.ply());
+            .init(usi_options, &mut limits, pos.side_to_move(), pos.ply());
         tt.new_search();
         self.limits = limits.clone();
         let root_moves = {

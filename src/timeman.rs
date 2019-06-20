@@ -70,7 +70,7 @@ impl TimeManagement {
             slow_mover,
         )
     }
-    pub fn init(&mut self, usi_optoins: &UsiOptions, limits: &LimitsType, us: Color, ply: i32) {
+    pub fn init(&mut self, usi_optoins: &UsiOptions, limits: &mut LimitsType, us: Color, ply: i32) {
         self.start_time = limits.start_time;
         let min_thinking_time = usi_optoins.get_i64("Minimum_Thinking_Time") as u64;
         self.optimum_time_milli = std::cmp::max(
@@ -109,6 +109,14 @@ impl TimeManagement {
             self.maximum_time_milli = std::cmp::min(t2, self.maximum_time_milli);
         }
         // not use ponder bonus
+
+        if let Some(movetime) = limits.movetime {
+            self.optimum_time_milli += movetime;
+            self.maximum_time_milli += movetime;
+        }
+        if limits.time[us.0 as usize] != std::time::Duration::from_millis(0) {
+            limits.movetime = None;
+        }
     }
     pub fn optimum_millis(&self) -> i64 {
         self.optimum_time_milli.as_millis() as i64
