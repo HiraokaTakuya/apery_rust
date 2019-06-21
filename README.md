@@ -2,12 +2,12 @@
 
 Apery is a free USI shogi engine derived from Stockfish and Apery(C++ version).
 Apery was rewritten in Rust.
-This requires a USI-compatible GUI (e.g. Shogidokoro, ShogiGUI, MyShogi).
+Apery requires a USI-compatible GUI (e.g. Shogidokoro, ShogiGUI, MyShogi).
 
 ## Usage
 
-This requires the evaluation function binaries as a submodule.
-Use this command If you have not have the evaluation function binaries at apery/eval/.
+Apery requires the evaluation function binaries as a submodule.
+Use this command If you have not have the evaluation function binaries at apery_rust/eval/.
 ```bash
 cd apery_rust
 git submodule init
@@ -18,10 +18,12 @@ If you have evaluation function binaries, Apery can run.
 The following is a sample command to run Apery.
 ```bash
 cd apery_rust
-cargo run --release
+cargo build --release
+./target/release/apery <<EOF
 isready
 go byoyomi 5000
-quit
+wait
+EOF
 ```
 See USI protocol on the web for details.
 
@@ -29,13 +31,24 @@ See USI protocol on the web for details.
 
 nightly only
 
+## Build
+
+An execute binary file is generated at apery_rust/target/release/apery
+```bash
+cargo build --release
+```
+
 ## Install
 
+```bash
 cargo install --path .
+```
 
 ## Uninstall
 
+```bash
 cargo uninstall apery
+```
 
 ## Profile
 
