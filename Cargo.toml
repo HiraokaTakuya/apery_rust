@@ -1,6 +1,6 @@
 [package]
 name = "apery"
-version = "1.0.0"
+version = "1.0.1"
 authors = ["HiraokaTakuya <hiraoka64@gmail.com>"]
 edition = "2018"
 
