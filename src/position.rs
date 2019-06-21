@@ -995,6 +995,16 @@ impl PositionBase {
         self.pieces_pppp(pt0, pt1, pt2, pt3) | self.pieces_p(pt4)
     }
     pub fn pieces_golds(&self) -> Bitboard {
+        debug_assert_eq!(
+            self.golds_bb,
+            self.pieces_ppppp(
+                PieceType::GOLD,
+                PieceType::PRO_PAWN,
+                PieceType::PRO_LANCE,
+                PieceType::PRO_KNIGHT,
+                PieceType::PRO_SILVER
+            )
+        );
         self.golds_bb
     }
     fn set_golds_bb(&mut self) {
