@@ -1576,7 +1576,10 @@ impl ThreadPool {
                 handle.join().unwrap();
             }
 
-            let multi_pv = usi_options_cloned.get_i64("MultiPV") as usize;
+            let multi_pv = std::cmp::min(
+                usi_options_cloned.get_i64("MultiPV") as usize,
+                root_moves.len(),
+            );
             let best_thread = if multi_pv == 1 && limits.depth.is_none() && !root_moves.is_empty() {
                 let mut votes = std::collections::BTreeMap::new();
                 let min_score: Value = thread_pool_base_cloned
