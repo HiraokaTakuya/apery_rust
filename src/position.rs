@@ -1647,10 +1647,8 @@ impl Position {
                             {
                                 return false;
                             }
-                        } else {
-                            if Rank::new(to).is_in_front_of(us, RankAsBlack::RANK2) {
-                                return false;
-                            }
+                        } else if Rank::new(to).is_in_front_of(us, RankAsBlack::RANK2) {
+                            return false;
                         }
                     }
                     PieceType::KNIGHT => {
