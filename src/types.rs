@@ -742,6 +742,15 @@ impl Value {
             )
         }
     }
+    pub fn to_win_rate(self) -> f64 {
+        if Value::MATED_IN_MAX_PLY < self && self < Value::MATE_IN_MAX_PLY {
+            1.0 / (1.0 + (-self.0 as f64 / 600.0).exp())
+        } else if Value::ZERO < self {
+            1.0
+        } else {
+            0.0
+        }
+    }
     pub fn mate_in(ply: i32) -> Value {
         Value::MATE - Value(ply)
     }
