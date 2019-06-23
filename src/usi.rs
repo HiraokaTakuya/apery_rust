@@ -520,7 +520,7 @@ pub fn cmd_loop() {
                     .store(false, std::sync::atomic::Ordering::Relaxed);
             }
             "position" => position(&mut pos, &args[1..]),
-            "quit" | "stop" => {
+            "quit" | "stop" | "gameover" => {
                 thread_pool
                     .stop
                     .store(true, std::sync::atomic::Ordering::Relaxed);
