@@ -44,7 +44,7 @@ struct Thread {
     nodess: Vec<Arc<AtomicI64>>,
 }
 
-unsafe impl std::marker::Send for Thread {} // for Thread::tt
+unsafe impl std::marker::Send for Thread {} // for Thread::tt and Thread::ehash
 
 struct ThreadPoolBase {
     threads: Vec<Arc<Mutex<Thread>>>,
