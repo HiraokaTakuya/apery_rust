@@ -61,7 +61,7 @@ impl UsiOptions {
         options.insert("Clear_Hash".to_string(), UsiOptionValue::Button);
         options.insert(
             "Eval_Dir".to_string(),
-            UsiOptionValue::string("eval/20190224"),
+            UsiOptionValue::string("eval/20190617"),
         );
         options.insert(
             "Eval_Hash".to_string(),
