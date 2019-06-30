@@ -707,12 +707,10 @@ impl Thread {
 
         // Step 12
         let mut move_count = 0;
-        let mut capture_count = 0;
-        let mut quiet_count = 0;
         const CAPTURES_SEARCHED_NUM: usize = 32;
         const QUIETS_SEARCHED_NUM: usize = 64;
-        let mut captures_searched = [unsafe { std::mem::uninitialized() }; CAPTURES_SEARCHED_NUM];
-        let mut quiets_searched = [unsafe { std::mem::uninitialized() }; QUIETS_SEARCHED_NUM];
+        let mut captures_searched = arrayvec::ArrayVec::<[_; CAPTURES_SEARCHED_NUM]>::new();
+        let mut quiets_searched = arrayvec::ArrayVec::<[_; QUIETS_SEARCHED_NUM]>::new();
         while let Some(m) = mp.next_move(&self.position, move_count_pruning) {
             debug_assert!(Some(m).is_normal_move());
 
@@ -951,12 +949,14 @@ impl Thread {
             }
 
             if m != best_move.unwrap_unchecked() {
-                if is_capture_or_pawn_promotion && capture_count < CAPTURES_SEARCHED_NUM {
-                    captures_searched[capture_count] = m;
-                    capture_count += 1;
-                } else if !is_capture_or_pawn_promotion && quiet_count < QUIETS_SEARCHED_NUM {
-                    quiets_searched[quiet_count] = m;
-                    quiet_count += 1;
+                if is_capture_or_pawn_promotion && !captures_searched.is_full() {
+                    unsafe {
+                        captures_searched.push_unchecked(m);
+                    }
+                } else if !is_capture_or_pawn_promotion && !quiets_searched.is_full() {
+                    unsafe {
+                        quiets_searched.push_unchecked(m);
+                    }
                 }
             }
         }
@@ -985,11 +985,11 @@ impl Thread {
                             Depth::ZERO
                         },
                 );
-                self.update_quiet_stats(stack, best_move, &quiets_searched[0..quiet_count], bonus);
+                self.update_quiet_stats(stack, best_move, &quiets_searched[..], bonus);
             }
             self.update_capture_stats(
                 best_move,
-                &captures_searched[0..capture_count],
+                &captures_searched[..],
                 stat_bonus(depth + Depth::ONE_PLY),
             );
 
