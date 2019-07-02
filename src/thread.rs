@@ -949,14 +949,10 @@ impl Thread {
             }
 
             if m != best_move.unwrap_unchecked() {
-                if is_capture_or_pawn_promotion && !captures_searched.is_full() {
-                    unsafe {
-                        captures_searched.push_unchecked(m);
-                    }
-                } else if !is_capture_or_pawn_promotion && !quiets_searched.is_full() {
-                    unsafe {
-                        quiets_searched.push_unchecked(m);
-                    }
+                if is_capture_or_pawn_promotion {
+                    let _ = captures_searched.try_push(m);
+                } else if !is_capture_or_pawn_promotion {
+                    let _ = quiets_searched.try_push(m);
                 }
             }
         }
