@@ -78,20 +78,21 @@ impl File {
     ];
 
     #[rustfmt::skip]
+    const SQUARE_TO_FILE: [File; Square::NUM] = [
+        File::FILE1, File::FILE1, File::FILE1, File::FILE1, File::FILE1, File::FILE1, File::FILE1, File::FILE1, File::FILE1,
+        File::FILE2, File::FILE2, File::FILE2, File::FILE2, File::FILE2, File::FILE2, File::FILE2, File::FILE2, File::FILE2,
+        File::FILE3, File::FILE3, File::FILE3, File::FILE3, File::FILE3, File::FILE3, File::FILE3, File::FILE3, File::FILE3,
+        File::FILE4, File::FILE4, File::FILE4, File::FILE4, File::FILE4, File::FILE4, File::FILE4, File::FILE4, File::FILE4,
+        File::FILE5, File::FILE5, File::FILE5, File::FILE5, File::FILE5, File::FILE5, File::FILE5, File::FILE5, File::FILE5,
+        File::FILE6, File::FILE6, File::FILE6, File::FILE6, File::FILE6, File::FILE6, File::FILE6, File::FILE6, File::FILE6,
+        File::FILE7, File::FILE7, File::FILE7, File::FILE7, File::FILE7, File::FILE7, File::FILE7, File::FILE7, File::FILE7,
+        File::FILE8, File::FILE8, File::FILE8, File::FILE8, File::FILE8, File::FILE8, File::FILE8, File::FILE8, File::FILE8,
+        File::FILE9, File::FILE9, File::FILE9, File::FILE9, File::FILE9, File::FILE9, File::FILE9, File::FILE9, File::FILE9,
+    ];
+
     pub fn new(sq: Square) -> File {
-        use crate::types::Square as S;
-        match sq {
-            S::SQ11 | S::SQ12 | S::SQ13 | S::SQ14 | S::SQ15 | S::SQ16 | S::SQ17 | S::SQ18 | S::SQ19 => File::FILE1,
-            S::SQ21 | S::SQ22 | S::SQ23 | S::SQ24 | S::SQ25 | S::SQ26 | S::SQ27 | S::SQ28 | S::SQ29 => File::FILE2,
-            S::SQ31 | S::SQ32 | S::SQ33 | S::SQ34 | S::SQ35 | S::SQ36 | S::SQ37 | S::SQ38 | S::SQ39 => File::FILE3,
-            S::SQ41 | S::SQ42 | S::SQ43 | S::SQ44 | S::SQ45 | S::SQ46 | S::SQ47 | S::SQ48 | S::SQ49 => File::FILE4,
-            S::SQ51 | S::SQ52 | S::SQ53 | S::SQ54 | S::SQ55 | S::SQ56 | S::SQ57 | S::SQ58 | S::SQ59 => File::FILE5,
-            S::SQ61 | S::SQ62 | S::SQ63 | S::SQ64 | S::SQ65 | S::SQ66 | S::SQ67 | S::SQ68 | S::SQ69 => File::FILE6,
-            S::SQ71 | S::SQ72 | S::SQ73 | S::SQ74 | S::SQ75 | S::SQ76 | S::SQ77 | S::SQ78 | S::SQ79 => File::FILE7,
-            S::SQ81 | S::SQ82 | S::SQ83 | S::SQ84 | S::SQ85 | S::SQ86 | S::SQ87 | S::SQ88 | S::SQ89 => File::FILE8,
-            S::SQ91 | S::SQ92 | S::SQ93 | S::SQ94 | S::SQ95 | S::SQ96 | S::SQ97 | S::SQ98 | S::SQ99 => File::FILE9,
-            _ => unreachable!(),
-        }
+        debug_assert!(0 <= sq.0 && sq.0 <= Square::NUM as i32);
+        unsafe { *File::SQUARE_TO_FILE.get_unchecked(sq.0 as usize) }
     }
     pub fn inverse(self) -> File {
         File(File::NUM as i32 - 1 - self.0)
@@ -190,20 +191,22 @@ impl Rank {
     ];
 
     #[rustfmt::skip]
+    const SQUARE_TO_RANK: [Rank; Square::NUM] = [
+        Rank::RANK1, Rank::RANK2, Rank::RANK3, Rank::RANK4, Rank::RANK5, Rank::RANK6, Rank::RANK7, Rank::RANK8, Rank::RANK9,
+        Rank::RANK1, Rank::RANK2, Rank::RANK3, Rank::RANK4, Rank::RANK5, Rank::RANK6, Rank::RANK7, Rank::RANK8, Rank::RANK9,
+        Rank::RANK1, Rank::RANK2, Rank::RANK3, Rank::RANK4, Rank::RANK5, Rank::RANK6, Rank::RANK7, Rank::RANK8, Rank::RANK9,
+        Rank::RANK1, Rank::RANK2, Rank::RANK3, Rank::RANK4, Rank::RANK5, Rank::RANK6, Rank::RANK7, Rank::RANK8, Rank::RANK9,
+        Rank::RANK1, Rank::RANK2, Rank::RANK3, Rank::RANK4, Rank::RANK5, Rank::RANK6, Rank::RANK7, Rank::RANK8, Rank::RANK9,
+        Rank::RANK1, Rank::RANK2, Rank::RANK3, Rank::RANK4, Rank::RANK5, Rank::RANK6, Rank::RANK7, Rank::RANK8, Rank::RANK9,
+        Rank::RANK1, Rank::RANK2, Rank::RANK3, Rank::RANK4, Rank::RANK5, Rank::RANK6, Rank::RANK7, Rank::RANK8, Rank::RANK9,
+        Rank::RANK1, Rank::RANK2, Rank::RANK3, Rank::RANK4, Rank::RANK5, Rank::RANK6, Rank::RANK7, Rank::RANK8, Rank::RANK9,
+        Rank::RANK1, Rank::RANK2, Rank::RANK3, Rank::RANK4, Rank::RANK5, Rank::RANK6, Rank::RANK7, Rank::RANK8, Rank::RANK9,
+    ];
+
+    #[rustfmt::skip]
     pub fn new(sq: Square) -> Rank {
-        use crate::types::Square as S;
-        match sq {
-            S::SQ11 | S::SQ21 | S::SQ31 | S::SQ41 | S::SQ51 | S::SQ61 | S::SQ71 | S::SQ81 | S::SQ91 => Rank::RANK1,
-            S::SQ12 | S::SQ22 | S::SQ32 | S::SQ42 | S::SQ52 | S::SQ62 | S::SQ72 | S::SQ82 | S::SQ92 => Rank::RANK2,
-            S::SQ13 | S::SQ23 | S::SQ33 | S::SQ43 | S::SQ53 | S::SQ63 | S::SQ73 | S::SQ83 | S::SQ93 => Rank::RANK3,
-            S::SQ14 | S::SQ24 | S::SQ34 | S::SQ44 | S::SQ54 | S::SQ64 | S::SQ74 | S::SQ84 | S::SQ94 => Rank::RANK4,
-            S::SQ15 | S::SQ25 | S::SQ35 | S::SQ45 | S::SQ55 | S::SQ65 | S::SQ75 | S::SQ85 | S::SQ95 => Rank::RANK5,
-            S::SQ16 | S::SQ26 | S::SQ36 | S::SQ46 | S::SQ56 | S::SQ66 | S::SQ76 | S::SQ86 | S::SQ96 => Rank::RANK6,
-            S::SQ17 | S::SQ27 | S::SQ37 | S::SQ47 | S::SQ57 | S::SQ67 | S::SQ77 | S::SQ87 | S::SQ97 => Rank::RANK7,
-            S::SQ18 | S::SQ28 | S::SQ38 | S::SQ48 | S::SQ58 | S::SQ68 | S::SQ78 | S::SQ88 | S::SQ98 => Rank::RANK8,
-            S::SQ19 | S::SQ29 | S::SQ39 | S::SQ49 | S::SQ59 | S::SQ69 | S::SQ79 | S::SQ89 | S::SQ99 => Rank::RANK9,
-            _ => unreachable!(),
-        }
+        debug_assert!(0 <= sq.0 && sq.0 <= Square::NUM as i32);
+        unsafe { *Rank::SQUARE_TO_RANK.get_unchecked(sq.0 as usize) }
     }
     pub fn new_from_color_and_rank_as_black(c: Color, rank_as_black: RankAsBlack) -> Rank {
         match c {
@@ -1260,6 +1263,48 @@ fn test_rank_inverse() {
     for i in 0..(Rank::NUM as i32) {
         let r = Rank(i);
         assert_eq!(r.inverse().inverse(), r);
+    }
+}
+
+#[test]
+fn test_file_new() {
+    for sq in Square::ALL.iter() {
+        use crate::types::Square as S;
+        #[rustfmt::skip]
+        let ans = match *sq {
+            S::SQ11 | S::SQ12 | S::SQ13 | S::SQ14 | S::SQ15 | S::SQ16 | S::SQ17 | S::SQ18 | S::SQ19 => File::FILE1,
+            S::SQ21 | S::SQ22 | S::SQ23 | S::SQ24 | S::SQ25 | S::SQ26 | S::SQ27 | S::SQ28 | S::SQ29 => File::FILE2,
+            S::SQ31 | S::SQ32 | S::SQ33 | S::SQ34 | S::SQ35 | S::SQ36 | S::SQ37 | S::SQ38 | S::SQ39 => File::FILE3,
+            S::SQ41 | S::SQ42 | S::SQ43 | S::SQ44 | S::SQ45 | S::SQ46 | S::SQ47 | S::SQ48 | S::SQ49 => File::FILE4,
+            S::SQ51 | S::SQ52 | S::SQ53 | S::SQ54 | S::SQ55 | S::SQ56 | S::SQ57 | S::SQ58 | S::SQ59 => File::FILE5,
+            S::SQ61 | S::SQ62 | S::SQ63 | S::SQ64 | S::SQ65 | S::SQ66 | S::SQ67 | S::SQ68 | S::SQ69 => File::FILE6,
+            S::SQ71 | S::SQ72 | S::SQ73 | S::SQ74 | S::SQ75 | S::SQ76 | S::SQ77 | S::SQ78 | S::SQ79 => File::FILE7,
+            S::SQ81 | S::SQ82 | S::SQ83 | S::SQ84 | S::SQ85 | S::SQ86 | S::SQ87 | S::SQ88 | S::SQ89 => File::FILE8,
+            S::SQ91 | S::SQ92 | S::SQ93 | S::SQ94 | S::SQ95 | S::SQ96 | S::SQ97 | S::SQ98 | S::SQ99 => File::FILE9,
+            _ => unreachable!(),
+        };
+        assert_eq!(File::new(*sq), ans);
+    }
+}
+
+#[test]
+fn test_rank_new() {
+    for sq in Square::ALL.iter() {
+        use crate::types::Square as S;
+        #[rustfmt::skip]
+        let ans = match *sq {
+            S::SQ11 | S::SQ21 | S::SQ31 | S::SQ41 | S::SQ51 | S::SQ61 | S::SQ71 | S::SQ81 | S::SQ91 => Rank::RANK1,
+            S::SQ12 | S::SQ22 | S::SQ32 | S::SQ42 | S::SQ52 | S::SQ62 | S::SQ72 | S::SQ82 | S::SQ92 => Rank::RANK2,
+            S::SQ13 | S::SQ23 | S::SQ33 | S::SQ43 | S::SQ53 | S::SQ63 | S::SQ73 | S::SQ83 | S::SQ93 => Rank::RANK3,
+            S::SQ14 | S::SQ24 | S::SQ34 | S::SQ44 | S::SQ54 | S::SQ64 | S::SQ74 | S::SQ84 | S::SQ94 => Rank::RANK4,
+            S::SQ15 | S::SQ25 | S::SQ35 | S::SQ45 | S::SQ55 | S::SQ65 | S::SQ75 | S::SQ85 | S::SQ95 => Rank::RANK5,
+            S::SQ16 | S::SQ26 | S::SQ36 | S::SQ46 | S::SQ56 | S::SQ66 | S::SQ76 | S::SQ86 | S::SQ96 => Rank::RANK6,
+            S::SQ17 | S::SQ27 | S::SQ37 | S::SQ47 | S::SQ57 | S::SQ67 | S::SQ77 | S::SQ87 | S::SQ97 => Rank::RANK7,
+            S::SQ18 | S::SQ28 | S::SQ38 | S::SQ48 | S::SQ58 | S::SQ68 | S::SQ78 | S::SQ88 | S::SQ98 => Rank::RANK8,
+            S::SQ19 | S::SQ29 | S::SQ39 | S::SQ49 | S::SQ59 | S::SQ69 | S::SQ79 | S::SQ89 | S::SQ99 => Rank::RANK9,
+            _ => unreachable!(),
+        };
+        assert_eq!(Rank::new(*sq), ans);
     }
 }
 
