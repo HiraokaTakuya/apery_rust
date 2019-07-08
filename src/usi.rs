@@ -236,9 +236,9 @@ fn bench_movegen(pos: &Position) {
     let mut mlist = MoveList::new();
     for _ in 0..max {
         mlist.size = 0;
-        mlist.generate_all::<CaptureOrPawnPromotionsType>(&pos, 0);
+        mlist.generate::<CaptureOrPawnPromotionsType>(&pos, 0);
         let size = mlist.size;
-        mlist.generate_all::<QuietsWithoutPawnPromotionsType>(&pos, size);
+        mlist.generate::<QuietsWithoutPawnPromotionsType>(&pos, size);
     }
     let end = start.elapsed();
     let elapsed = (end.as_secs() * 1000) as i64 + i64::from(end.subsec_millis());

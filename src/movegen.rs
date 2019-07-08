@@ -391,7 +391,7 @@ impl MoveList {
         }
         self.size += 1;
     }
-    pub fn generate_all<AMT: AllowMovesTrait>(&mut self, pos: &Position, current_size: usize) {
+    fn generate_all<AMT: AllowMovesTrait>(&mut self, pos: &Position, current_size: usize) {
         self.size = current_size;
         let us = pos.side_to_move();
         let target = if AMT::ALLOW_CAPTURES && AMT::ALLOW_QUIETS {

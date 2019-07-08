@@ -463,7 +463,7 @@ impl<'a> MovePickerForMainSearch<'a> {
                 }
                 StagesForMainSearch::CaptureInit => {
                     self.move_list
-                        .generate_all::<CaptureOrPawnPromotionsType>(pos, 0);
+                        .generate::<CaptureOrPawnPromotionsType>(pos, 0);
                     score_captures(self.move_list.slice_mut(0), pos, self.capture_history);
                     self.stage = self.stage.next_variant().unwrap();
                 }
@@ -502,7 +502,7 @@ impl<'a> MovePickerForMainSearch<'a> {
                 StagesForMainSearch::QuietInit => {
                     self.cur = self.end_bad_captures;
                     self.move_list
-                        .generate_all::<QuietsWithoutPawnPromotionsType>(pos, self.cur);
+                        .generate::<QuietsWithoutPawnPromotionsType>(pos, self.cur);
                     score_quiets(
                         self.move_list.slice_mut(self.cur),
                         pos,
@@ -623,7 +623,7 @@ impl<'a> MovePickerForQSearch<'a> {
                 }
                 StagesForQSearch::QCaptureInit => {
                     self.move_list
-                        .generate_all::<CaptureOrPawnPromotionsType>(pos, 0);
+                        .generate::<CaptureOrPawnPromotionsType>(pos, 0);
                     score_captures(self.move_list.slice_mut(0), pos, self.capture_history);
                     self.stage = self.stage.next_variant().unwrap();
                 }
@@ -730,7 +730,7 @@ impl MovePickerForProbCut {
                 }
                 StagesForProbCut::Init => {
                     self.move_list
-                        .generate_all::<CaptureOrPawnPromotionsType>(pos, 0);
+                        .generate::<CaptureOrPawnPromotionsType>(pos, 0);
                     score_captures(self.move_list.slice_mut(0), pos, self.capture_history);
                     self.stage = self.stage.next_variant().unwrap();
                 }
@@ -806,7 +806,7 @@ fn test_move_list_select_best() {
     let sfen = "k8/9/3b1l3/4s4/5pg2/4GP3/5RN2/9/K4L3 b - 1";
     let pos = Position::new_from_sfen(sfen).unwrap();
     let mut mlist = MoveList::new();
-    mlist.generate_all::<CaptureOrPawnPromotionsType>(&pos, 0);
+    mlist.generate::<CaptureOrPawnPromotionsType>(&pos, 0);
     let capture_history = CapturePieceToHistory::new();
     score_captures(mlist.slice_mut(0), &pos, &capture_history);
     let mut cur = 0;
@@ -824,7 +824,7 @@ fn test_move_list_select_best() {
     let sfen = "k8/lpppppp2/rbgsnlp2/+RPPPPPP2/9/9/9/9/K8 b - 1";
     let pos = Position::new_from_sfen(sfen).unwrap();
     let mut mlist = MoveList::new();
-    mlist.generate_all::<CaptureOrPawnPromotionsType>(&pos, 0);
+    mlist.generate::<CaptureOrPawnPromotionsType>(&pos, 0);
     let capture_history = CapturePieceToHistory::new();
     score_captures(mlist.slice_mut(0), &pos, &capture_history);
     let mut cur = 0;
