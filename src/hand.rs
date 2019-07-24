@@ -35,20 +35,6 @@ impl Hand {
     const ROOK_MASK: u32 = ((1 << Hand::ROOK_REQUIRE_BITS) - 1) << Hand::ROOK_SHIFT_BITS;
     const GOLD_MASK: u32 = ((1 << Hand::GOLD_REQUIRE_BITS) - 1) << Hand::GOLD_SHIFT_BITS;
 
-    const EXCEPT_PAWN_MASK: u32 = (Hand::LANCE_MASK
-        | Hand::KNIGHT_MASK
-        | Hand::SILVER_MASK
-        | Hand::BISHOP_MASK
-        | Hand::ROOK_MASK
-        | Hand::GOLD_MASK);
-    const BORROW_MASK: u32 = ((Hand::PAWN_MASK + (1 << Hand::PAWN_SHIFT_BITS))
-        | (Hand::LANCE_MASK + (1 << Hand::LANCE_SHIFT_BITS))
-        | (Hand::KNIGHT_MASK + (1 << Hand::KNIGHT_SHIFT_BITS))
-        | (Hand::SILVER_MASK + (1 << Hand::SILVER_SHIFT_BITS))
-        | (Hand::BISHOP_MASK + (1 << Hand::BISHOP_SHIFT_BITS))
-        | (Hand::ROOK_MASK + (1 << Hand::ROOK_SHIFT_BITS))
-        | (Hand::GOLD_MASK + (1 << Hand::GOLD_SHIFT_BITS)));
-
     const PAWN_ONE: u32 = 1 << Hand::PAWN_SHIFT_BITS;
     const LANCE_ONE: u32 = 1 << Hand::LANCE_SHIFT_BITS;
     const KNIGHT_ONE: u32 = 1 << Hand::KNIGHT_SHIFT_BITS;
@@ -56,6 +42,20 @@ impl Hand {
     const BISHOP_ONE: u32 = 1 << Hand::BISHOP_SHIFT_BITS;
     const ROOK_ONE: u32 = 1 << Hand::ROOK_SHIFT_BITS;
     const GOLD_ONE: u32 = 1 << Hand::GOLD_SHIFT_BITS;
+
+    const EXCEPT_PAWN_MASK: u32 = (Hand::LANCE_MASK
+        | Hand::KNIGHT_MASK
+        | Hand::SILVER_MASK
+        | Hand::BISHOP_MASK
+        | Hand::ROOK_MASK
+        | Hand::GOLD_MASK);
+    const BORROW_MASK: u32 = ((Hand::PAWN_MASK + Hand::PAWN_ONE)
+        | (Hand::LANCE_MASK + Hand::LANCE_ONE)
+        | (Hand::KNIGHT_MASK + Hand::KNIGHT_ONE)
+        | (Hand::SILVER_MASK + Hand::SILVER_ONE)
+        | (Hand::BISHOP_MASK + Hand::BISHOP_ONE)
+        | (Hand::ROOK_MASK + Hand::ROOK_ONE)
+        | (Hand::GOLD_MASK + Hand::GOLD_ONE));
 
     pub fn num(self, pt: PieceType) -> u32 {
         let (mask, shift) = match pt {
