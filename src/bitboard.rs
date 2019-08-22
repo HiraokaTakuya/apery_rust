@@ -824,12 +824,12 @@ impl PieceAttackTable {
         Square::DELTA_W,
     ];
 
-    fn new(deltass: &[Vec<Square>; Color::NUM]) -> PieceAttackTable {
+    fn new(deltass: &[&[Square]; Color::NUM]) -> PieceAttackTable {
         let mut ret = PieceAttackTable([[Bitboard::ZERO; Color::NUM]; Square::NUM]);
         for c in Color::ALL.iter() {
             for sq in Square::ALL.iter() {
                 let deltas = &deltass[c.0 as usize];
-                for delta in deltas {
+                for delta in deltas.iter() {
                     if let Some(sq_tmp) = sq.checked_add(*delta) {
                         if (File::new(*sq).0 - File::new(sq_tmp).0).abs() <= 1
                             && (Rank::new(*sq).0 - Rank::new(sq_tmp).0).abs() <= 2
@@ -983,34 +983,34 @@ impl<'a> AttackTable<'a> {
 lazy_static! {
     pub static ref ATTACK_TABLE: AttackTable<'static> = AttackTable {
         pawn: PieceAttackTable::new(&[
-            PieceAttackTable::BLACK_PAWN_DELTAS.to_vec(),
-            PieceAttackTable::WHITE_PAWN_DELTAS.to_vec(),
+            &PieceAttackTable::BLACK_PAWN_DELTAS,
+            &PieceAttackTable::WHITE_PAWN_DELTAS,
         ]),
         lance: LanceAttackTable::new(),
         knight: PieceAttackTable::new(&[
-            PieceAttackTable::BLACK_KNIGHT_DELTAS.to_vec(),
-            PieceAttackTable::WHITE_KNIGHT_DELTAS.to_vec(),
+            &PieceAttackTable::BLACK_KNIGHT_DELTAS,
+            &PieceAttackTable::WHITE_KNIGHT_DELTAS,
         ]),
         silver: PieceAttackTable::new(&[
-            PieceAttackTable::BLACK_SILVER_DELTAS.to_vec(),
-            PieceAttackTable::WHITE_SILVER_DELTAS.to_vec(),
+            &PieceAttackTable::BLACK_SILVER_DELTAS,
+            &PieceAttackTable::WHITE_SILVER_DELTAS,
         ]),
         gold: PieceAttackTable::new(&[
-            PieceAttackTable::BLACK_GOLD_DELTAS.to_vec(),
-            PieceAttackTable::WHITE_GOLD_DELTAS.to_vec(),
+            &PieceAttackTable::BLACK_GOLD_DELTAS,
+            &PieceAttackTable::WHITE_GOLD_DELTAS,
         ]),
         king: KingAttackTable::new(),
         bishop: MagicTable::new(
             AttackTable::BISHOP_ATTACK_TABLE_NUM,
             &AttackTable::BISHOP_SHIFT_BITS,
             &AttackTable::BISHOP_MAGICS,
-            &AttackTable::BISHOP_DELTAS.to_vec()
+            &AttackTable::BISHOP_DELTAS,
         ),
         rook: MagicTable::new(
             AttackTable::ROOK_ATTACK_TABLE_NUM,
             &AttackTable::ROOK_SHIFT_BITS,
             &AttackTable::ROOK_MAGICS,
-            &AttackTable::ROOK_DELTAS.to_vec()
+            &AttackTable::ROOK_DELTAS,
         ),
     };
 }
@@ -1137,11 +1137,7 @@ fn test_bishop_magic() {
             occupied.set(Square::SQ28);
             assert_eq!(
                 ATTACK_TABLE.bishop.magic(Square::SQ55).attack(&occupied),
-                sliding_attacks(
-                    &AttackTable::BISHOP_DELTAS.to_vec(),
-                    Square::SQ55,
-                    &occupied
-                )
+                sliding_attacks(&AttackTable::BISHOP_DELTAS, Square::SQ55, &occupied)
             );
         })
         .unwrap()
@@ -1159,7 +1155,7 @@ fn test_rook_magic() {
     occupied.set(Square::SQ58);
     assert_eq!(
         ATTACK_TABLE.rook.magic(Square::SQ55).attack(&occupied),
-        sliding_attacks(&AttackTable::ROOK_DELTAS.to_vec(), Square::SQ55, &occupied)
+        sliding_attacks(&AttackTable::ROOK_DELTAS, Square::SQ55, &occupied)
     );
 }
 
