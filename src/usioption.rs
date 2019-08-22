@@ -100,7 +100,6 @@ impl UsiOptions {
             },
             _ => {
                 println!(r#"Error: The option "{}" isn't button type"#, key);
-                return;
             }
         }
     }
@@ -142,7 +141,6 @@ impl UsiOptions {
                 }
                 Err(err) => {
                     println!("{:?}", err);
-                    return;
                 }
             },
             UsiOptionValue::Check { .. } => {
@@ -153,7 +151,6 @@ impl UsiOptions {
                     }
                     Err(err) => {
                         println!("{:?}", err);
-                        return;
                     }
                 }
             }

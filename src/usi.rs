@@ -216,7 +216,6 @@ fn setoption(
                 args.iter().fold("".to_string(), |sum, x| sum + " " + x)
             );
             eprintln!("{}", s);
-            return;
         }
     }
 }
