@@ -1051,7 +1051,7 @@ impl Thread {
         let old_alpha = if pv_node {
             alpha
         } else {
-            unsafe { std::mem::uninitialized() }
+            unsafe { std::mem::MaybeUninit::uninit().assume_init() }
         };
         get_stack_mut(stack, 1).ply = get_stack(stack, 0).ply + 1;
         get_stack_mut(stack, 0).current_move = None;

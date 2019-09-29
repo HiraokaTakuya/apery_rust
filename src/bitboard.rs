@@ -719,7 +719,8 @@ impl<'a> MagicTable<'a> {
         deltas: &[Square],
     ) -> MagicTable<'a> {
         let mut attacks = vec![Bitboard::ZERO; table_num];
-        let mut magics: [Magic<'a>; Square::NUM] = unsafe { std::mem::uninitialized() };
+        let mut magics: [Magic<'a>; Square::NUM] =
+            unsafe { std::mem::MaybeUninit::uninit().assume_init() };
         let mut count = 0;
         for sq in Square::ALL.iter() {
             let mask = Magic::attack_mask(deltas, *sq);

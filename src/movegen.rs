@@ -369,7 +369,7 @@ pub struct MoveList {
 
 impl MoveList {
     pub fn new() -> MoveList {
-        let mut mlist: MoveList = unsafe { std::mem::uninitialized() };
+        let mut mlist: MoveList = unsafe { std::mem::MaybeUninit::uninit().assume_init() };
         mlist.size = 0;
         mlist
     }
@@ -535,7 +535,8 @@ impl MoveList {
             }
         }
         if hand.except_pawn_exist() {
-            let mut possessions: [Piece; 6] = unsafe { std::mem::uninitialized() };
+            let mut possessions: [Piece; 6] =
+                unsafe { std::mem::MaybeUninit::uninit().assume_init() };
             let mut possessions_num: usize = 0;
             let sgbr_num;
             let sgbrl_num;

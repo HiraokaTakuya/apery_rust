@@ -141,7 +141,7 @@ pub struct ContinuationHistory {
 impl ContinuationHistory {
     pub fn new() -> ContinuationHistory {
         let mut ch = ContinuationHistory {
-            v: unsafe { std::mem::uninitialized() },
+            v: unsafe { std::mem::MaybeUninit::uninit().assume_init() },
         };
         for x in ch.v.iter_mut() {
             for y in x.iter_mut() {

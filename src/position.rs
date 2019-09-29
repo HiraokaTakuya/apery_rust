@@ -580,14 +580,14 @@ impl StateInfo {
             material: old_state.material,
             plies_from_null: old_state.plies_from_null,
             continuous_checks: old_state.continuous_checks,
-            board_key: std::mem::uninitialized(),
-            hand_key: std::mem::uninitialized(),
-            hand_of_side_to_move: std::mem::uninitialized(),
-            checkers_bb: std::mem::uninitialized(),
-            captured_piece: std::mem::uninitialized(),
-            check_info: std::mem::uninitialized(),
-            changed_eval_index: std::mem::uninitialized(),
-            changed_eval_index_captured: std::mem::uninitialized(),
+            board_key: std::mem::MaybeUninit::uninit().assume_init(),
+            hand_key: std::mem::MaybeUninit::uninit().assume_init(),
+            hand_of_side_to_move: std::mem::MaybeUninit::uninit().assume_init(),
+            checkers_bb: std::mem::MaybeUninit::uninit().assume_init(),
+            captured_piece: std::mem::MaybeUninit::uninit().assume_init(),
+            check_info: std::mem::MaybeUninit::uninit().assume_init(),
+            changed_eval_index: std::mem::MaybeUninit::uninit().assume_init(),
+            changed_eval_index_captured: std::mem::MaybeUninit::uninit().assume_init(),
         }
     }
     fn new_from_position(pos: &PositionBase) -> StateInfo {
