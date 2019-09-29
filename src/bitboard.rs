@@ -159,18 +159,6 @@ impl Bitboard {
     pub fn is_set(&self, sq: Square) -> bool {
         self.and_to_bool(Bitboard::square_mask(sq))
     }
-    pub fn to_string(&self) -> String {
-        let mut s: String = "".to_string();
-        for rank in Rank::ALL_FROM_UPPER.iter() {
-            for file in File::ALL_FROM_LEFT.iter() {
-                let sq = Square::new(*file, *rank);
-                s += if self.is_set(sq) { "1" } else { "0" };
-            }
-            s += "\n";
-        }
-        s += "\n";
-        s
-    }
     #[allow(dead_code)]
     pub fn print(self) {
         println!("{}", self.to_string());
@@ -448,6 +436,21 @@ impl Iterator for Bitboard {
         } else {
             None
         }
+    }
+}
+
+impl std::fmt::Display for Bitboard {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let mut s: String = "".to_string();
+        for rank in Rank::ALL_FROM_UPPER.iter() {
+            for file in File::ALL_FROM_LEFT.iter() {
+                let sq = Square::new(*file, *rank);
+                s += if self.is_set(sq) { "1" } else { "0" };
+            }
+            s += "\n";
+        }
+        s += "\n";
+        write!(f, "{}", s)
     }
 }
 
