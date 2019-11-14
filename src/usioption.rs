@@ -53,7 +53,7 @@ impl UsiOptionValue {
 
 #[derive(Clone)]
 pub struct UsiOptions {
-    v: std::collections::HashMap<String, UsiOptionValue>,
+    v: std::collections::HashMap<&'static str, UsiOptionValue>,
 }
 
 impl UsiOptions {
@@ -62,56 +62,40 @@ impl UsiOptions {
 
         // The following are all options.
         options.insert(
-            "Byoyomi_Margin".to_string(),
+            "Byoyomi_Margin",
             UsiOptionValue::spin_default(500, 0, i64::max_value()),
         );
-        options.insert("Clear_Hash".to_string(), UsiOptionValue::Button);
+        options.insert("Clear_Hash", UsiOptionValue::Button);
+        options.insert("Eval_Dir", UsiOptionValue::string_default("eval/20190617"));
         options.insert(
-            "Eval_Dir".to_string(),
-            UsiOptionValue::string_default("eval/20190617"),
-        );
-        options.insert(
-            "Eval_Hash".to_string(),
+            "Eval_Hash",
             UsiOptionValue::spin_default(256, 1, 1024 * 1024),
         );
         options.insert(
-            "Minimum_Thinking_Time".to_string(),
+            "Minimum_Thinking_Time",
             UsiOptionValue::spin_default(20, 0, 5000),
         );
+        options.insert("MultiPV", UsiOptionValue::spin_default(1, 1, 500));
+        options.insert("Slow_Mover", UsiOptionValue::spin_default(84, 10, 1000));
+        options.insert("Threads", UsiOptionValue::spin_default(1, 1, 8192));
         options.insert(
-            "MultiPV".to_string(),
-            UsiOptionValue::spin_default(1, 1, 500),
-        );
-        options.insert(
-            "Slow_Mover".to_string(),
-            UsiOptionValue::spin_default(84, 10, 1000),
-        );
-        options.insert(
-            "Threads".to_string(),
-            UsiOptionValue::spin_default(1, 1, 8192),
-        );
-        options.insert(
-            "Time_Margin".to_string(),
+            "Time_Margin",
             UsiOptionValue::spin_default(500, 0, i64::max_value()),
         );
         options.insert(
-            "USI_Hash".to_string(),
+            "USI_Hash",
             UsiOptionValue::spin_default(256, 1, 1024 * 1024),
         );
-        options.insert(
-            "USI_Ponder".to_string(),
-            UsiOptionValue::check_default(true),
-        );
+        options.insert("USI_Ponder", UsiOptionValue::check_default(true));
 
         UsiOptions { v: options }
     }
     pub fn push_button(&self, key: &str, tt: &mut TranspositionTable) {
-        if self.v.get(key).is_none() {
-            println!("Error: illegal option name: {}", key);
-            return;
-        }
-        match &self.v[key] {
-            UsiOptionValue::Button => match key {
+        match self.v.get(key) {
+            None => {
+                println!("Error: illegal option name: {}", key);
+            }
+            Some(UsiOptionValue::Button) => match key {
                 "Clear_Hash" => {
                     tt.clear();
                 }
