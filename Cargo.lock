@@ -10,7 +10,7 @@ dependencies = [
 
 [[package]]
 name = "apery"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
  "arrayvec 0.4.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "custom_derive 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
