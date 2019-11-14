@@ -22,25 +22,32 @@ enum UsiOptionValue {
 }
 
 impl UsiOptionValue {
-    pub fn string(default: &str) -> UsiOptionValue {
+    fn string(default: &str, current: &str) -> UsiOptionValue {
         UsiOptionValue::StringOption {
             default: default.to_string(),
-            current: default.to_string(),
+            current: current.to_string(),
         }
     }
-    pub fn spin(default: i64, min: i64, max: i64) -> UsiOptionValue {
+    fn spin(default: i64, current: i64, min: i64, max: i64) -> UsiOptionValue {
         UsiOptionValue::Spin {
             default,
-            current: default,
+            current,
             min,
             max,
         }
     }
-    pub fn check(default: bool) -> UsiOptionValue {
-        UsiOptionValue::Check {
-            default,
-            current: default,
-        }
+    fn check(default: bool, current: bool) -> UsiOptionValue {
+        UsiOptionValue::Check { default, current }
+    }
+
+    fn string_default(default: &str) -> UsiOptionValue {
+        Self::string(default, default)
+    }
+    fn spin_default(default: i64, min: i64, max: i64) -> UsiOptionValue {
+        Self::spin(default, default, min, max)
+    }
+    fn check_default(default: bool) -> UsiOptionValue {
+        Self::check(default, default)
     }
 }
 
@@ -56,33 +63,45 @@ impl UsiOptions {
         // The following are all options.
         options.insert(
             "Byoyomi_Margin".to_string(),
-            UsiOptionValue::spin(500, 0, i64::max_value()),
+            UsiOptionValue::spin_default(500, 0, i64::max_value()),
         );
         options.insert("Clear_Hash".to_string(), UsiOptionValue::Button);
         options.insert(
             "Eval_Dir".to_string(),
-            UsiOptionValue::string("eval/20190617"),
+            UsiOptionValue::string_default("eval/20190617"),
         );
         options.insert(
             "Eval_Hash".to_string(),
-            UsiOptionValue::spin(256, 1, 1024 * 1024),
+            UsiOptionValue::spin_default(256, 1, 1024 * 1024),
         );
         options.insert(
             "Minimum_Thinking_Time".to_string(),
-            UsiOptionValue::spin(20, 0, 5000),
+            UsiOptionValue::spin_default(20, 0, 5000),
         );
-        options.insert("MultiPV".to_string(), UsiOptionValue::spin(1, 1, 500));
-        options.insert("Slow_Mover".to_string(), UsiOptionValue::spin(84, 10, 1000));
-        options.insert("Threads".to_string(), UsiOptionValue::spin(1, 1, 8192));
+        options.insert(
+            "MultiPV".to_string(),
+            UsiOptionValue::spin_default(1, 1, 500),
+        );
+        options.insert(
+            "Slow_Mover".to_string(),
+            UsiOptionValue::spin_default(84, 10, 1000),
+        );
+        options.insert(
+            "Threads".to_string(),
+            UsiOptionValue::spin_default(1, 1, 8192),
+        );
         options.insert(
             "Time_Margin".to_string(),
-            UsiOptionValue::spin(500, 0, i64::max_value()),
+            UsiOptionValue::spin_default(500, 0, i64::max_value()),
         );
         options.insert(
             "USI_Hash".to_string(),
-            UsiOptionValue::spin(256, 1, 1024 * 1024),
+            UsiOptionValue::spin_default(256, 1, 1024 * 1024),
         );
-        options.insert("USI_Ponder".to_string(), UsiOptionValue::check(true));
+        options.insert(
+            "USI_Ponder".to_string(),
+            UsiOptionValue::check_default(true),
+        );
 
         UsiOptions { v: options }
     }
@@ -111,21 +130,20 @@ impl UsiOptions {
         tt: &mut TranspositionTable,
         ehash: &mut EvalHash,
     ) {
-        if self.v.get(key).is_none() {
-            println!("Error: illegal option name: {}", key);
-            return;
-        }
-        match self.v[key] {
-            UsiOptionValue::StringOption { .. } => {
-                self.v
-                    .insert(key.to_string(), UsiOptionValue::string(value));
+        match self.v.get_mut(key) {
+            None => {
+                println!("Error: illegal option name: {}", key);
             }
-            UsiOptionValue::Spin { min, max, .. } => match value.parse::<i64>() {
+            Some(UsiOptionValue::StringOption { current, .. }) => {
+                *current = value.to_string();
+            }
+            Some(UsiOptionValue::Spin {
+                current, min, max, ..
+            }) => match value.parse::<i64>() {
                 Ok(n) => {
-                    let n = std::cmp::min(n, max);
-                    let n = std::cmp::max(n, min);
-                    self.v
-                        .insert(key.to_string(), UsiOptionValue::spin(n, min, max));
+                    let n = std::cmp::min(n, *max);
+                    let n = std::cmp::max(n, *min);
+                    *current = n;
                     match key {
                         "Eval_Hash" => {
                             ehash.resize(n as usize, thread_pool);
@@ -143,18 +161,18 @@ impl UsiOptions {
                     println!("{:?}", err);
                 }
             },
-            UsiOptionValue::Check { .. } => {
+            Some(UsiOptionValue::Check { current, .. }) => {
                 // "true" or "false" is ok. You can only use lowercase.
                 match value.parse::<bool>() {
                     Ok(b) => {
-                        self.v.insert(key.to_string(), UsiOptionValue::check(b));
+                        *current = b;
                     }
                     Err(err) => {
                         println!("{:?}", err);
                     }
                 }
             }
-            UsiOptionValue::Button => {}
+            Some(UsiOptionValue::Button) => {}
         }
     }
     pub fn to_usi_string(&self) -> String {
