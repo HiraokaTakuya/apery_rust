@@ -1356,22 +1356,21 @@ impl Thread {
         beta: Value,
         reverse: bool, // for Shogidokoro Graph
     ) -> String {
-        let mut lines = vec![];
         let elapsed_millis = self.limits.start_time.unwrap().elapsed().as_millis() as i64 + 1; // "+ 1": avoid dividing by 0
-        let mut info_with_multi_pv_index = |i: usize| {
-            let updated = i <= self.pv_idx && self.root_moves[i].score != -Value::INFINITE;
+        let info_with_multi_pv_index = |i: usize, rm: &RootMove| -> Option<String> {
+            let updated = i <= self.pv_idx && rm.score != -Value::INFINITE;
             if depth == Depth::ONE_PLY && !updated {
-                return;
+                return None;
             }
             let (d, v) = if updated {
-                (depth, self.root_moves[i].score)
+                (depth, rm.score)
             } else {
-                (depth - Depth::ONE_PLY, self.root_moves[i].previous_score)
+                (depth - Depth::ONE_PLY, rm.previous_score)
             };
             let line = format!(
                 "info depth {depth} seldepth {seldepth} multipv {multipv} score {score} {bound}wr {wr:.4} nodes {nodes} nps {nps} time {time} pv {pv}",
                 depth = d.0 / Depth::ONE_PLY.0,
-                seldepth = self.root_moves[i].sel_depth,
+                seldepth = rm.sel_depth,
                 multipv = i + 1,
                 score = v.to_usi(),
                 bound = if v >= beta {
@@ -1383,18 +1382,19 @@ impl Thread {
                 nodes = nodes_searched,
                 nps = nodes_searched * 1000 / elapsed_millis,
                 time = elapsed_millis,
-                pv = self.root_moves[i].pv.iter().map(|m| m.to_usi_string()).collect::<Vec<_>>().join(" ")
+                pv = rm.pv.iter().map(|m| m.to_usi_string()).collect::<Vec<_>>().join(" ")
             );
-            lines.push(line);
+            Some(line)
         };
+        let mut lines = self
+            .root_moves
+            .iter()
+            .take(multi_pv)
+            .enumerate()
+            .flat_map(|(i, rm)| info_with_multi_pv_index(i, rm))
+            .collect::<Vec<_>>();
         if reverse {
-            for i in (0..multi_pv).rev() {
-                info_with_multi_pv_index(i);
-            }
-        } else {
-            for i in 0..multi_pv {
-                info_with_multi_pv_index(i);
-            }
+            lines.reverse();
         }
         lines.join("\n")
     }
