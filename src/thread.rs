@@ -93,7 +93,7 @@ impl Thread {
             item.continuation_history = self.continuation_history.sentinel();
         }
         let multi_pv = std::cmp::min(
-            self.usi_options.get_i64("MultiPV") as usize,
+            self.usi_options.get_i64(UsiOptions::MULTI_PV) as usize,
             self.root_moves.len(),
         );
         evaluate_at_root(&self.position, &mut stack);
@@ -1574,7 +1574,7 @@ impl ThreadPool {
             }
 
             let multi_pv = std::cmp::min(
-                usi_options_cloned.get_i64("MultiPV") as usize,
+                usi_options_cloned.get_i64(UsiOptions::MULTI_PV) as usize,
                 root_moves.len(),
             );
             let best_thread = if multi_pv == 1 && limits.depth.is_none() && !root_moves.is_empty() {
@@ -1640,7 +1640,7 @@ impl ThreadPool {
                     "bestmove {}",
                     best_thread.root_moves[0].pv[0].to_usi_string(),
                 );
-                if usi_options_cloned.get_bool("USI_Ponder")
+                if usi_options_cloned.get_bool(UsiOptions::USI_PONDER)
                     && best_thread.root_moves[0].pv.len() >= 2
                 {
                     s += &format!(
@@ -1685,7 +1685,7 @@ fn test_start_thinking() {
             let mut ehash = EvalHash::new();
             tt.resize(16, &mut thread_pool);
             ehash.resize(16, &mut thread_pool);
-            load_evaluate_files(&usi_options.get_string("Eval_Dir")).unwrap();
+            load_evaluate_files(&usi_options.get_string(UsiOptions::EVAL_DIR)).unwrap();
             let limits = {
                 let mut limits = LimitsType::new();
                 limits.depth = Some(1);

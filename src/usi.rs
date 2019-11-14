@@ -42,7 +42,7 @@ fn go(
                     Color::WHITE
                 };
                 let n = next_num(limit_type, &mut iter)?;
-                let time_margin = usi_options.get_i64("Time_Margin") as u64;
+                let time_margin = usi_options.get_i64(UsiOptions::TIME_MARGIN) as u64;
                 limits.time[color.0 as usize] = if time_margin <= n {
                     std::time::Duration::from_millis(n - time_margin)
                 } else {
@@ -60,7 +60,7 @@ fn go(
             }
             "byoyomi" | "movetime" => {
                 let n = next_num(limit_type, &mut iter)?;
-                let byoyomi_margin = usi_options.get_i64("Byoyomi_Margin") as u64;
+                let byoyomi_margin = usi_options.get_i64(UsiOptions::BYOYOMI_MARGIN) as u64;
                 limits.movetime = if byoyomi_margin <= n {
                     Some(std::time::Duration::from_millis(n - byoyomi_margin))
                 } else {
@@ -496,7 +496,7 @@ pub fn cmd_loop() {
             "isready" => {
                 if !is_ready {
                     let mut all_ok = true;
-                    match load_evaluate_files(&usi_options.get_string("Eval_Dir")) {
+                    match load_evaluate_files(&usi_options.get_string(UsiOptions::EVAL_DIR)) {
                         Ok(_) => {}
                         Err(err) => {
                             eprintln!("{}", err);
@@ -504,8 +504,14 @@ pub fn cmd_loop() {
                         }
                     }
                     if all_ok {
-                        tt.resize(usi_options.get_i64("USI_Hash") as usize, &mut thread_pool);
-                        ehash.resize(usi_options.get_i64("Eval_Hash") as usize, &mut thread_pool);
+                        tt.resize(
+                            usi_options.get_i64(UsiOptions::USI_HASH) as usize,
+                            &mut thread_pool,
+                        );
+                        ehash.resize(
+                            usi_options.get_i64(UsiOptions::EVAL_HASH) as usize,
+                            &mut thread_pool,
+                        );
 
                         is_ready = true;
                     }

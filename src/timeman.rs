@@ -72,13 +72,13 @@ impl TimeManagement {
     }
     pub fn init(&mut self, usi_optoins: &UsiOptions, limits: &mut LimitsType, us: Color, ply: i32) {
         self.start_time = limits.start_time;
-        let min_thinking_time = usi_optoins.get_i64("Minimum_Thinking_Time") as u64;
+        let min_thinking_time = usi_optoins.get_i64(UsiOptions::MINIMUM_THINKING_TIME) as u64;
         self.optimum_time_milli = std::cmp::max(
             limits.time[us.0 as usize],
             std::time::Duration::from_millis(min_thinking_time),
         );
         self.maximum_time_milli = self.optimum_time_milli;
-        let slow_mover = usi_optoins.get_i64("Slow_Mover");
+        let slow_mover = usi_optoins.get_i64(UsiOptions::SLOW_MOVER);
         let max_moves_to_go = TimeManagement::MOVE_HORIZON;
         let move_overhead = 0;
         for hypothetical_moves_to_go in 1..max_moves_to_go {

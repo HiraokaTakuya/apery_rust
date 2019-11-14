@@ -57,36 +57,51 @@ pub struct UsiOptions {
 }
 
 impl UsiOptions {
+    pub const BYOYOMI_MARGIN: &'static str = "Byoyomi_Margin";
+    const CLEAR_HASH: &'static str = "Clear_Hash";
+    pub const EVAL_DIR: &'static str = "Eval_Dir";
+    pub const EVAL_HASH: &'static str = "Eval_Hash";
+    pub const MINIMUM_THINKING_TIME: &'static str = "Minimum_Thinking_Time";
+    pub const MULTI_PV: &'static str = "MultiPV";
+    pub const SLOW_MOVER: &'static str = "Slow_Mover";
+    const THREADS: &'static str = "Threads";
+    pub const TIME_MARGIN: &'static str = "Time_Margin";
+    pub const USI_HASH: &'static str = "USI_Hash";
+    pub const USI_PONDER: &'static str = "USI_Ponder";
+
     pub fn new() -> UsiOptions {
         let mut options = std::collections::HashMap::new();
 
         // The following are all options.
         options.insert(
-            "Byoyomi_Margin",
+            Self::BYOYOMI_MARGIN,
             UsiOptionValue::spin_default(500, 0, i64::max_value()),
         );
-        options.insert("Clear_Hash", UsiOptionValue::Button);
-        options.insert("Eval_Dir", UsiOptionValue::string_default("eval/20190617"));
+        options.insert(Self::CLEAR_HASH, UsiOptionValue::Button);
         options.insert(
-            "Eval_Hash",
+            Self::EVAL_DIR,
+            UsiOptionValue::string_default("eval/20190617"),
+        );
+        options.insert(
+            Self::EVAL_HASH,
             UsiOptionValue::spin_default(256, 1, 1024 * 1024),
         );
         options.insert(
-            "Minimum_Thinking_Time",
+            Self::MINIMUM_THINKING_TIME,
             UsiOptionValue::spin_default(20, 0, 5000),
         );
-        options.insert("MultiPV", UsiOptionValue::spin_default(1, 1, 500));
-        options.insert("Slow_Mover", UsiOptionValue::spin_default(84, 10, 1000));
-        options.insert("Threads", UsiOptionValue::spin_default(1, 1, 8192));
+        options.insert(Self::MULTI_PV, UsiOptionValue::spin_default(1, 1, 500));
+        options.insert(Self::SLOW_MOVER, UsiOptionValue::spin_default(84, 10, 1000));
+        options.insert(Self::THREADS, UsiOptionValue::spin_default(1, 1, 8192));
         options.insert(
-            "Time_Margin",
+            Self::TIME_MARGIN,
             UsiOptionValue::spin_default(500, 0, i64::max_value()),
         );
         options.insert(
-            "USI_Hash",
+            Self::USI_HASH,
             UsiOptionValue::spin_default(256, 1, 1024 * 1024),
         );
-        options.insert("USI_Ponder", UsiOptionValue::check_default(true));
+        options.insert(Self::USI_PONDER, UsiOptionValue::check_default(true));
 
         UsiOptions { v: options }
     }
@@ -96,7 +111,7 @@ impl UsiOptions {
                 println!("Error: illegal option name: {}", key);
             }
             Some(UsiOptionValue::Button) => match key {
-                "Clear_Hash" => {
+                Self::CLEAR_HASH => {
                     tt.clear();
                 }
                 _ => unreachable!(),
@@ -133,13 +148,13 @@ impl UsiOptions {
                     let n = std::cmp::max(n, *min);
                     *current = n;
                     match key {
-                        "Eval_Hash" => {
+                        Self::EVAL_HASH => {
                             ehash.resize(n as usize, thread_pool);
                         }
-                        "Threads" => {
+                        Self::THREADS => {
                             thread_pool.set(n as usize, tt, ehash);
                         }
-                        "USI_Hash" => {
+                        Self::USI_HASH => {
                             tt.resize(n as usize, thread_pool);
                         }
                         _ => {}
