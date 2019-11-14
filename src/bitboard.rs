@@ -680,12 +680,30 @@ impl LanceAttackTable {
     }
     pub fn attack(&self, c: Color, sq: Square, occupied: &Bitboard) -> Bitboard {
         let part = Bitboard::part(sq);
-        let index = ((occupied.value(part) >> Self::SLIDE[sq.0 as usize]) as usize)
+        debug_assert!(0 <= sq.0 && (sq.0 as usize) < Self::SLIDE.len());
+        let index = ((occupied.value(part) >> unsafe { Self::SLIDE.get_unchecked(sq.0 as usize) })
+            as usize)
             & (Self::MASK_TABLE_NUM - 1);
-        self.0[sq.0 as usize][c.0 as usize][index]
+        debug_assert!(0 <= c.0 && (c.0 as usize) < self.0[0].len());
+        debug_assert!(index < self.0[0][0].len());
+        unsafe {
+            *self
+                .0
+                .get_unchecked(sq.0 as usize)
+                .get_unchecked(c.0 as usize)
+                .get_unchecked(index)
+        }
     }
     pub fn pseudo_attack(&self, c: Color, sq: Square) -> Bitboard {
-        self.0[sq.0 as usize][c.0 as usize][0]
+        debug_assert!(0 <= sq.0 && (sq.0 as usize) < self.0.len());
+        debug_assert!(0 <= c.0 && (c.0 as usize) < self.0[0].len());
+        unsafe {
+            *self
+                .0
+                .get_unchecked(sq.0 as usize)
+                .get_unchecked(c.0 as usize)
+                .get_unchecked(0)
+        }
     }
 }
 
@@ -736,7 +754,8 @@ impl<'a> MagicTable<'a> {
     }
 
     pub fn magic(&self, sq: Square) -> &Magic {
-        &self.magics[sq.0 as usize]
+        debug_assert!(0 <= sq.0 && (sq.0 as usize) < self.magics.len());
+        unsafe { self.magics.get_unchecked(sq.0 as usize) }
     }
 }
 
@@ -769,7 +788,8 @@ impl KingAttackTable {
         ret
     }
     pub fn attack(&self, sq: Square) -> Bitboard {
-        self.0[sq.0 as usize]
+        debug_assert!(0 <= sq.0 && (sq.0 as usize) < self.0.len());
+        unsafe { *self.0.get_unchecked(sq.0 as usize) }
     }
 }
 
@@ -830,7 +850,14 @@ impl PieceAttackTable {
         ret
     }
     pub fn attack(&self, c: Color, sq: Square) -> Bitboard {
-        self.0[sq.0 as usize][c.0 as usize]
+        debug_assert!(0 <= sq.0 && (sq.0 as usize) < self.0.len());
+        debug_assert!(0 <= c.0 && (c.0 as usize) < self.0[0].len());
+        unsafe {
+            *self
+                .0
+                .get_unchecked(sq.0 as usize)
+                .get_unchecked(c.0 as usize)
+        }
     }
 }
 
