@@ -189,6 +189,7 @@ fn setoption(
     thread_pool: &mut ThreadPool,
     tt: &mut TranspositionTable,
     ehash: &mut EvalHash,
+    is_ready: &mut bool,
 ) {
     if !args.is_empty() && args[0] != "name" {
         eprintln!(r#"Error: expected: "name", found: "{}""#, args[0]);
@@ -206,7 +207,7 @@ fn setoption(
             }
             let name = args[1];
             let value = args[3];
-            usi_options.set(name, value, thread_pool, tt, ehash);
+            usi_options.set(name, value, thread_pool, tt, ehash, is_ready);
         }
         _ => {
             let mut s = "Error: invalid number of sections.".to_string();
@@ -530,6 +531,7 @@ pub fn cmd_loop() {
                 &mut thread_pool,
                 &mut tt,
                 &mut ehash,
+                &mut is_ready,
             ),
             "usi" => {
                 let mut s = format!("id name {}", crate::engine_name::ENGINE_NAME);

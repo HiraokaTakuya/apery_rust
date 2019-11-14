@@ -113,6 +113,7 @@ impl UsiOptions {
         thread_pool: &mut ThreadPool,
         tt: &mut TranspositionTable,
         ehash: &mut EvalHash,
+        is_ready: &mut bool,
     ) {
         match self.v.get_mut(key) {
             None => {
@@ -120,6 +121,9 @@ impl UsiOptions {
             }
             Some(UsiOptionValue::StringOption { current, .. }) => {
                 *current = value.to_string();
+                if key == "Eval_Dir" {
+                    *is_ready = false;
+                }
             }
             Some(UsiOptionValue::Spin {
                 current, min, max, ..
