@@ -183,20 +183,20 @@ impl UsiOptions {
         s.join("\n") // The last line has no "\n".
     }
     pub fn get_i64(&self, key: &str) -> i64 {
-        match &self.v[key] {
-            UsiOptionValue::Spin { current, .. } => *current,
+        match self.v.get(key) {
+            Some(UsiOptionValue::Spin { current, .. }) => *current,
             _ => panic!("Error: illegal option name: {}", key),
         }
     }
     pub fn get_string(&self, key: &str) -> String {
-        match &self.v[key] {
-            UsiOptionValue::StringOption { current, .. } => current.clone(),
+        match self.v.get(key) {
+            Some(UsiOptionValue::StringOption { current, .. }) => current.clone(),
             _ => panic!("Error: illegal option name: {}", key),
         }
     }
     pub fn get_bool(&self, key: &str) -> bool {
-        match &self.v[key] {
-            UsiOptionValue::Check { current, .. } => *current,
+        match self.v.get(key) {
+            Some(UsiOptionValue::Check { current, .. }) => *current,
             _ => panic!("Error: illegal option name: {}", key),
         }
     }
