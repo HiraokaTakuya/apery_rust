@@ -295,43 +295,26 @@ impl Bitboard {
         Bitboard { v: [0      , 1 << 16] },
         Bitboard { v: [0      , 1 << 17] },
     ];
-    #[rustfmt::skip]
-    const FILE1_MASK: Bitboard = Bitboard { v: [0x1ff           , 0         ] };
-    #[rustfmt::skip]
-    const FILE2_MASK: Bitboard = Bitboard { v: [0x1ff << 9      , 0         ] };
-    #[rustfmt::skip]
-    const FILE3_MASK: Bitboard = Bitboard { v: [0x1ff << (9 * 2), 0         ] };
-    #[rustfmt::skip]
-    const FILE4_MASK: Bitboard = Bitboard { v: [0x1ff << (9 * 3), 0         ] };
-    #[rustfmt::skip]
-    const FILE5_MASK: Bitboard = Bitboard { v: [0x1ff << (9 * 4), 0         ] };
-    #[rustfmt::skip]
-    const FILE6_MASK: Bitboard = Bitboard { v: [0x1ff << (9 * 5), 0         ] };
-    #[rustfmt::skip]
-    const FILE7_MASK: Bitboard = Bitboard { v: [0x1ff << (9 * 6), 0         ] };
-    #[rustfmt::skip]
-    const FILE8_MASK: Bitboard = Bitboard { v: [0               , 0x1ff     ] };
-    #[rustfmt::skip]
-    const FILE9_MASK: Bitboard = Bitboard { v: [0               , 0x1ff << 9] };
+    #[rustfmt::skip] const FILE1_MASK: Bitboard = Bitboard { v: [0x1ff           , 0         ] };
+    #[rustfmt::skip] const FILE2_MASK: Bitboard = Bitboard { v: [0x1ff << 9      , 0         ] };
+    #[rustfmt::skip] const FILE3_MASK: Bitboard = Bitboard { v: [0x1ff << (9 * 2), 0         ] };
+    #[rustfmt::skip] const FILE4_MASK: Bitboard = Bitboard { v: [0x1ff << (9 * 3), 0         ] };
+    #[rustfmt::skip] const FILE5_MASK: Bitboard = Bitboard { v: [0x1ff << (9 * 4), 0         ] };
+    #[rustfmt::skip] const FILE6_MASK: Bitboard = Bitboard { v: [0x1ff << (9 * 5), 0         ] };
+    #[rustfmt::skip] const FILE7_MASK: Bitboard = Bitboard { v: [0x1ff << (9 * 6), 0         ] };
+    #[rustfmt::skip] const FILE8_MASK: Bitboard = Bitboard { v: [0               , 0x1ff     ] };
+    #[rustfmt::skip] const FILE9_MASK: Bitboard = Bitboard { v: [0               , 0x1ff << 9] };
 
-    #[rustfmt::skip]
-    const RANK1_MASK: Bitboard = Bitboard { v: [0x40_2010_0804_0201     , 0x201     ] };
-    #[rustfmt::skip]
-    const RANK2_MASK: Bitboard = Bitboard { v: [0x40_2010_0804_0201 << 1, 0x201 << 1] };
-    #[rustfmt::skip]
-    const RANK3_MASK: Bitboard = Bitboard { v: [0x40_2010_0804_0201 << 2, 0x201 << 2] };
-    #[rustfmt::skip]
-    const RANK4_MASK: Bitboard = Bitboard { v: [0x40_2010_0804_0201 << 3, 0x201 << 3] };
-    #[rustfmt::skip]
-    const RANK5_MASK: Bitboard = Bitboard { v: [0x40_2010_0804_0201 << 4, 0x201 << 4] };
-    #[rustfmt::skip]
-    const RANK6_MASK: Bitboard = Bitboard { v: [0x40_2010_0804_0201 << 5, 0x201 << 5] };
-    #[rustfmt::skip]
-    const RANK7_MASK: Bitboard = Bitboard { v: [0x40_2010_0804_0201 << 6, 0x201 << 6] };
-    #[rustfmt::skip]
-    const RANK8_MASK: Bitboard = Bitboard { v: [0x40_2010_0804_0201 << 7, 0x201 << 7] };
-    #[rustfmt::skip]
-    const RANK9_MASK: Bitboard = Bitboard { v: [0x40_2010_0804_0201 << 8, 0x201 << 8] };
+    #[rustfmt::skip] const RANK1_MASK: Bitboard = Bitboard { v: [0x40_2010_0804_0201     , 0x201     ] };
+    #[rustfmt::skip] const RANK2_MASK: Bitboard = Bitboard { v: [0x40_2010_0804_0201 << 1, 0x201 << 1] };
+    #[rustfmt::skip] const RANK3_MASK: Bitboard = Bitboard { v: [0x40_2010_0804_0201 << 2, 0x201 << 2] };
+    #[rustfmt::skip] const RANK4_MASK: Bitboard = Bitboard { v: [0x40_2010_0804_0201 << 3, 0x201 << 3] };
+    #[rustfmt::skip] const RANK5_MASK: Bitboard = Bitboard { v: [0x40_2010_0804_0201 << 4, 0x201 << 4] };
+    #[rustfmt::skip] const RANK6_MASK: Bitboard = Bitboard { v: [0x40_2010_0804_0201 << 5, 0x201 << 5] };
+    #[rustfmt::skip] const RANK7_MASK: Bitboard = Bitboard { v: [0x40_2010_0804_0201 << 6, 0x201 << 6] };
+    #[rustfmt::skip] const RANK8_MASK: Bitboard = Bitboard { v: [0x40_2010_0804_0201 << 7, 0x201 << 7] };
+    #[rustfmt::skip] const RANK9_MASK: Bitboard = Bitboard { v: [0x40_2010_0804_0201 << 8, 0x201 << 8] };
+
     pub fn square_mask(sq: Square) -> Bitboard {
         debug_assert!(0 <= sq.0);
         debug_assert!(sq.0 < Square::NUM as i32);

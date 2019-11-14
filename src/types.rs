@@ -203,7 +203,6 @@ impl Rank {
         Rank::RANK1, Rank::RANK2, Rank::RANK3, Rank::RANK4, Rank::RANK5, Rank::RANK6, Rank::RANK7, Rank::RANK8, Rank::RANK9,
     ];
 
-    #[rustfmt::skip]
     pub fn new(sq: Square) -> Rank {
         debug_assert!(0 <= sq.0 && sq.0 <= Square::NUM as i32);
         unsafe { *Rank::SQUARE_TO_RANK.get_unchecked(sq.0 as usize) }
