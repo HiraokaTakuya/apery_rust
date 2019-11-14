@@ -145,18 +145,15 @@ impl UsiOptions {
                     println!("{:?}", err);
                 }
             },
-            Some(UsiOptionValue::Check { current, .. }) => {
-                // "true" or "false" is ok. You can only use lowercase.
-                match value.parse::<bool>() {
-                    Ok(b) => {
-                        *current = b;
-                    }
-                    Err(err) => {
-                        println!("{:?}", err);
-                    }
-                }
-            }
-            Some(UsiOptionValue::Button) => {}
+            Some(UsiOptionValue::Check { current, .. }) => match value {
+                "true" => *current = true,
+                "false" => *current = false,
+                _ => println!("Error: illegal option value: {}", value),
+            },
+            Some(UsiOptionValue::Button) => println!(
+                r#"Error: The option "{}" is button type. You can't set value to it."#,
+                key
+            ),
         }
     }
     pub fn to_usi_string(&self) -> String {
