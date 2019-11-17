@@ -4,7 +4,7 @@ use crate::tt::*;
 
 #[derive(Clone)]
 enum UsiOptionValue {
-    StringOption {
+    String {
         default: String,
         current: String,
     },
@@ -23,7 +23,7 @@ enum UsiOptionValue {
 
 impl UsiOptionValue {
     fn string(default: &str) -> UsiOptionValue {
-        UsiOptionValue::StringOption {
+        UsiOptionValue::String {
             default: default.to_string(),
             current: default.to_string(),
         }
@@ -118,7 +118,7 @@ impl UsiOptions {
             None => {
                 println!("Error: illegal option name: {}", key);
             }
-            Some(UsiOptionValue::StringOption { current, .. }) => {
+            Some(UsiOptionValue::String { current, .. }) => {
                 *current = value.to_string();
                 if key == "Eval_Dir" {
                     *is_ready = false;
@@ -158,7 +158,7 @@ impl UsiOptions {
             .v
             .iter()
             .map(|(key, opt)| match opt {
-                UsiOptionValue::StringOption { default, .. } => {
+                UsiOptionValue::String { default, .. } => {
                     format!("option name {} type string default {}", key, default)
                 }
                 UsiOptionValue::Spin {
@@ -184,7 +184,7 @@ impl UsiOptions {
     }
     pub fn get_string(&self, key: &str) -> String {
         match self.v.get(key) {
-            Some(UsiOptionValue::StringOption { current, .. }) => current.clone(),
+            Some(UsiOptionValue::String { current, .. }) => current.clone(),
             _ => panic!("Error: illegal option name: {}", key),
         }
     }
