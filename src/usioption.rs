@@ -22,32 +22,25 @@ enum UsiOptionValue {
 }
 
 impl UsiOptionValue {
-    fn string(default: &str, current: &str) -> UsiOptionValue {
+    fn string(default: &str) -> UsiOptionValue {
         UsiOptionValue::StringOption {
             default: default.to_string(),
-            current: current.to_string(),
+            current: default.to_string(),
         }
     }
-    fn spin(default: i64, current: i64, min: i64, max: i64) -> UsiOptionValue {
+    fn spin(default: i64, min: i64, max: i64) -> UsiOptionValue {
         UsiOptionValue::Spin {
             default,
-            current,
+            current: default,
             min,
             max,
         }
     }
-    fn check(default: bool, current: bool) -> UsiOptionValue {
-        UsiOptionValue::Check { default, current }
-    }
-
-    fn string_default(default: &str) -> UsiOptionValue {
-        Self::string(default, default)
-    }
-    fn spin_default(default: i64, min: i64, max: i64) -> UsiOptionValue {
-        Self::spin(default, default, min, max)
-    }
-    fn check_default(default: bool) -> UsiOptionValue {
-        Self::check(default, default)
+    fn check(default: bool) -> UsiOptionValue {
+        UsiOptionValue::Check {
+            default,
+            current: default,
+        }
     }
 }
 
@@ -75,33 +68,24 @@ impl UsiOptions {
         // The following are all options.
         options.insert(
             Self::BYOYOMI_MARGIN,
-            UsiOptionValue::spin_default(500, 0, i64::max_value()),
+            UsiOptionValue::spin(500, 0, i64::max_value()),
         );
         options.insert(Self::CLEAR_HASH, UsiOptionValue::Button);
-        options.insert(
-            Self::EVAL_DIR,
-            UsiOptionValue::string_default("eval/20190617"),
-        );
-        options.insert(
-            Self::EVAL_HASH,
-            UsiOptionValue::spin_default(256, 1, 1024 * 1024),
-        );
+        options.insert(Self::EVAL_DIR, UsiOptionValue::string("eval/20190617"));
+        options.insert(Self::EVAL_HASH, UsiOptionValue::spin(256, 1, 1024 * 1024));
         options.insert(
             Self::MINIMUM_THINKING_TIME,
-            UsiOptionValue::spin_default(20, 0, 5000),
+            UsiOptionValue::spin(20, 0, 5000),
         );
-        options.insert(Self::MULTI_PV, UsiOptionValue::spin_default(1, 1, 500));
-        options.insert(Self::SLOW_MOVER, UsiOptionValue::spin_default(84, 10, 1000));
-        options.insert(Self::THREADS, UsiOptionValue::spin_default(1, 1, 8192));
+        options.insert(Self::MULTI_PV, UsiOptionValue::spin(1, 1, 500));
+        options.insert(Self::SLOW_MOVER, UsiOptionValue::spin(84, 10, 1000));
+        options.insert(Self::THREADS, UsiOptionValue::spin(1, 1, 8192));
         options.insert(
             Self::TIME_MARGIN,
-            UsiOptionValue::spin_default(500, 0, i64::max_value()),
+            UsiOptionValue::spin(500, 0, i64::max_value()),
         );
-        options.insert(
-            Self::USI_HASH,
-            UsiOptionValue::spin_default(256, 1, 1024 * 1024),
-        );
-        options.insert(Self::USI_PONDER, UsiOptionValue::check_default(true));
+        options.insert(Self::USI_HASH, UsiOptionValue::spin(256, 1, 1024 * 1024));
+        options.insert(Self::USI_PONDER, UsiOptionValue::check(true));
 
         UsiOptions { v: options }
     }
@@ -148,15 +132,9 @@ impl UsiOptions {
                     let n = std::cmp::max(n, *min);
                     *current = n;
                     match key {
-                        Self::EVAL_HASH => {
-                            ehash.resize(n as usize, thread_pool);
-                        }
-                        Self::THREADS => {
-                            thread_pool.set(n as usize, tt, ehash);
-                        }
-                        Self::USI_HASH => {
-                            tt.resize(n as usize, thread_pool);
-                        }
+                        Self::EVAL_HASH => ehash.resize(n as usize, thread_pool),
+                        Self::THREADS => thread_pool.set(n as usize, tt, ehash),
+                        Self::USI_HASH => tt.resize(n as usize, thread_pool),
                         _ => {}
                     }
                 }
