@@ -1513,11 +1513,15 @@ impl Position {
     }
     #[inline]
     fn st(&self) -> &StateInfo {
-        self.states.last().unwrap()
+        debug_assert!(self.states.last().is_some());
+        let idx = self.states.len() - 1;
+        unsafe { self.states.get_unchecked(idx) }
     }
     #[inline]
     fn st_mut(&mut self) -> &mut StateInfo {
-        self.states.last_mut().unwrap()
+        debug_assert!(self.states.last().is_some());
+        let idx = self.states.len() - 1;
+        unsafe { self.states.get_unchecked_mut(idx) }
     }
     pub fn is_capture_after_move(&self) -> bool {
         self.st().is_capture_move()
