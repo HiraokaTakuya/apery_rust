@@ -483,6 +483,11 @@ pub fn cmd_loop() {
 
         match token {
             // Required commands as USI protocol.
+            "gameover" | "quit" | "stop" => {
+                thread_pool
+                    .stop
+                    .store(true, std::sync::atomic::Ordering::Relaxed);
+            }
             "go" => {
                 if is_ready {
                     if let Err(err) = go(&mut thread_pool, &mut tt, &usi_options, &pos, &args[1..])
@@ -526,11 +531,6 @@ pub fn cmd_loop() {
                     .store(false, std::sync::atomic::Ordering::Relaxed);
             }
             "position" => position(&mut pos, &args[1..]),
-            "quit" | "stop" | "gameover" => {
-                thread_pool
-                    .stop
-                    .store(true, std::sync::atomic::Ordering::Relaxed);
-            }
             "setoption" => setoption(
                 &args[1..],
                 &mut usi_options,
