@@ -957,12 +957,17 @@ impl Thread {
             }
         }
 
+        fn legal_moves_size(pos: &Position) -> usize {
+            let mut mlist = MoveList::new();
+            let current_size = 0;
+            mlist.generate::<LegalType>(pos, current_size);
+            mlist.size
+        }
         debug_assert!(
-            move_count != 0 || !in_check || excluded_move.is_some() || {
-                let mut mlist = MoveList::new();
-                mlist.generate::<LegalType>(&self.position, 0);
-                mlist.size == 0
-            }
+            move_count != 0
+                || !in_check
+                || excluded_move.is_some()
+                || legal_moves_size(&self.position) == 0
         );
 
         if move_count == 0 {

@@ -609,39 +609,41 @@ impl MoveList {
             debug_assert_eq!(Square::DELTA_S.0, 1);
             from_bb << 1
         } & *target;
-        debug_assert_eq!(
-            {
-                let mut to_bb = if us == Color::BLACK {
-                    debug_assert_eq!(Square::DELTA_N.0, -1);
-                    from_bb >> 1
-                } else {
-                    debug_assert_eq!(Square::DELTA_S.0, 1);
-                    from_bb << 1
-                };
-                to_bb &= !pos.pieces_c(us);
-                if AMT::EVASIONS {
-                    let checkers = pos.checkers();
-                    match checkers.count_ones() {
-                        1 => {
-                            let ksq = pos.king_square(us);
-                            to_bb &=
-                                checkers | Bitboard::between_mask(ksq, checkers.lsb_unchecked());
-                        }
-                        2 => to_bb = Bitboard::ZERO, // Only king can move.
-                        _ => unreachable!(),
+
+        fn make_to_bb<AMT: AllowMovesTrait>(
+            pos: &Position,
+            from_bb: Bitboard,
+            us: Color,
+        ) -> Bitboard {
+            let mut to_bb = if us == Color::BLACK {
+                debug_assert_eq!(Square::DELTA_N.0, -1);
+                from_bb >> 1
+            } else {
+                debug_assert_eq!(Square::DELTA_S.0, 1);
+                from_bb << 1
+            };
+            to_bb &= !pos.pieces_c(us);
+            if AMT::EVASIONS {
+                let checkers = pos.checkers();
+                match checkers.count_ones() {
+                    1 => {
+                        let ksq = pos.king_square(us);
+                        to_bb &= checkers | Bitboard::between_mask(ksq, checkers.lsb_unchecked());
                     }
+                    2 => to_bb = Bitboard::ZERO, // Only king can move.
+                    _ => unreachable!(),
                 }
-                // allow_capture is allow capture or pawn_promotion
-                if !AMT::ALLOW_CAPTURES {
-                    to_bb &= !(pos.pieces_c(us.inverse()) | Bitboard::opponent_field_mask(us));
-                }
-                if !AMT::ALLOW_QUIETS {
-                    to_bb &= pos.pieces_c(us.inverse()) | Bitboard::opponent_field_mask(us);
-                }
-                to_bb
-            },
+            }
+            // allow_capture is allow capture or pawn_promotion
+            if !AMT::ALLOW_CAPTURES {
+                to_bb &= !(pos.pieces_c(us.inverse()) | Bitboard::opponent_field_mask(us));
+            }
+            if !AMT::ALLOW_QUIETS {
+                to_bb &= pos.pieces_c(us.inverse()) | Bitboard::opponent_field_mask(us);
+            }
             to_bb
-        );
+        }
+        debug_assert_eq!(make_to_bb::<AMT>(pos, from_bb, us), to_bb);
 
         let (delta, pc) = if us == Color::BLACK {
             (Square::DELTA_S, Piece::B_PAWN)
@@ -664,32 +666,35 @@ impl MoveList {
         let from_bb = pos.pieces_cp(us, PieceType::LANCE);
         for from in from_bb {
             let to_bb = ATTACK_TABLE.lance.attack(us, from, &pos.occupied_bb()) & *target;
-            debug_assert_eq!(
-                {
-                    let mut to_bb =
-                        ATTACK_TABLE.lance.attack(us, from, &pos.occupied_bb()) & !pos.pieces_c(us);
-                    if AMT::EVASIONS {
-                        let checkers = pos.checkers();
-                        match checkers.count_ones() {
-                            1 => {
-                                let ksq = pos.king_square(us);
-                                to_bb &= checkers
-                                    | Bitboard::between_mask(ksq, checkers.lsb_unchecked());
-                            }
-                            2 => to_bb = Bitboard::ZERO, // Only king can move.
-                            _ => unreachable!(),
+
+            fn make_to_bb<AMT: AllowMovesTrait>(
+                pos: &Position,
+                from: Square,
+                us: Color,
+            ) -> Bitboard {
+                let mut to_bb =
+                    ATTACK_TABLE.lance.attack(us, from, &pos.occupied_bb()) & !pos.pieces_c(us);
+                if AMT::EVASIONS {
+                    let checkers = pos.checkers();
+                    match checkers.count_ones() {
+                        1 => {
+                            let ksq = pos.king_square(us);
+                            to_bb &=
+                                checkers | Bitboard::between_mask(ksq, checkers.lsb_unchecked());
                         }
+                        2 => to_bb = Bitboard::ZERO, // Only king can move.
+                        _ => unreachable!(),
                     }
-                    if !AMT::ALLOW_CAPTURES {
-                        to_bb &= !pos.pieces_c(us.inverse());
-                    }
-                    if !AMT::ALLOW_QUIETS {
-                        to_bb &= pos.pieces_c(us.inverse());
-                    }
-                    to_bb
-                },
+                }
+                if !AMT::ALLOW_CAPTURES {
+                    to_bb &= !pos.pieces_c(us.inverse());
+                }
+                if !AMT::ALLOW_QUIETS {
+                    to_bb &= pos.pieces_c(us.inverse());
+                }
                 to_bb
-            );
+            }
+            debug_assert_eq!(make_to_bb::<AMT>(pos, from, us), to_bb);
             let pc = pos.piece_on(from);
             for to in to_bb {
                 let rank_to = Rank::new(to);
@@ -714,31 +719,34 @@ impl MoveList {
         let from_bb = pos.pieces_cp(us, PieceType::KNIGHT);
         for from in from_bb {
             let to_bb = ATTACK_TABLE.knight.attack(us, from) & *target;
-            debug_assert_eq!(
-                {
-                    let mut to_bb = ATTACK_TABLE.knight.attack(us, from) & !pos.pieces_c(us);
-                    if AMT::EVASIONS {
-                        let checkers = pos.checkers();
-                        match checkers.count_ones() {
-                            1 => {
-                                let ksq = pos.king_square(us);
-                                to_bb &= checkers
-                                    | Bitboard::between_mask(ksq, checkers.lsb_unchecked());
-                            }
-                            2 => to_bb = Bitboard::ZERO, // Only king can move.
-                            _ => unreachable!(),
+
+            fn make_to_bb<AMT: AllowMovesTrait>(
+                pos: &Position,
+                from: Square,
+                us: Color,
+            ) -> Bitboard {
+                let mut to_bb = ATTACK_TABLE.knight.attack(us, from) & !pos.pieces_c(us);
+                if AMT::EVASIONS {
+                    let checkers = pos.checkers();
+                    match checkers.count_ones() {
+                        1 => {
+                            let ksq = pos.king_square(us);
+                            to_bb &=
+                                checkers | Bitboard::between_mask(ksq, checkers.lsb_unchecked());
                         }
+                        2 => to_bb = Bitboard::ZERO, // Only king can move.
+                        _ => unreachable!(),
                     }
-                    if !AMT::ALLOW_CAPTURES {
-                        to_bb &= !pos.pieces_c(us.inverse());
-                    }
-                    if !AMT::ALLOW_QUIETS {
-                        to_bb &= pos.pieces_c(us.inverse());
-                    }
-                    to_bb
-                },
+                }
+                if !AMT::ALLOW_CAPTURES {
+                    to_bb &= !pos.pieces_c(us.inverse());
+                }
+                if !AMT::ALLOW_QUIETS {
+                    to_bb &= pos.pieces_c(us.inverse());
+                }
                 to_bb
-            );
+            }
+            debug_assert_eq!(make_to_bb::<AMT>(pos, from, us), to_bb);
             let pc = pos.piece_on(from);
             for to in to_bb {
                 let rank_to = Rank::new(to);
@@ -757,31 +765,34 @@ impl MoveList {
         let from_bb = pos.pieces_cp(us, PieceType::SILVER);
         for from in from_bb {
             let to_bb = ATTACK_TABLE.silver.attack(us, from) & *target;
-            debug_assert_eq!(
-                {
-                    let mut to_bb = ATTACK_TABLE.silver.attack(us, from) & !pos.pieces_c(us);
-                    if AMT::EVASIONS {
-                        let checkers = pos.checkers();
-                        match checkers.count_ones() {
-                            1 => {
-                                let ksq = pos.king_square(us);
-                                to_bb &= checkers
-                                    | Bitboard::between_mask(ksq, checkers.lsb_unchecked());
-                            }
-                            2 => to_bb = Bitboard::ZERO, // Only king can move.
-                            _ => unreachable!(),
+
+            fn make_to_bb<AMT: AllowMovesTrait>(
+                pos: &Position,
+                from: Square,
+                us: Color,
+            ) -> Bitboard {
+                let mut to_bb = ATTACK_TABLE.silver.attack(us, from) & !pos.pieces_c(us);
+                if AMT::EVASIONS {
+                    let checkers = pos.checkers();
+                    match checkers.count_ones() {
+                        1 => {
+                            let ksq = pos.king_square(us);
+                            to_bb &=
+                                checkers | Bitboard::between_mask(ksq, checkers.lsb_unchecked());
                         }
+                        2 => to_bb = Bitboard::ZERO, // Only king can move.
+                        _ => unreachable!(),
                     }
-                    if !AMT::ALLOW_CAPTURES {
-                        to_bb &= !pos.pieces_c(us.inverse());
-                    }
-                    if !AMT::ALLOW_QUIETS {
-                        to_bb &= pos.pieces_c(us.inverse());
-                    }
-                    to_bb
-                },
+                }
+                if !AMT::ALLOW_CAPTURES {
+                    to_bb &= !pos.pieces_c(us.inverse());
+                }
+                if !AMT::ALLOW_QUIETS {
+                    to_bb &= pos.pieces_c(us.inverse());
+                }
                 to_bb
-            );
+            }
+            debug_assert_eq!(make_to_bb::<AMT>(pos, from, us), to_bb);
             let from_is_opponent_field = Rank::new(from).is_opponent_field(us);
             let pc = pos.piece_on(from);
             for to in to_bb {
@@ -798,60 +809,24 @@ impl MoveList {
         let from_bb = pos.pieces_golds() & pos.pieces_c(us);
         for from in from_bb {
             let to_bb = ATTACK_TABLE.gold.attack(us, from) & *target;
-            debug_assert_eq!(
-                {
-                    let mut to_bb = ATTACK_TABLE.gold.attack(us, from) & !pos.pieces_c(us);
-                    if AMT::EVASIONS {
-                        let checkers = pos.checkers();
-                        match checkers.count_ones() {
-                            1 => {
-                                let ksq = pos.king_square(us);
-                                to_bb &= checkers
-                                    | Bitboard::between_mask(ksq, checkers.lsb_unchecked());
-                            }
-                            2 => to_bb = Bitboard::ZERO, // Only king can move.
-                            _ => unreachable!(),
-                        }
-                    }
-                    if !AMT::ALLOW_CAPTURES {
-                        to_bb &= !pos.pieces_c(us.inverse());
-                    }
-                    if !AMT::ALLOW_QUIETS {
-                        to_bb &= pos.pieces_c(us.inverse());
-                    }
-                    to_bb
-                },
-                to_bb
-            );
-            for to in to_bb {
-                self.push(Move::new_unpromote(from, to, pos.piece_on(from)));
-            }
-        }
-    }
-    fn generate_for_king<AMT: AllowMovesTrait>(&mut self, pos: &Position, target: &Bitboard) {
-        debug_assert!(!pos.checkers().to_bool()); // not evasion
-        let us = pos.side_to_move();
-        let from = pos.king_square(us);
-        let to_bb = ATTACK_TABLE.king.attack(from) & *target;
-        debug_assert_eq!(
-            {
-                let mut to_bb = ATTACK_TABLE.king.attack(from) & !pos.pieces_c(us);
+
+            fn make_to_bb<AMT: AllowMovesTrait>(
+                pos: &Position,
+                from: Square,
+                us: Color,
+            ) -> Bitboard {
+                let mut to_bb = ATTACK_TABLE.gold.attack(us, from) & !pos.pieces_c(us);
                 if AMT::EVASIONS {
                     let checkers = pos.checkers();
-                    let mut copy_checkers = checkers;
-                    let mut checker_sq;
-                    let mut not_target = Bitboard::ZERO;
-                    // Rust's do-while
-                    while {
-                        checker_sq = copy_checkers.pop_lsb_unchecked();
-                        not_target |= pos.effect_bb_of_checker_where_king_cannot_escape(
-                            checker_sq,
-                            pos.piece_on(checker_sq),
-                            &pos.occupied_bb(),
-                        );
-                        copy_checkers.to_bool() // loop condition
-                    } {}
-                    to_bb &= !not_target;
+                    match checkers.count_ones() {
+                        1 => {
+                            let ksq = pos.king_square(us);
+                            to_bb &=
+                                checkers | Bitboard::between_mask(ksq, checkers.lsb_unchecked());
+                        }
+                        2 => to_bb = Bitboard::ZERO, // Only king can move.
+                        _ => unreachable!(),
+                    }
                 }
                 if !AMT::ALLOW_CAPTURES {
                     to_bb &= !pos.pieces_c(us.inverse());
@@ -860,9 +835,48 @@ impl MoveList {
                     to_bb &= pos.pieces_c(us.inverse());
                 }
                 to_bb
-            },
+            }
+            debug_assert_eq!(make_to_bb::<AMT>(pos, from, us), to_bb);
+            for to in to_bb {
+                self.push(Move::new_unpromote(from, to, pos.piece_on(from)));
+            }
+        }
+    }
+
+    fn generate_for_king<AMT: AllowMovesTrait>(&mut self, pos: &Position, target: &Bitboard) {
+        debug_assert!(!pos.checkers().to_bool()); // not evasion
+        let us = pos.side_to_move();
+        let from = pos.king_square(us);
+        let to_bb = ATTACK_TABLE.king.attack(from) & *target;
+
+        fn make_to_bb<AMT: AllowMovesTrait>(pos: &Position, from: Square, us: Color) -> Bitboard {
+            let mut to_bb = ATTACK_TABLE.king.attack(from) & !pos.pieces_c(us);
+            if AMT::EVASIONS {
+                let checkers = pos.checkers();
+                let mut copy_checkers = checkers;
+                let mut checker_sq;
+                let mut not_target = Bitboard::ZERO;
+                // Rust's do-while
+                while {
+                    checker_sq = copy_checkers.pop_lsb_unchecked();
+                    not_target |= pos.effect_bb_of_checker_where_king_cannot_escape(
+                        checker_sq,
+                        pos.piece_on(checker_sq),
+                        &pos.occupied_bb(),
+                    );
+                    copy_checkers.to_bool() // loop condition
+                } {}
+                to_bb &= !not_target;
+            }
+            if !AMT::ALLOW_CAPTURES {
+                to_bb &= !pos.pieces_c(us.inverse());
+            }
+            if !AMT::ALLOW_QUIETS {
+                to_bb &= pos.pieces_c(us.inverse());
+            }
             to_bb
-        );
+        }
+        debug_assert_eq!(make_to_bb::<AMT>(pos, from, us), to_bb);
         for to in to_bb {
             self.push(Move::new_unpromote(from, to, pos.piece_on(from)));
         }
@@ -878,32 +892,35 @@ impl MoveList {
         let from_bb = pos.pieces_cp(us, pt);
         for from in from_bb {
             let to_bb = ATTACK_TABLE.attack(pt, us, from, &pos.occupied_bb()) & *target;
-            debug_assert_eq!(
-                {
-                    let mut to_bb =
-                        ATTACK_TABLE.attack(pt, us, from, &pos.occupied_bb()) & !pos.pieces_c(us);
-                    if AMT::EVASIONS {
-                        let checkers = pos.checkers();
-                        match checkers.count_ones() {
-                            1 => {
-                                let ksq = pos.king_square(us);
-                                to_bb &= checkers
-                                    | Bitboard::between_mask(ksq, checkers.lsb_unchecked());
-                            }
-                            2 => to_bb = Bitboard::ZERO, // Only king can move.
-                            _ => unreachable!(),
+            fn make_to_bb<AMT: AllowMovesTrait>(
+                pos: &Position,
+                pt: PieceType,
+                from: Square,
+                us: Color,
+            ) -> Bitboard {
+                let mut to_bb =
+                    ATTACK_TABLE.attack(pt, us, from, &pos.occupied_bb()) & !pos.pieces_c(us);
+                if AMT::EVASIONS {
+                    let checkers = pos.checkers();
+                    match checkers.count_ones() {
+                        1 => {
+                            let ksq = pos.king_square(us);
+                            to_bb &=
+                                checkers | Bitboard::between_mask(ksq, checkers.lsb_unchecked());
                         }
+                        2 => to_bb = Bitboard::ZERO, // Only king can move.
+                        _ => unreachable!(),
                     }
-                    if !AMT::ALLOW_CAPTURES {
-                        to_bb &= !pos.pieces_c(us.inverse());
-                    }
-                    if !AMT::ALLOW_QUIETS {
-                        to_bb &= pos.pieces_c(us.inverse());
-                    }
-                    to_bb
-                },
+                }
+                if !AMT::ALLOW_CAPTURES {
+                    to_bb &= !pos.pieces_c(us.inverse());
+                }
+                if !AMT::ALLOW_QUIETS {
+                    to_bb &= pos.pieces_c(us.inverse());
+                }
                 to_bb
-            );
+            }
+            debug_assert_eq!(make_to_bb::<AMT>(pos, pt, from, us), to_bb);
             let from_is_opponent_field = Rank::new(from).is_opponent_field(us);
             let pc = pos.piece_on(from);
             for to in to_bb {
@@ -928,32 +945,35 @@ impl MoveList {
         let from_bb = pos.pieces_cp(us, pt);
         for from in from_bb {
             let to_bb = ATTACK_TABLE.attack(pt, us, from, &pos.occupied_bb()) & *target;
-            debug_assert_eq!(
-                {
-                    let mut to_bb =
-                        ATTACK_TABLE.attack(pt, us, from, &pos.occupied_bb()) & !pos.pieces_c(us);
-                    if AMT::EVASIONS {
-                        let checkers = pos.checkers();
-                        match checkers.count_ones() {
-                            1 => {
-                                let ksq = pos.king_square(us);
-                                to_bb &= checkers
-                                    | Bitboard::between_mask(ksq, checkers.lsb_unchecked());
-                            }
-                            2 => to_bb = Bitboard::ZERO, // Only king can move.
-                            _ => unreachable!(),
+            fn make_to_bb<AMT: AllowMovesTrait>(
+                pos: &Position,
+                pt: PieceType,
+                from: Square,
+                us: Color,
+            ) -> Bitboard {
+                let mut to_bb =
+                    ATTACK_TABLE.attack(pt, us, from, &pos.occupied_bb()) & !pos.pieces_c(us);
+                if AMT::EVASIONS {
+                    let checkers = pos.checkers();
+                    match checkers.count_ones() {
+                        1 => {
+                            let ksq = pos.king_square(us);
+                            to_bb &=
+                                checkers | Bitboard::between_mask(ksq, checkers.lsb_unchecked());
                         }
+                        2 => to_bb = Bitboard::ZERO, // Only king can move.
+                        _ => unreachable!(),
                     }
-                    if !AMT::ALLOW_CAPTURES {
-                        to_bb &= !pos.pieces_c(us.inverse());
-                    }
-                    if !AMT::ALLOW_QUIETS {
-                        to_bb &= pos.pieces_c(us.inverse());
-                    }
-                    to_bb
-                },
+                }
+                if !AMT::ALLOW_CAPTURES {
+                    to_bb &= !pos.pieces_c(us.inverse());
+                }
+                if !AMT::ALLOW_QUIETS {
+                    to_bb &= pos.pieces_c(us.inverse());
+                }
                 to_bb
-            );
+            }
+            debug_assert_eq!(make_to_bb::<AMT>(pos, pt, from, us), to_bb);
             for to in to_bb {
                 self.push(Move::new_unpromote(from, to, pos.piece_on(from)));
             }
