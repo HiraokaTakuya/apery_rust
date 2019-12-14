@@ -4,7 +4,13 @@ use crate::tt::*;
 
 #[derive(Clone)]
 enum UsiOptionValue {
+    #[allow(dead_code)]
     String {
+        default: String,
+        current: String,
+    },
+    #[allow(dead_code)]
+    Filename {
         default: String,
         current: String,
     },
@@ -22,8 +28,16 @@ enum UsiOptionValue {
 }
 
 impl UsiOptionValue {
+    #[allow(dead_code)]
     fn string(default: &str) -> UsiOptionValue {
         UsiOptionValue::String {
+            default: default.to_string(),
+            current: default.to_string(),
+        }
+    }
+    #[allow(dead_code)]
+    fn filename(default: &str) -> UsiOptionValue {
+        UsiOptionValue::Filename {
             default: default.to_string(),
             current: default.to_string(),
         }
@@ -124,6 +138,9 @@ impl UsiOptions {
                     *is_ready = false;
                 }
             }
+            Some(UsiOptionValue::Filename { current, .. }) => {
+                *current = value.to_string();
+            }
             Some(UsiOptionValue::Spin {
                 current, min, max, ..
             }) => match value.parse::<i64>() {
@@ -161,6 +178,9 @@ impl UsiOptions {
                 UsiOptionValue::String { default, .. } => {
                     format!("option name {} type string default {}", key, default)
                 }
+                UsiOptionValue::Filename { default, .. } => {
+                    format!("option name {} type filename default {}", key, default)
+                }
                 UsiOptionValue::Spin {
                     default, min, max, ..
                 } => format!(
@@ -182,9 +202,17 @@ impl UsiOptions {
             _ => panic!("Error: illegal option name: {}", key),
         }
     }
+    #[allow(dead_code)]
     pub fn get_string(&self, key: &str) -> String {
         match self.v.get(key) {
             Some(UsiOptionValue::String { current, .. }) => current.clone(),
+            _ => panic!("Error: illegal option name: {}", key),
+        }
+    }
+    #[allow(dead_code)]
+    pub fn get_filename(&self, key: &str) -> String {
+        match self.v.get(key) {
+            Some(UsiOptionValue::Filename { current, .. }) => current.clone(),
             _ => panic!("Error: illegal option name: {}", key),
         }
     }
