@@ -12,6 +12,7 @@ extern crate enum_derive;
 extern crate lazy_static;
 mod authors;
 mod bitboard;
+mod book;
 mod engine_name;
 mod evaluate;
 mod file_to_vec;

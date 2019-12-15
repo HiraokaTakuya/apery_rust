@@ -1,6 +1,25 @@
 use crate::bitboard::*;
 use crate::position::*;
 use crate::types::*;
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize, Hash, PartialEq, Eq, PartialOrd, Ord, Debug)]
+pub struct UsiMove(String);
+
+impl UsiMove {
+    // TODO use from trait
+    pub fn new_from_str(s: &str) -> UsiMove {
+        UsiMove(s.to_string())
+    }
+    #[allow(dead_code)]
+    pub fn to_string(self) -> String {
+        self.0
+    }
+}
+
+#[allow(dead_code)]
+#[derive(Serialize, Deserialize, Debug)]
+pub struct CsaMove(String);
 
 // xxxxxxxx xxxxxxxx xxxxxxxx x1111111  to
 // xxxxxxxx xxxxxxxx xxxxxxxx 1xxxxxxx  promote flag
@@ -99,6 +118,9 @@ impl Move {
             return None;
         }
         Some(m)
+    }
+    pub fn new_from_usi(usi_move: &UsiMove, pos: &Position) -> Option<Move> {
+        Self::new_from_usi_str(&*usi_move.0, pos)
     }
     pub fn new_from_csa_str(s: &str, pos: &Position) -> Option<Move> {
         let m;
@@ -206,7 +228,7 @@ impl Move {
     pub fn is_capture_or_pawn_promotion(self, pos: &Position) -> bool {
         self.is_capture(pos) || self.is_pawn_promotion()
     }
-    pub fn to_usi_string(self) -> String {
+    pub fn to_usi(self) -> UsiMove {
         let mut s = "".to_string();
         if self.is_drop() {
             let pt = self.piece_type_dropped();
@@ -220,7 +242,10 @@ impl Move {
                 s += "+";
             }
         }
-        s
+        UsiMove(s)
+    }
+    pub fn to_usi_string(self) -> String {
+        self.to_usi().0
     }
     #[allow(dead_code)]
     pub fn to_csa_string(self, pos: &Position) -> String {

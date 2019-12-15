@@ -1,5 +1,6 @@
 use crate::bitboard::*;
 use crate::piecevalue::*;
+use serde::{Deserialize, Serialize};
 
 pub struct True;
 pub struct False;
@@ -696,6 +697,8 @@ impl Bound {
 }
 
 #[derive(
+    Serialize,
+    Deserialize,
     Debug,
     Clone,
     Copy,
