@@ -19,6 +19,7 @@ mod file_to_vec;
 mod hand;
 mod movegen;
 mod movepick;
+mod movetypes;
 mod piecevalue;
 mod position;
 mod search;

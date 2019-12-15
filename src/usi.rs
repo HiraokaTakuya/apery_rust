@@ -1,6 +1,7 @@
 use crate::evaluate::*;
 use crate::file_to_vec::*;
 use crate::movegen::*;
+use crate::movetypes::*;
 use crate::position::*;
 use crate::search::*;
 use crate::sfen::START_SFEN;

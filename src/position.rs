@@ -1,7 +1,7 @@
 use crate::bitboard::*;
 use crate::evaluate::*;
 use crate::hand::*;
-use crate::movegen::*;
+use crate::movetypes::*;
 use crate::piecevalue::*;
 use crate::sfen::*;
 use crate::types::*;

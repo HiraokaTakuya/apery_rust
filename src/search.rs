@@ -1,6 +1,6 @@
 use crate::evaluate::*;
-use crate::movegen::*;
 use crate::movepick::*;
+use crate::movetypes::*;
 use crate::position::*;
 use crate::tt::*;
 use crate::types::*;

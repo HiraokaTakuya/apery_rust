@@ -1,4 +1,5 @@
 use crate::movegen::*;
+use crate::movetypes::*;
 use crate::piecevalue::*;
 use crate::position::*;
 use crate::types::*;

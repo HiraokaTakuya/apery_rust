@@ -1,4 +1,4 @@
-use crate::movegen::*;
+use crate::movetypes::*;
 use crate::position::*;
 use crate::search::*;
 use crate::thread::*;
