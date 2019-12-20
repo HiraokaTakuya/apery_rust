@@ -1,3 +1,4 @@
+use crate::book::*;
 use crate::evaluate::*;
 use crate::file_to_vec::*;
 use crate::movegen::*;
@@ -504,6 +505,15 @@ pub fn cmd_loop() {
                     let mut all_ok = true;
                     match load_evaluate_files(&usi_options.get_string(UsiOptions::EVAL_DIR)) {
                         Ok(_) => {}
+                        Err(err) => {
+                            eprintln!("{}", err);
+                            all_ok = false;
+                        }
+                    }
+                    match Book::from_file(&usi_options.get_filename(UsiOptions::BOOK_FILE)) {
+                        Ok(book) => {
+                            *thread_pool.book.lock().unwrap() = book;
+                        }
                         Err(err) => {
                             eprintln!("{}", err);
                             all_ok = false;

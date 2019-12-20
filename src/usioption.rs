@@ -64,6 +64,7 @@ pub struct UsiOptions {
 }
 
 impl UsiOptions {
+    pub const BOOK_ENABLE: &'static str = "Book_Enable";
     pub const BOOK_FILE: &'static str = "Book_File";
     pub const BYOYOMI_MARGIN: &'static str = "Byoyomi_Margin";
     const CLEAR_HASH: &'static str = "Clear_Hash";
@@ -81,6 +82,7 @@ impl UsiOptions {
         let mut options = std::collections::HashMap::new();
 
         // The following are all options.
+        options.insert(Self::BOOK_ENABLE, UsiOptionValue::check(false));
         options.insert(
             Self::BOOK_FILE,
             UsiOptionValue::filename("book/20191216/book.json"),
@@ -139,12 +141,15 @@ impl UsiOptions {
             }
             Some(UsiOptionValue::String { current, .. }) => {
                 *current = value.to_string();
-                if key == "Eval_Dir" {
+                if key == Self::EVAL_DIR {
                     *is_ready = false;
                 }
             }
             Some(UsiOptionValue::Filename { current, .. }) => {
                 *current = value.to_string();
+                if key == Self::BOOK_FILE {
+                    *is_ready = false;
+                }
             }
             Some(UsiOptionValue::Spin {
                 current, min, max, ..

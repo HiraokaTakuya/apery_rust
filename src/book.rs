@@ -11,11 +11,11 @@ struct Info {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct Book(std::collections::BTreeMap<String, std::collections::BTreeMap<UsiMove, Info>>);
+pub struct Book(std::collections::BTreeMap<String, std::collections::BTreeMap<UsiMove, Info>>);
 
 impl Book {
     #[allow(dead_code)]
-    fn new() -> Book {
+    pub fn new() -> Book {
         Book(std::collections::BTreeMap::new())
     }
     #[allow(dead_code)]
@@ -27,7 +27,7 @@ impl Book {
         set.insert(mv.to_usi(), info);
     }
     #[allow(dead_code)]
-    fn probe(&self, pos: &Position, rng: &mut ThreadRng) -> Option<Move> {
+    pub fn probe(&self, pos: &Position, rng: &mut ThreadRng) -> Option<Move> {
         let sfen = pos.to_sfen();
         match self.0.get(&sfen) {
             Some(candidates) => {
@@ -53,6 +53,15 @@ impl Book {
                 return None;
             }
         }
+    }
+    pub fn from_file<P>(path: P) -> Result<Book, Box<dyn std::error::Error>>
+    where
+        P: AsRef<std::path::Path>,
+    {
+        let file = std::fs::File::open(path)?;
+        let reader = std::io::BufReader::new(file);
+        let book = serde_json::from_reader(reader)?;
+        Ok(book)
     }
 }
 
@@ -176,6 +185,24 @@ fn test_book_probe() {
                     break;
                 }
             }
+        })
+        .unwrap()
+        .join()
+        .unwrap();
+}
+
+#[test]
+fn test_book_from_file() {
+    const STACK_SIZE: usize = 128 * 1024 * 1024;
+    std::thread::Builder::new()
+        .stack_size(STACK_SIZE)
+        .spawn(|| {
+            let path = std::path::Path::new("test/book.json");
+            let book = Book::from_file(path).unwrap();
+            assert_eq!(
+                r#"{"lnsgkgsnl/1r5b1/ppppppppp/9/9/7P1/PPPPPPP1P/1B5R1/LNSGKGSNL w - 2":{"3c3d":{"value":-99,"probability":1}},"lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1":{"2g2f":{"value":36,"probability":6},"6i7h":{"value":20,"probability":1},"7g7f":{"value":36,"probability":4}}}"#,
+                serde_json::to_string(&book).unwrap(),
+            );
         })
         .unwrap()
         .join()
