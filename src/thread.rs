@@ -61,7 +61,7 @@ pub struct ThreadPool {
     pub ponder: Arc<AtomicBool>,
     pub stop: Arc<AtomicBool>,
     pub limits: LimitsType,
-    pub last_best_pv: Arc<Mutex<Vec<Move>>>,
+    pub last_best_pv: Arc<Mutex<Vec<Move>>>, // Not for usi engine. For debug or some tools.
     handle: Option<std::thread::JoinHandle<()>>,
 }
 
