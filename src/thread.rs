@@ -55,7 +55,7 @@ struct ThreadPoolBase {
 pub struct ThreadPool {
     thread_pool_base: Arc<Mutex<ThreadPoolBase>>,
     nodess: Vec<Arc<AtomicI64>>,
-    pub book: Arc<Mutex<Book>>,
+    pub book: Book,
     timeman: Arc<Mutex<TimeManagement>>,
     previous_score: Arc<Mutex<Value>>,
     best_move_changess: Vec<Arc<AtomicU64>>,
@@ -1413,7 +1413,7 @@ impl ThreadPool {
         ThreadPool {
             thread_pool_base: Arc::new(Mutex::new(ThreadPoolBase { threads: vec![] })),
             nodess: vec![],
-            book: Arc::new(Mutex::new(Book::new())),
+            book: Book::new(),
             timeman: Arc::new(Mutex::new(TimeManagement::new())),
             previous_score: Arc::new(Mutex::new(Value::INFINITE)),
             best_move_changess: vec![],
@@ -1513,12 +1513,7 @@ impl ThreadPool {
             let mut mlist = MoveList::new();
             mlist.generate::<LegalType>(pos, 0);
             let mut root_moves = RootMoves::new();
-            match self
-                .book
-                .lock()
-                .unwrap()
-                .probe(pos, &mut rand::thread_rng())
-            {
+            match self.book.probe(pos, &mut rand::thread_rng()) {
                 Some(book_move) => {
                     root_moves.push(RootMove::new(book_move));
                 }

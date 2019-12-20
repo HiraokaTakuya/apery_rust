@@ -512,7 +512,7 @@ pub fn cmd_loop() {
                     }
                     match Book::from_file(&usi_options.get_filename(UsiOptions::BOOK_FILE)) {
                         Ok(book) => {
-                            *thread_pool.book.lock().unwrap() = book;
+                            thread_pool.book = book;
                         }
                         Err(err) => {
                             eprintln!("{}", err);
