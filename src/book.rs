@@ -7,7 +7,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug, PartialOrd, Ord, PartialEq, Eq)]
 struct Info {
     value: Value,
-    probability: u64,
+    win: u64,
+    lose: u64,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -31,23 +32,20 @@ impl Book {
         let sfen = pos.to_sfen();
         match self.0.get(&sfen) {
             Some(candidates) => {
-                let sum_probability = candidates
-                    .values()
-                    .fold(0, |sum, info| sum + info.probability);
-                if sum_probability == 0 {
-                    return None;
-                }
-                let num = rng.gen_range(0, sum_probability);
-                let mut count = 0;
-                for (usi_move, info) in candidates.iter() {
-                    count += info.probability;
-                    if count >= num {
-                        let mv = Move::new_from_usi(usi_move, pos);
-                        debug_assert!(mv.is_some());
-                        return mv;
-                    }
-                }
-                unreachable!();
+                let move_and_weights = candidates
+                    .iter()
+                    .map(|(usi_move, info)| {
+                        let win_rate = info.win as f64 / (info.win + info.lose) as f64;
+                        let weight = win_rate * win_rate;
+                        (usi_move, weight)
+                    })
+                    .collect::<Vec<_>>();
+                let dist =
+                    rand::distributions::WeightedIndex::new(move_and_weights.iter().map(|x| x.1))
+                        .unwrap();
+                let usi_move = move_and_weights[dist.sample(rng)].0;
+                let m = Move::new_from_usi(usi_move, pos);
+                return m;
             }
             None => {
                 return None;
@@ -79,7 +77,8 @@ fn test_book() {
                 Move::new_from_usi_str("2g2f", &pos).unwrap(),
                 Info {
                     value: Value(36),
-                    probability: 6,
+                    win: 6,
+                    lose: 4,
                 },
             );
             b.insert(
@@ -87,7 +86,8 @@ fn test_book() {
                 Move::new_from_usi_str("7g7f", &pos).unwrap(),
                 Info {
                     value: Value(99),
-                    probability: 99,
+                    win: 99,
+                    lose: 3,
                 },
             );
             b.insert(
@@ -95,7 +95,8 @@ fn test_book() {
                 Move::new_from_usi_str("6i7h", &pos).unwrap(),
                 Info {
                     value: Value(20),
-                    probability: 1,
+                    win: 1,
+                    lose: 10,
                 },
             );
             // overwrite
@@ -104,7 +105,8 @@ fn test_book() {
                 Move::new_from_usi_str("7g7f", &pos).unwrap(),
                 Info {
                     value: Value(36),
-                    probability: 4,
+                    win: 3,
+                    lose: 9,
                 },
             );
             let m = Move::new_from_usi_str("2g2f", &pos).unwrap();
@@ -115,11 +117,12 @@ fn test_book() {
                 Move::new_from_usi_str("3c3d", &pos).unwrap(),
                 Info {
                     value: Value(-99),
-                    probability: 1,
+                    win: 1,
+                    lose: 2,
                 },
             );
             assert_eq!(
-                r#"{"lnsgkgsnl/1r5b1/ppppppppp/9/9/7P1/PPPPPPP1P/1B5R1/LNSGKGSNL w - 2":{"3c3d":{"value":-99,"probability":1}},"lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1":{"2g2f":{"value":36,"probability":6},"6i7h":{"value":20,"probability":1},"7g7f":{"value":36,"probability":4}}}"#,
+                r#"{"lnsgkgsnl/1r5b1/ppppppppp/9/9/7P1/PPPPPPP1P/1B5R1/LNSGKGSNL w - 2":{"3c3d":{"value":-99,"win":1,"lose":2}},"lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1":{"2g2f":{"value":36,"win":6,"lose":4},"6i7h":{"value":20,"win":1,"lose":10},"7g7f":{"value":36,"win":3,"lose":9}}}"#,
                 serde_json::to_string(&b).unwrap(),
             );
         })
@@ -142,7 +145,8 @@ fn test_book_probe() {
                 Move::new_from_usi_str("2g2f", &pos).unwrap(),
                 Info {
                     value: Value(36),
-                    probability: 70,
+                    win: 70,
+                    lose: 30,
                 },
             );
             b.insert(
@@ -150,7 +154,8 @@ fn test_book_probe() {
                 Move::new_from_usi_str("7g7f", &pos).unwrap(),
                 Info {
                     value: Value(99),
-                    probability: 30,
+                    win: 30,
+                    lose: 10,
                 },
             );
 
@@ -200,7 +205,7 @@ fn test_book_from_file() {
             let path = std::path::Path::new("test/book.json");
             let book = Book::from_file(path).unwrap();
             assert_eq!(
-                r#"{"lnsgkgsnl/1r5b1/ppppppppp/9/9/7P1/PPPPPPP1P/1B5R1/LNSGKGSNL w - 2":{"3c3d":{"value":-99,"probability":1}},"lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1":{"2g2f":{"value":36,"probability":6},"6i7h":{"value":20,"probability":1},"7g7f":{"value":36,"probability":4}}}"#,
+                r#"{"lnsgkgsnl/1r5b1/ppppppppp/9/9/7P1/PPPPPPP1P/1B5R1/LNSGKGSNL w - 2":{"3c3d":{"value":-99,"win":1,"lose":2}},"lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1":{"2g2f":{"value":36,"win":6,"lose":4},"6i7h":{"value":20,"win":1,"lose":10},"7g7f":{"value":36,"win":3,"lose":9}}}"#,
                 serde_json::to_string(&book).unwrap(),
             );
         })
