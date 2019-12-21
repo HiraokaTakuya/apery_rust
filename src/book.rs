@@ -24,33 +24,25 @@ impl Book {
         let set = self
             .0
             .entry(sfen)
-            .or_insert_with(|| std::collections::BTreeMap::new());
+            .or_insert_with(std::collections::BTreeMap::new);
         set.insert(mv.to_usi(), info);
     }
     #[allow(dead_code)]
     pub fn probe(&self, pos: &Position, rng: &mut ThreadRng) -> Option<Move> {
         let sfen = pos.to_sfen();
-        match self.0.get(&sfen) {
-            Some(candidates) => {
-                let move_and_weights = candidates
-                    .iter()
-                    .map(|(usi_move, info)| {
-                        let win_rate = info.win as f64 / (info.win + info.lose) as f64;
-                        let weight = win_rate * win_rate;
-                        (usi_move, weight)
-                    })
-                    .collect::<Vec<_>>();
-                let dist =
-                    rand::distributions::WeightedIndex::new(move_and_weights.iter().map(|x| x.1))
-                        .unwrap();
-                let usi_move = move_and_weights[dist.sample(rng)].0;
-                let m = Move::new_from_usi(usi_move, pos);
-                return m;
-            }
-            None => {
-                return None;
-            }
-        }
+        let candidates = self.0.get(&sfen)?;
+        let move_and_weights = candidates
+            .iter()
+            .map(|(usi_move, info)| {
+                let win_rate = info.win as f64 / (info.win + info.lose) as f64;
+                let weight = win_rate * win_rate;
+                (usi_move, weight)
+            })
+            .collect::<Vec<_>>();
+        let dist =
+            rand::distributions::WeightedIndex::new(move_and_weights.iter().map(|x| x.1)).unwrap();
+        let usi_move = move_and_weights[dist.sample(rng)].0;
+        Move::new_from_usi(usi_move, pos)
     }
     pub fn from_file<P>(path: P) -> Result<Book, Box<dyn std::error::Error>>
     where

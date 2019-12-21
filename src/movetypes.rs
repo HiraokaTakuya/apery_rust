@@ -6,9 +6,8 @@ use serde::{Deserialize, Serialize};
 pub struct UsiMove(String);
 
 impl UsiMove {
-    #[allow(dead_code)]
-    pub fn to_string(self) -> String {
-        self.0
+    fn as_str(&self) -> &str {
+        &self.0
     }
 }
 
@@ -115,7 +114,7 @@ impl Move {
         Some(m)
     }
     pub fn new_from_usi(usi_move: &UsiMove, pos: &Position) -> Option<Move> {
-        Self::new_from_usi_str(&*usi_move.0, pos)
+        Self::new_from_usi_str(usi_move.as_str(), pos)
     }
     pub fn new_from_csa_str(s: &str, pos: &Position) -> Option<Move> {
         let m;
