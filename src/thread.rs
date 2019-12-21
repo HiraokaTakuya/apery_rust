@@ -1513,7 +1513,12 @@ impl ThreadPool {
             let mut mlist = MoveList::new();
             mlist.generate::<LegalType>(pos, 0);
             let mut root_moves = RootMoves::new();
-            match self.book.probe(pos, &mut rand::thread_rng()) {
+            let book_move = if usi_options.get_bool(UsiOptions::BOOK_ENABLE) {
+                self.book.probe(pos, &mut rand::thread_rng())
+            } else {
+                None
+            };
+            match book_move {
                 Some(book_move) => {
                     root_moves.push(RootMove::new(book_move));
                 }
