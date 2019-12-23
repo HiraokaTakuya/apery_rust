@@ -514,7 +514,7 @@ pub fn cmd_loop() {
                         Ok(book) => {
                             thread_pool.book = Some(book);
                         }
-                        Err(err) => {
+                        Err(_err) => {
                             //eprintln!("{}", err);
                             //all_ok = false;
                         }
