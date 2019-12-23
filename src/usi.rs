@@ -512,11 +512,11 @@ pub fn cmd_loop() {
                     }
                     match Book::from_file(&usi_options.get_filename(UsiOptions::BOOK_FILE)) {
                         Ok(book) => {
-                            thread_pool.book = book;
+                            thread_pool.book = Some(book);
                         }
                         Err(err) => {
-                            eprintln!("{}", err);
-                            all_ok = false;
+                            //eprintln!("{}", err);
+                            //all_ok = false;
                         }
                     }
                     if all_ok {
