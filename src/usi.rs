@@ -1,6 +1,7 @@
 use crate::book::*;
 use crate::evaluate::*;
 use crate::file_to_vec::*;
+use crate::huffman_code::*;
 use crate::movegen::*;
 use crate::movetypes::*;
 use crate::position::*;

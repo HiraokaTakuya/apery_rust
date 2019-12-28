@@ -17,6 +17,7 @@ mod engine_name;
 mod evaluate;
 mod file_to_vec;
 mod hand;
+mod huffman_code;
 mod movegen;
 mod movepick;
 mod movetypes;
