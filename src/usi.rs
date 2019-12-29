@@ -457,12 +457,12 @@ fn csa_record_to_sfen(csa: &[u8]) -> Result<String, String> {
 }
 
 pub fn cmd_loop() {
-    let mut tt = Box::new(TranspositionTable::new());
-    let mut ehash = Box::new(EvalHash::new());
-    let mut thread_pool = Box::new(ThreadPool::new());
+    let mut tt = TranspositionTable::new();
+    let mut ehash = EvalHash::new();
+    let mut thread_pool = ThreadPool::new();
     thread_pool.set(1, &mut tt, &mut ehash);
-    let mut usi_options = Box::new(UsiOptions::new());
-    let mut pos = Box::new(Position::new());
+    let mut usi_options = UsiOptions::new();
+    let mut pos = Position::new();
     let mut is_ready = false;
     loop {
         let cmd = if std::env::args().len() == 1 {
