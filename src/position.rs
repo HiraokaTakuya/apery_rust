@@ -1765,6 +1765,7 @@ impl Position {
     pub fn print(&self) {
         self.base.print();
         println!("key: {}", self.key().0);
+        println!("{}", self.to_sfen());
     }
     #[inline]
     pub fn to_sfen(&self) -> String {
