@@ -63,7 +63,7 @@ pub struct ThreadPool {
     pub ponder: Arc<AtomicBool>,
     pub stop: Arc<AtomicBool>,
     pub limits: LimitsType,
-    pub last_best_pv: Arc<Mutex<Vec<Move>>>, // Not for usi engine. For debug or some tools.
+    pub last_best_root_move: Arc<Mutex<Option<RootMove>>>, // Not for usi engine. For debug or some tools.
     handle: Option<std::thread::JoinHandle<()>>,
 }
 
@@ -1421,7 +1421,7 @@ impl ThreadPool {
             ponder: Arc::new(AtomicBool::new(false)),
             stop: Arc::new(AtomicBool::new(false)),
             limits: LimitsType::new(),
-            last_best_pv: Arc::new(Mutex::new(vec![])),
+            last_best_root_move: Arc::new(Mutex::new(None)),
             handle: None,
         }
     }
@@ -1429,7 +1429,7 @@ impl ThreadPool {
         for th in self.thread_pool_base.lock().unwrap().threads.iter() {
             th.lock().unwrap().clear();
         }
-        self.last_best_pv.lock().unwrap().clear();
+        *self.last_best_root_move.lock().unwrap() = None;
 
         let thread_pool_base = self.thread_pool_base.lock().unwrap();
         let mut main_thread = thread_pool_base.threads[0].lock().unwrap();
@@ -1535,7 +1535,7 @@ impl ThreadPool {
         };
         if root_moves.is_empty() {
             println!("bestmove resign");
-            *self.last_best_pv.lock().unwrap() = vec![Move::RESIGN];
+            *self.last_best_root_move.lock().unwrap() = Some(RootMove::new(Move::RESIGN));
             return;
         }
         let dummy_nodes = Arc::new(AtomicI64::new(0)); // This isn't used.
@@ -1547,7 +1547,7 @@ impl ThreadPool {
         let stop_cloned = self.stop.clone();
         let ponder_cloned = self.ponder.clone();
         let usi_options_cloned = usi_options.clone();
-        let last_best_pv_cloned = self.last_best_pv.clone();
+        let last_best_root_move_cloned = self.last_best_root_move.clone();
         self.handle = Some(std::thread::spawn(move || {
             let mut v = vec![];
             for (i, thread) in thread_pool_base_cloned
@@ -1674,8 +1674,8 @@ impl ThreadPool {
                 }
                 println!("{}", s);
             }
-            *last_best_pv_cloned.lock().unwrap() =
-                best_thread.lock().unwrap().root_moves[0].pv.clone();
+            *last_best_root_move_cloned.lock().unwrap() =
+                Some(best_thread.lock().unwrap().root_moves[0].clone());
         }));
     }
     pub fn wait_for_search_finished(&mut self) {

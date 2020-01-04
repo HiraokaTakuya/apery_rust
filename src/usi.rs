@@ -120,7 +120,13 @@ fn self_move(
             let ponder_mode = false;
             thread_pool.start_thinking(&pos, tt, limits, &usi_options, ponder_mode);
             thread_pool.wait_for_search_finished();
-            let m = thread_pool.last_best_pv.lock().unwrap()[0];
+            let m = thread_pool
+                .last_best_root_move
+                .lock()
+                .unwrap()
+                .as_ref()
+                .unwrap()
+                .pv[0];
             if m == Move::RESIGN {
                 break;
             } else {
