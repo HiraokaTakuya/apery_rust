@@ -73,7 +73,7 @@ impl UsiOptions {
     pub const MINIMUM_THINKING_TIME: &'static str = "Minimum_Thinking_Time";
     pub const MULTI_PV: &'static str = "MultiPV";
     pub const SLOW_MOVER: &'static str = "Slow_Mover";
-    const THREADS: &'static str = "Threads";
+    pub const THREADS: &'static str = "Threads";
     pub const TIME_MARGIN: &'static str = "Time_Margin";
     pub const USI_HASH: &'static str = "USI_Hash";
     pub const USI_PONDER: &'static str = "USI_Ponder";

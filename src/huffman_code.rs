@@ -186,7 +186,7 @@ impl std::convert::TryFrom<&HuffmanCode> for ColorAndPieceTypeForHand {
 }
 
 #[repr(C)]
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct HuffmanCodedPosition {
     pub buf: [u8; 32],
     pub ply: i16,
@@ -290,4 +290,28 @@ impl<'a> BitStreamWriter<'a> {
             self.put_bit_from_lsb(bit);
         }
     }
+}
+
+#[allow(dead_code)]
+#[derive(Clone, Copy)]
+pub enum GameResult {
+    Draw,
+    BlackWin,
+    WhiteWin,
+}
+
+#[repr(C)]
+pub struct HuffmanCodedPositionAndEval {
+    pub hcp: HuffmanCodedPosition,
+    pub value: i16,
+    pub best_move16: u16,
+    pub end_ply: i16,
+    pub game_result: GameResult,
+    pub padding: u8,
+}
+
+#[test]
+fn test_huffmancodedpositionandeval_size() {
+    assert_eq!(std::mem::size_of::<GameResult>(), 1);
+    assert_eq!(std::mem::size_of::<HuffmanCodedPositionAndEval>(), 42);
 }

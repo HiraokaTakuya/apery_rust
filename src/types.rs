@@ -762,6 +762,9 @@ impl Value {
     pub fn mated_in(ply: i32) -> Value {
         -Value::MATE + Value(ply)
     }
+    pub fn abs(self) -> Self {
+        Value(self.0.abs() as i32)
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

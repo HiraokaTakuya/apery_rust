@@ -2,6 +2,7 @@ use crate::book::*;
 use crate::evaluate::*;
 use crate::file_to_vec::*;
 use crate::huffman_code::*;
+use crate::learn::*;
 use crate::movegen::*;
 use crate::movetypes::*;
 use crate::position::*;
@@ -85,7 +86,8 @@ fn go(
             invalid_token => return Err(format!("Error: Invalid token: {}", invalid_token)),
         }
     }
-    thread_pool.start_thinking(pos, tt, limits, usi_options, ponder_mode);
+    let hide_all_output = false;
+    thread_pool.start_thinking(pos, tt, limits, usi_options, ponder_mode, hide_all_output);
     Ok(())
 }
 
@@ -118,7 +120,15 @@ fn self_move(
             limits.start_time = Some(std::time::Instant::now());
             limits.movetime = Some(std::time::Duration::from_millis(4000));
             let ponder_mode = false;
-            thread_pool.start_thinking(&pos, tt, limits, &usi_options, ponder_mode);
+            let hide_all_output = false;
+            thread_pool.start_thinking(
+                &pos,
+                tt,
+                limits,
+                &usi_options,
+                ponder_mode,
+                hide_all_output,
+            );
             thread_pool.wait_for_search_finished();
             let m = thread_pool
                 .last_best_root_move
@@ -192,7 +202,7 @@ fn position(pos: &mut Position, args: &[&str]) {
     pos.reserve_states();
 }
 
-fn setoption(
+pub fn setoption(
     args: &[&str],
     usi_options: &mut UsiOptions,
     thread_pool: &mut ThreadPool,
@@ -354,7 +364,7 @@ fn read_hcp(args: &[&str]) {
         return;
     }
     let input_path = args[0];
-    let v = file_to_vec::<HuffmanCodedPosition>(input_path).unwrap();
+    let v = file_to_vec(input_path).unwrap();
     for item in v {
         match Position::new_from_huffman_coded_position(&item) {
             Ok(pos) => {
@@ -572,6 +582,13 @@ pub fn cmd_loop() {
                 if is_ready {
                     let mut stack = vec![Stack::new(); CURRENT_STACK_INDEX + 1];
                     println!("{}", evaluate_at_root(&pos, &mut stack).0);
+                } else {
+                    eprintln!(r#"We need "isready" command in advance."#);
+                }
+            }
+            "generate_teachers" => {
+                if is_ready {
+                    generate_teachers(&args[1..]);
                 } else {
                     eprintln!(r#"We need "isready" command in advance."#);
                 }

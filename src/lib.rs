@@ -18,6 +18,7 @@ mod evaluate;
 mod file_to_vec;
 mod hand;
 mod huffman_code;
+mod learn;
 mod movegen;
 mod movepick;
 mod movetypes;

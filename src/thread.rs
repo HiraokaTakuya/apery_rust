@@ -43,6 +43,7 @@ struct Thread {
     stop_on_ponderhit: Arc<AtomicBool>,
     ponder: Arc<AtomicBool>,
     stop: Arc<AtomicBool>,
+    hide_all_output: Arc<AtomicBool>,
     nodess: Vec<Arc<AtomicI64>>,
 }
 
@@ -62,6 +63,7 @@ pub struct ThreadPool {
     stop_on_ponderhit: Arc<AtomicBool>,
     pub ponder: Arc<AtomicBool>,
     pub stop: Arc<AtomicBool>,
+    pub hide_all_output: Arc<AtomicBool>,
     pub limits: LimitsType,
     pub last_best_root_move: Arc<Mutex<Option<RootMove>>>, // Not for usi engine. For debug or some tools.
     handle: Option<std::thread::JoinHandle<()>>,
@@ -156,17 +158,19 @@ impl Thread {
                             || last_info_time.unwrap().elapsed().as_millis() > 200)
                     {
                         last_info_time = Some(std::time::Instant::now());
-                        println!(
-                            "{}",
-                            self.pv_info_to_usi_string(
-                                self.nodes_searched(),
-                                multi_pv,
-                                self.root_depth,
-                                alpha,
-                                beta,
-                                false,
-                            )
-                        );
+                        if !self.hide_all_output.load(Ordering::Relaxed) {
+                            println!(
+                                "{}",
+                                self.pv_info_to_usi_string(
+                                    self.nodes_searched(),
+                                    multi_pv,
+                                    self.root_depth,
+                                    alpha,
+                                    beta,
+                                    false,
+                                )
+                            );
+                        }
                     }
                     if best_value <= alpha {
                         beta = (alpha + beta) / 2;
@@ -198,17 +202,19 @@ impl Thread {
                         || last_info_time.unwrap().elapsed().as_millis() > 200)
                 {
                     last_info_time = Some(std::time::Instant::now());
-                    println!(
-                        "{}",
-                        self.pv_info_to_usi_string(
-                            self.nodes_searched(),
-                            multi_pv,
-                            self.root_depth,
-                            alpha,
-                            beta,
-                            false,
-                        )
-                    );
+                    if !self.hide_all_output.load(Ordering::Relaxed) {
+                        println!(
+                            "{}",
+                            self.pv_info_to_usi_string(
+                                self.nodes_searched(),
+                                multi_pv,
+                                self.root_depth,
+                                alpha,
+                                beta,
+                                false,
+                            )
+                        );
+                    }
                 }
 
                 self.pv_idx += 1;
@@ -1420,6 +1426,7 @@ impl ThreadPool {
             stop_on_ponderhit: Arc::new(AtomicBool::new(false)),
             ponder: Arc::new(AtomicBool::new(false)),
             stop: Arc::new(AtomicBool::new(false)),
+            hide_all_output: Arc::new(AtomicBool::new(false)),
             limits: LimitsType::new(),
             last_best_root_move: Arc::new(Mutex::new(None)),
             handle: None,
@@ -1480,6 +1487,7 @@ impl ThreadPool {
                     stop_on_ponderhit: self.stop_on_ponderhit.clone(),
                     ponder: self.ponder.clone(),
                     stop: self.stop.clone(),
+                    hide_all_output: self.hide_all_output.clone(),
                     nodess: vec![],
                 }))
             })
@@ -1497,12 +1505,15 @@ impl ThreadPool {
         limits: LimitsType,
         usi_options: &UsiOptions,
         ponder_mode: bool,
+        hide_all_output: bool,
     ) {
         let mut limits = limits;
         self.wait_for_search_finished();
         self.stop.store(false, Ordering::Relaxed);
         self.stop_on_ponderhit.store(false, Ordering::Relaxed);
         self.ponder.store(ponder_mode, Ordering::Relaxed);
+        self.hide_all_output
+            .store(hide_all_output, Ordering::Relaxed);
         self.timeman
             .lock()
             .unwrap()
@@ -1534,7 +1545,9 @@ impl ThreadPool {
             root_moves
         };
         if root_moves.is_empty() {
-            println!("bestmove resign");
+            if !self.hide_all_output.load(Ordering::Relaxed) {
+                println!("bestmove resign");
+            }
             *self.last_best_root_move.lock().unwrap() = Some(RootMove::new(Move::RESIGN));
             return;
         }
@@ -1546,6 +1559,7 @@ impl ThreadPool {
         let thread_pool_base_cloned = self.thread_pool_base.clone();
         let stop_cloned = self.stop.clone();
         let ponder_cloned = self.ponder.clone();
+        let hide_all_output_cloned = self.hide_all_output.clone();
         let usi_options_cloned = usi_options.clone();
         let last_best_root_move_cloned = self.last_best_root_move.clone();
         self.handle = Some(std::thread::spawn(move || {
@@ -1648,31 +1662,33 @@ impl ThreadPool {
                 .unwrap()
                 .nodes_searched();
             if let Ok(best_thread) = best_thread.lock() {
-                // Always send again PV info.
-                println!(
-                    "{}",
-                    best_thread.pv_info_to_usi_string(
-                        nodes_searched,
-                        multi_pv,
-                        best_thread.completed_depth,
-                        -Value::INFINITE,
-                        Value::INFINITE,
-                        true,
-                    )
-                );
-                let mut s = format!(
-                    "bestmove {}",
-                    best_thread.root_moves[0].pv[0].to_usi_string(),
-                );
-                if usi_options_cloned.get_bool(UsiOptions::USI_PONDER)
-                    && best_thread.root_moves[0].pv.len() >= 2
-                {
-                    s += &format!(
-                        " ponder {}",
-                        best_thread.root_moves[0].pv[1].to_usi_string()
+                if !hide_all_output_cloned.load(Ordering::Relaxed) {
+                    // Always send again PV info.
+                    println!(
+                        "{}",
+                        best_thread.pv_info_to_usi_string(
+                            nodes_searched,
+                            multi_pv,
+                            best_thread.completed_depth,
+                            -Value::INFINITE,
+                            Value::INFINITE,
+                            true,
+                        )
                     );
+                    let mut s = format!(
+                        "bestmove {}",
+                        best_thread.root_moves[0].pv[0].to_usi_string(),
+                    );
+                    if usi_options_cloned.get_bool(UsiOptions::USI_PONDER)
+                        && best_thread.root_moves[0].pv.len() >= 2
+                    {
+                        s += &format!(
+                            " ponder {}",
+                            best_thread.root_moves[0].pv[1].to_usi_string()
+                        );
+                    }
+                    println!("{}", s);
                 }
-                println!("{}", s);
             }
             *last_best_root_move_cloned.lock().unwrap() =
                 Some(best_thread.lock().unwrap().root_moves[0].clone());
@@ -1718,12 +1734,14 @@ fn test_start_thinking() {
             };
             thread_pool.set(3, &mut tt, &mut ehash);
             let ponder_mode = false;
+            let hide_all_output = false;
             thread_pool.start_thinking(
                 &Position::new(),
                 &mut tt,
                 limits,
                 &usi_options,
                 ponder_mode,
+                hide_all_output,
             );
             thread_pool.wait_for_search_finished();
         })
