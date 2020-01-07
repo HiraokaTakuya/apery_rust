@@ -1508,6 +1508,10 @@ impl ThreadPool {
         hide_all_output: bool,
     ) {
         let mut limits = limits;
+        if limits.perft.is_some() {
+            Perft::new(pos).go(limits.perft.unwrap());
+            return;
+        }
         self.wait_for_search_finished();
         self.stop.store(false, Ordering::Relaxed);
         self.stop_on_ponderhit.store(false, Ordering::Relaxed);
