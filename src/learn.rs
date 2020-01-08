@@ -32,7 +32,7 @@ impl TeacherWriter {
 }
 
 pub fn generate_teachers(args: &[&str]) {
-    if args.is_empty() {
+    if args.len() != 5 {
         eprintln!("Invalid generate_teachers command.");
         eprintln!("expected:");
         eprintln!(r#"generate_teachers <output_file_path> <root_positions_file_path> <search_depth> <num_threads> <num_teachers>"#);
