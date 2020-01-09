@@ -83,6 +83,10 @@ fn go(
             "ponder" => {
                 ponder_mode = true;
             }
+            "perft" => {
+                let n = next_num(limit_type, &mut iter)?;
+                limits.perft = Some(n);
+            }
             invalid_token => return Err(format!("Error: Invalid token: {}", invalid_token)),
         }
     }
@@ -243,6 +247,15 @@ pub fn setoption(
 fn legal_moves(pos: &Position) {
     let mut mlist = MoveList::new();
     mlist.generate::<LegalType>(&pos, 0);
+    for i in 0..mlist.size {
+        print!("{} ", mlist.ext_moves[i].mv.to_usi_string());
+    }
+    println!();
+}
+
+fn legal_all_moves(pos: &Position) {
+    let mut mlist = MoveList::new();
+    mlist.generate::<LegalAllType>(&pos, 0);
     for i in 0..mlist.size {
         print!("{} ", mlist.ext_moves[i].mv.to_usi_string());
     }
@@ -595,6 +608,7 @@ pub fn cmd_loop() {
             }
             "key" => println!("{}", pos.key().0),
             "legal_moves" => legal_moves(&pos),
+            "legal_all_moves" => legal_all_moves(&pos),
             "self_move" => self_move(&mut thread_pool, &mut tt, &usi_options, &pos),
             "read_csa_dirs_and_output_sfen" => read_csa_dirs_and_output_sfen(&args[1..]),
             "read_hcp" => read_hcp(&args[1..]),

@@ -8,20 +8,25 @@ pub trait AllowMovesTrait {
     const ALLOW_QUIETS: bool;
     const EVASIONS: bool;
     const LEGALS: bool;
+    const ALL: bool;
     const ALLOW_PSEUDO_LEGAL: bool;
 }
 
 pub struct CaptureOrPawnPromotionsType;
 pub struct QuietsWithoutPawnPromotionsType;
 pub struct EvasionsType;
+pub struct EvasionsAllType;
 pub struct NonEvasionsType;
+pub struct NonEvasionsAllType;
 pub struct LegalType;
+pub struct LegalAllType;
 
 impl AllowMovesTrait for CaptureOrPawnPromotionsType {
     const ALLOW_CAPTURES: bool = true;
     const ALLOW_QUIETS: bool = false;
     const EVASIONS: bool = false;
     const LEGALS: bool = false;
+    const ALL: bool = false;
     const ALLOW_PSEUDO_LEGAL: bool = true;
 }
 impl AllowMovesTrait for QuietsWithoutPawnPromotionsType {
@@ -29,6 +34,7 @@ impl AllowMovesTrait for QuietsWithoutPawnPromotionsType {
     const ALLOW_QUIETS: bool = true;
     const EVASIONS: bool = false;
     const LEGALS: bool = false;
+    const ALL: bool = false;
     const ALLOW_PSEUDO_LEGAL: bool = true;
 }
 impl AllowMovesTrait for EvasionsType {
@@ -36,6 +42,15 @@ impl AllowMovesTrait for EvasionsType {
     const ALLOW_QUIETS: bool = true;
     const EVASIONS: bool = true;
     const LEGALS: bool = false;
+    const ALL: bool = false;
+    const ALLOW_PSEUDO_LEGAL: bool = true;
+}
+impl AllowMovesTrait for EvasionsAllType {
+    const ALLOW_CAPTURES: bool = true;
+    const ALLOW_QUIETS: bool = true;
+    const EVASIONS: bool = true;
+    const LEGALS: bool = false;
+    const ALL: bool = true;
     const ALLOW_PSEUDO_LEGAL: bool = true;
 }
 impl AllowMovesTrait for NonEvasionsType {
@@ -43,6 +58,15 @@ impl AllowMovesTrait for NonEvasionsType {
     const ALLOW_QUIETS: bool = true;
     const EVASIONS: bool = false;
     const LEGALS: bool = false;
+    const ALL: bool = false;
+    const ALLOW_PSEUDO_LEGAL: bool = true;
+}
+impl AllowMovesTrait for NonEvasionsAllType {
+    const ALLOW_CAPTURES: bool = true;
+    const ALLOW_QUIETS: bool = true;
+    const EVASIONS: bool = false;
+    const LEGALS: bool = false;
+    const ALL: bool = true;
     const ALLOW_PSEUDO_LEGAL: bool = true;
 }
 impl AllowMovesTrait for LegalType {
@@ -50,6 +74,15 @@ impl AllowMovesTrait for LegalType {
     const ALLOW_QUIETS: bool = true;
     const EVASIONS: bool = false;
     const LEGALS: bool = true;
+    const ALL: bool = false;
+    const ALLOW_PSEUDO_LEGAL: bool = false;
+}
+impl AllowMovesTrait for LegalAllType {
+    const ALLOW_CAPTURES: bool = true;
+    const ALLOW_QUIETS: bool = true;
+    const EVASIONS: bool = false;
+    const LEGALS: bool = true;
+    const ALL: bool = true;
     const ALLOW_PSEUDO_LEGAL: bool = false;
 }
 
@@ -116,7 +149,7 @@ impl MoveList {
             self.generate_drop::<AMT>(pos, &target);
         }
     }
-    pub fn generate_evasions(&mut self, pos: &Position, current_size: usize) {
+    pub fn generate_evasions<ISALL: Bool>(&mut self, pos: &Position, current_size: usize) {
         self.size = current_size;
         let us = pos.side_to_move();
         let ksq_of_evasion = pos.king_square(us);
@@ -153,17 +186,31 @@ impl MoveList {
         let target_drop = Bitboard::between_mask(checker_sq, ksq_of_evasion);
         let target_move = target_drop | Bitboard::square_mask(checker_sq);
 
-        self.generate_for_piece::<PawnType, EvasionsType>(pos, &target_move);
-        self.generate_for_piece::<LanceType, EvasionsType>(pos, &target_move);
-        self.generate_for_piece::<KnightType, EvasionsType>(pos, &target_move);
-        self.generate_for_piece::<SilverType, EvasionsType>(pos, &target_move);
-        self.generate_for_piece::<BishopType, EvasionsType>(pos, &target_move);
-        self.generate_for_piece::<RookType, EvasionsType>(pos, &target_move);
-        self.generate_for_piece::<GoldType, EvasionsType>(pos, &target_move);
-        self.generate_for_piece::<HorseType, EvasionsType>(pos, &target_move);
-        self.generate_for_piece::<DragonType, EvasionsType>(pos, &target_move);
+        if ISALL::BOOL {
+            self.generate_for_piece::<PawnType, EvasionsAllType>(pos, &target_move);
+            self.generate_for_piece::<LanceType, EvasionsAllType>(pos, &target_move);
+            self.generate_for_piece::<KnightType, EvasionsAllType>(pos, &target_move);
+            self.generate_for_piece::<SilverType, EvasionsAllType>(pos, &target_move);
+            self.generate_for_piece::<BishopType, EvasionsAllType>(pos, &target_move);
+            self.generate_for_piece::<RookType, EvasionsAllType>(pos, &target_move);
+            self.generate_for_piece::<GoldType, EvasionsAllType>(pos, &target_move);
+            self.generate_for_piece::<HorseType, EvasionsAllType>(pos, &target_move);
+            self.generate_for_piece::<DragonType, EvasionsAllType>(pos, &target_move);
 
-        self.generate_drop::<EvasionsType>(pos, &target_drop);
+            self.generate_drop::<EvasionsAllType>(pos, &target_drop);
+        } else {
+            self.generate_for_piece::<PawnType, EvasionsType>(pos, &target_move);
+            self.generate_for_piece::<LanceType, EvasionsType>(pos, &target_move);
+            self.generate_for_piece::<KnightType, EvasionsType>(pos, &target_move);
+            self.generate_for_piece::<SilverType, EvasionsType>(pos, &target_move);
+            self.generate_for_piece::<BishopType, EvasionsType>(pos, &target_move);
+            self.generate_for_piece::<RookType, EvasionsType>(pos, &target_move);
+            self.generate_for_piece::<GoldType, EvasionsType>(pos, &target_move);
+            self.generate_for_piece::<HorseType, EvasionsType>(pos, &target_move);
+            self.generate_for_piece::<DragonType, EvasionsType>(pos, &target_move);
+
+            self.generate_drop::<EvasionsType>(pos, &target_drop);
+        }
     }
     fn generate_drop_for_possessions(&mut self, possessions: &[Piece], to_bb: Bitboard) {
         for to in to_bb {
@@ -344,11 +391,16 @@ impl MoveList {
         for to in to_bb {
             let from = to.add_unchecked(delta);
             let rank_to = Rank::new(to);
-            self.push(if rank_to.is_opponent_field(us) {
-                Move::new_promote(from, to, pc)
+            if rank_to.is_opponent_field(us) {
+                self.push(Move::new_promote(from, to, pc));
+                if AMT::ALL
+                    && rank_to != Rank::new_from_color_and_rank_as_black(us, RankAsBlack::RANK1)
+                {
+                    self.push(Move::new_unpromote(from, to, pc));
+                }
             } else {
-                Move::new_unpromote(from, to, pc)
-            });
+                self.push(Move::new_unpromote(from, to, pc));
+            };
         }
     }
     fn generate_for_lance<AMT: AllowMovesTrait>(&mut self, pos: &Position, target: &Bitboard) {
@@ -391,12 +443,20 @@ impl MoveList {
                 let rank_to = Rank::new(to);
                 if rank_to.is_opponent_field(us) {
                     self.push(Move::new_promote(from, to, pc));
-                    // avoid unpromote quiet move to rank3. because it is useless move.
-                    if AMT::ALLOW_CAPTURES
-                        && rank_to == Rank::new_from_color_and_rank_as_black(us, RankAsBlack::RANK3)
-                        && pos.piece_on(to) != Piece::EMPTY
-                    {
-                        self.push(Move::new_unpromote(from, to, pc));
+                    if AMT::ALL {
+                        if rank_to != Rank::new_from_color_and_rank_as_black(us, RankAsBlack::RANK1)
+                        {
+                            self.push(Move::new_unpromote(from, to, pc));
+                        }
+                    } else {
+                        // avoid unpromote quiet move to rank3. because it is useless move.
+                        if AMT::ALLOW_CAPTURES
+                            && rank_to
+                                == Rank::new_from_color_and_rank_as_black(us, RankAsBlack::RANK3)
+                            && pos.piece_on(to) != Piece::EMPTY
+                        {
+                            self.push(Move::new_unpromote(from, to, pc));
+                        }
                     }
                 } else {
                     self.push(Move::new_unpromote(from, to, pc));
@@ -615,13 +675,14 @@ impl MoveList {
             let from_is_opponent_field = Rank::new(from).is_opponent_field(us);
             let pc = pos.piece_on(from);
             for to in to_bb {
-                self.push(
-                    if from_is_opponent_field || Rank::new(to).is_opponent_field(us) {
-                        Move::new_promote(from, to, pc)
-                    } else {
-                        Move::new_unpromote(from, to, pc)
-                    },
-                );
+                if from_is_opponent_field || Rank::new(to).is_opponent_field(us) {
+                    self.push(Move::new_promote(from, to, pc));
+                    if AMT::ALL {
+                        self.push(Move::new_unpromote(from, to, pc));
+                    }
+                } else {
+                    self.push(Move::new_unpromote(from, to, pc));
+                }
             }
         }
     }
@@ -706,9 +767,15 @@ impl MoveList {
             }
         }
     }
-    fn generate_legals(&mut self, pos: &Position, current_size: usize) {
+    fn generate_legals<ISALL: Bool>(&mut self, pos: &Position, current_size: usize) {
         if pos.in_check() {
-            self.generate_evasions(pos, current_size);
+            if ISALL::BOOL {
+                self.generate_evasions::<True>(pos, current_size);
+            } else {
+                self.generate_evasions::<False>(pos, current_size);
+            }
+        } else if ISALL::BOOL {
+            self.generate_all::<NonEvasionsAllType>(pos, current_size);
         } else {
             self.generate_all::<NonEvasionsType>(pos, current_size);
         }
@@ -726,9 +793,17 @@ impl MoveList {
     }
     pub fn generate<AMT: AllowMovesTrait>(&mut self, pos: &Position, current_size: usize) {
         if AMT::LEGALS {
-            self.generate_legals(pos, current_size);
+            if AMT::ALL {
+                self.generate_legals::<True>(pos, current_size);
+            } else {
+                self.generate_legals::<False>(pos, current_size);
+            }
         } else if AMT::EVASIONS {
-            self.generate_evasions(pos, current_size);
+            if AMT::ALL {
+                self.generate_evasions::<True>(pos, current_size);
+            } else {
+                self.generate_evasions::<False>(pos, current_size);
+            }
         } else {
             self.generate_all::<AMT>(pos, current_size);
         }

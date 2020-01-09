@@ -1,4 +1,5 @@
 use crate::evaluate::*;
+use crate::movegen::*;
 use crate::movepick::*;
 use crate::movetypes::*;
 use crate::position::*;
@@ -236,3 +237,69 @@ pub fn reduction(improving: bool, depth: Depth, move_count: i32) -> Depth {
 
 pub const SKIP_SIZE: [i32; 20] = [1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4];
 pub const SKIP_PHASE: [i32; 20] = [0, 1, 0, 1, 2, 3, 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 6, 7];
+
+pub struct Perft {
+    position: Position,
+}
+
+impl Perft {
+    pub fn new(pos: &Position) -> Perft {
+        Perft {
+            position: Position::new_from_position(
+                pos,
+                std::sync::Arc::new(std::sync::atomic::AtomicI64::new(0)),
+            ),
+        }
+    }
+    pub fn go(&mut self, depth: u32) {
+        let timeins1 = std::time::Instant::now();
+        let searched_nodes = self.perft::<True>(depth);
+        let timeins2 = std::time::Instant::now();
+        let timedur = timeins2 - timeins1;
+        let timedur_nanos = std::cmp::max(timedur.as_nanos(), 1);
+        let moved_nodes = self.position.nodes_searched();
+        println!();
+        println!("Time duration: {:?}", timedur);
+        println!(
+            "Searched: {} nodes : {} nps",
+            searched_nodes,
+            (searched_nodes as u128) * 1000000000 / timedur_nanos
+        );
+        println!(
+            "(Moved: {} nodes : {} nps)",
+            moved_nodes,
+            (moved_nodes as u128) * 1000000000 / timedur_nanos
+        );
+    }
+    // perft() is our utility to verify move generation. All the leaf nodes up
+    // to the given depth are generated and counted, and the sum is returned.
+    pub fn perft<Root: Bool>(&mut self, depth: u32) -> u64 {
+        let leaf: bool = depth == 2;
+        let mut nodes: u64 = 0;
+        let mut mlist = MoveList::new();
+        mlist.generate::<LegalAllType>(&self.position, 0);
+        for i in 0..mlist.size {
+            let cnt: u64;
+            if Root::BOOL && depth <= 1 {
+                cnt = 1;
+                nodes += 1;
+            } else {
+                let m = mlist.ext_moves[i].mv;
+                self.position.do_move(m, self.position.gives_check(m));
+                if leaf {
+                    let mut leaf_mlist = MoveList::new();
+                    leaf_mlist.generate::<LegalAllType>(&self.position, 0);
+                    cnt = leaf_mlist.size as u64;
+                } else {
+                    cnt = self.perft::<False>(depth - 1);
+                }
+                nodes += cnt;
+                self.position.undo_move(m);
+            }
+            if Root::BOOL {
+                println!("{} : {}", mlist.ext_moves[i].mv.to_usi_string(), cnt);
+            }
+        }
+        nodes
+    }
+}
