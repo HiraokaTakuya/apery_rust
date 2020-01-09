@@ -263,12 +263,12 @@ impl Perft {
         println!(
             "Searched: {} nodes : {} nps",
             searched_nodes,
-            (searched_nodes as u128) * 1000000000 / timedur_nanos
+            (searched_nodes as u128) * 1_000_000_000 / timedur_nanos
         );
         println!(
             "(Moved: {} nodes : {} nps)",
             moved_nodes,
-            (moved_nodes as u128) * 1000000000 / timedur_nanos
+            (moved_nodes as u128) * 1_000_000_000 / timedur_nanos
         );
     }
     // perft() is our utility to verify move generation. All the leaf nodes up
