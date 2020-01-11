@@ -29,7 +29,7 @@ See USI protocol on the web for details.
 
 ## Rust toolchain
 
-nightly only
+stable
 
 ## Build
 
