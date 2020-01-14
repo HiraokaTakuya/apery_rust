@@ -1,6 +1,9 @@
+use crate::bitboard::*;
 use crate::evaluate::*;
 use crate::file_to_vec::*;
 use crate::huffman_code::*;
+use crate::movegen::*;
+use crate::movetypes::*;
 use crate::position::*;
 use crate::search::*;
 use crate::thread::*;
@@ -8,6 +11,7 @@ use crate::tt::*;
 use crate::types::*;
 use crate::usi::*;
 use crate::usioption::*;
+use rand::prelude::*;
 use rand::Rng;
 use std::io::prelude::*;
 
@@ -28,6 +32,60 @@ impl TeacherWriter {
 
     fn write(&mut self, hcpes: &[HuffmanCodedPositionAndEval]) {
         self.file.write_all(as_u8_slice(hcpes)).unwrap();
+    }
+}
+
+fn random_move(pos: &mut Position, rng: &mut ThreadRng) {
+    match rng.gen_range(0, 2) {
+        0 => {
+            // King move and opponent king move 1/2 probability.
+            let mut mlist = MoveList::new();
+            let ksq = pos.king_square(pos.side_to_move());
+            for to in ATTACK_TABLE.king.attack(ksq) {
+                let m = Move::new_unpromote(ksq, to, pos.piece_on(ksq));
+                if pos.pseudo_legal::<NotSearchingType>(m) && pos.legal(m) {
+                    mlist.push(m);
+                }
+            }
+            if let Some(ext_move) = mlist.slice(0).choose(rng) {
+                let m = ext_move.mv;
+                let gives_check = pos.gives_check(m);
+                pos.do_move(m, gives_check);
+                match rng.gen_range(0, 2) {
+                    0 => {} // nop
+                    1 => {
+                        // opponent king move 1/2 probability.
+                        let mut mlist = MoveList::new();
+                        let current_size = 0;
+                        mlist.generate::<LegalType>(pos, current_size);
+                        if let Some(ext_move) = mlist.slice(0).choose(rng) {
+                            let m = ext_move.mv;
+                            let gives_check = pos.gives_check(m);
+                            pos.do_move(m, gives_check);
+                        }
+                    }
+                    _ => unreachable!(),
+                }
+            }
+        }
+        1 => {
+            // All move.
+            for _ in 0..2 {
+                // Each color move.
+                let mut mlist = MoveList::new();
+                let current_size = 0;
+                mlist.generate::<LegalType>(pos, current_size);
+                match mlist.slice(0).choose(rng) {
+                    Some(ext_move) => {
+                        let m = ext_move.mv;
+                        let gives_check = pos.gives_check(m);
+                        pos.do_move(m, gives_check);
+                    }
+                    None => break,
+                }
+            }
+        }
+        _ => unreachable!(),
     }
 }
 
@@ -130,7 +188,7 @@ pub fn generate_teachers(args: &[&str]) {
                 hcpes.clear();
                 let hcp = &roots[rng.gen_range(0, roots.len())];
                 let mut pos = Position::new_from_huffman_coded_position(hcp).unwrap();
-                // todo: random move
+                random_move(&mut pos, &mut rng);
                 let mut position_key_appearances = std::collections::HashMap::new();
                 let start_ply = pos.ply();
                 let max_moves_ply = start_ply + MAX_MOVES;

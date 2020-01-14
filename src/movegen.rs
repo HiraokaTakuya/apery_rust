@@ -108,7 +108,7 @@ impl MoveList {
         self.slice(0).iter().any(|x| x.mv == m)
     }
     #[inline]
-    fn push(&mut self, m: Move) {
+    pub fn push(&mut self, m: Move) {
         debug_assert!(self.size < self.ext_moves.len());
         unsafe {
             self.ext_moves.get_unchecked_mut(self.size).mv = m;
