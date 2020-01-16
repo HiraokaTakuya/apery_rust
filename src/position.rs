@@ -1463,97 +1463,25 @@ impl Position {
         !self.blockers_for_king(us).is_set(from)
             || is_aligned_and_sq2_is_not_between_sq0_and_sq1(from, m.to(), self.king_square(us))
     }
-    fn min_attacker(
-        &self,
-        to: Square,
-        side_to_move_attackers: &Bitboard,
-        occupied: &mut Bitboard,
-        attackers: &mut Bitboard,
-    ) -> PieceType {
-        let mut b;
-        macro_rules! attacker_found {
-            ($pt: expr) => {{
-                b = *side_to_move_attackers & self.pieces_p($pt);
-                b.to_bool()
-            }};
-        }
-        if !attacker_found!(PieceType::PAWN)
-            && !attacker_found!(PieceType::LANCE)
-            && !attacker_found!(PieceType::KNIGHT)
-            && !attacker_found!(PieceType::PRO_PAWN)
-            && !attacker_found!(PieceType::PRO_LANCE)
-            && !attacker_found!(PieceType::PRO_KNIGHT)
-            && !attacker_found!(PieceType::SILVER)
-            && !attacker_found!(PieceType::PRO_SILVER)
-            && !attacker_found!(PieceType::GOLD)
-            && !attacker_found!(PieceType::BISHOP)
-            && !attacker_found!(PieceType::HORSE)
-            && !attacker_found!(PieceType::ROOK)
-            && !attacker_found!(PieceType::DRAGON)
-        {
-            return PieceType::KING;
-        }
-        let sq = b.lsb_unchecked();
-        *occupied ^= Bitboard::square_mask(sq);
-
-        // add a piece behind of sq. (and add a piece of sq. but it supporsed to be erased after.)
-        match Relation::new(sq, to) {
-            Relation::MISC => {}
-            Relation::FILE_NS => {
-                *attackers |= ATTACK_TABLE.lance.attack(Color::BLACK, to, occupied)
-                    & self.pieces_cppp(
-                        Color::WHITE,
-                        PieceType::ROOK,
-                        PieceType::DRAGON,
-                        PieceType::LANCE,
-                    );
-            }
-            Relation::FILE_SN => {
-                *attackers |= ATTACK_TABLE.lance.attack(Color::WHITE, to, occupied)
-                    & self.pieces_cppp(
-                        Color::BLACK,
-                        PieceType::ROOK,
-                        PieceType::DRAGON,
-                        PieceType::LANCE,
-                    );
-            }
-            Relation::RANK_EW | Relation::RANK_WE => {
-                *attackers |= ATTACK_TABLE.rook.magic(to).attack(occupied)
-                    & (self.pieces_pp(PieceType::ROOK, PieceType::DRAGON));
-            }
-            Relation::DIAG_NESW
-            | Relation::DIAG_NWSE
-            | Relation::DIAG_SWNE
-            | Relation::DIAG_SENW => {
-                *attackers |= ATTACK_TABLE.bishop.magic(to).attack(occupied)
-                    & self.pieces_pp(PieceType::BISHOP, PieceType::HORSE);
-            }
-            _ => unreachable!(),
-        }
-        // erase a piece of sq.
-        *attackers &= *occupied;
-        PieceType::new(self.piece_on(sq))
-    }
     pub fn see_ge(&self, m: Move, threshold: Value) -> bool {
         let to = m.to();
-        let mut balance = capture_piece_value(self.piece_on(to)) - threshold;
-        if balance < Value::ZERO {
+        let mut swap = capture_piece_value(self.piece_on(to)) - threshold;
+        if swap < Value::ZERO {
             return false;
         }
         let is_drop = m.is_drop();
-        let mut next_victim = if is_drop {
+        let next_victim = if is_drop {
             m.piece_type_dropped()
         } else {
             PieceType::new(self.piece_on(m.from()))
         };
-        balance -= capture_piece_type_value(next_victim);
+        swap = capture_piece_type_value(next_victim) - swap;
         // in case next_victim == PieceType::KING return here.
         // ( capture_piece_type_value(PieceType::KING) == Value::ZERO )
         // it is ok if this move is legal.
-        if balance >= Value::ZERO {
+        if swap <= Value::ZERO {
             return true;
         }
-        let mut attackers;
         let mut occupied = self.occupied_bb();
         // "m" is capture, "occupied" become
         // In fact, the bit at the position of "to" should be 0,
@@ -1563,10 +1491,13 @@ impl Position {
         if !is_drop {
             occupied ^= Bitboard::square_mask(m.from());
         }
-        attackers = self.attackers_to_both_color(to, &occupied) & occupied;
+        let mut attackers = self.attackers_to_both_color(to, &occupied) & occupied;
         let us = self.side_to_move();
-        let mut side_to_move = us.inverse();
+        let mut side_to_move = us;
+        let mut res = Value(1);
+        let mut bb;
         loop {
+            side_to_move = side_to_move.inverse();
             let mut side_to_move_attackers = attackers & self.pieces_c(side_to_move);
             if !(self.pinners_for_king(side_to_move.inverse()) & !occupied).to_bool() {
                 side_to_move_attackers &= !self.blockers_for_king(side_to_move);
@@ -1574,22 +1505,126 @@ impl Position {
             if !side_to_move_attackers.to_bool() {
                 break;
             }
-            next_victim =
-                self.min_attacker(to, &side_to_move_attackers, &mut occupied, &mut attackers);
-            side_to_move = side_to_move.inverse();
-            debug_assert!(balance < Value::ZERO);
-            balance = -balance - Value(1) - capture_piece_type_value(next_victim);
-            if balance >= Value::ZERO {
-                if next_victim == PieceType::KING
-                    && (attackers & self.pieces_c(side_to_move)).to_bool()
-                {
-                    side_to_move = side_to_move.inverse();
-                }
-                break;
+            res.0 ^= 1;
+            macro_rules! attacker_found {
+                ($pt: expr) => {{
+                    bb = side_to_move_attackers & self.pieces_p($pt);
+                    bb.to_bool()
+                }};
             }
-            debug_assert!(next_victim != PieceType::KING);
+            if attacker_found!(PieceType::PAWN) {
+                swap = capture_piece_type_value(PieceType::PAWN) - swap;
+                if swap < res {
+                    break;
+                }
+            } else if attacker_found!(PieceType::LANCE) {
+                swap = capture_piece_type_value(PieceType::LANCE) - swap;
+                if swap < res {
+                    break;
+                }
+            } else if attacker_found!(PieceType::KNIGHT) {
+                swap = capture_piece_type_value(PieceType::KNIGHT) - swap;
+                if swap < res {
+                    break;
+                }
+            } else if attacker_found!(PieceType::PRO_PAWN) {
+                swap = capture_piece_type_value(PieceType::PRO_PAWN) - swap;
+                if swap < res {
+                    break;
+                }
+            } else if attacker_found!(PieceType::PRO_LANCE) {
+                swap = capture_piece_type_value(PieceType::PRO_LANCE) - swap;
+                if swap < res {
+                    break;
+                }
+            } else if attacker_found!(PieceType::PRO_KNIGHT) {
+                swap = capture_piece_type_value(PieceType::PRO_KNIGHT) - swap;
+                if swap < res {
+                    break;
+                }
+            } else if attacker_found!(PieceType::SILVER) {
+                swap = capture_piece_type_value(PieceType::SILVER) - swap;
+                if swap < res {
+                    break;
+                }
+            } else if attacker_found!(PieceType::PRO_SILVER) {
+                swap = capture_piece_type_value(PieceType::PRO_SILVER) - swap;
+                if swap < res {
+                    break;
+                }
+            } else if attacker_found!(PieceType::GOLD) {
+                swap = capture_piece_type_value(PieceType::GOLD) - swap;
+                if swap < res {
+                    break;
+                }
+            } else if attacker_found!(PieceType::BISHOP) {
+                swap = capture_piece_type_value(PieceType::BISHOP) - swap;
+                if swap < res {
+                    break;
+                }
+            } else if attacker_found!(PieceType::HORSE) {
+                swap = capture_piece_type_value(PieceType::HORSE) - swap;
+                if swap < res {
+                    break;
+                }
+            } else if attacker_found!(PieceType::ROOK) {
+                swap = capture_piece_type_value(PieceType::ROOK) - swap;
+                if swap < res {
+                    break;
+                }
+            } else if attacker_found!(PieceType::DRAGON) {
+                swap = capture_piece_type_value(PieceType::DRAGON) - swap;
+                if swap < res {
+                    break;
+                }
+            } else {
+                if (attackers & !self.pieces_c(side_to_move)).to_bool() {
+                    res.0 ^= 1;
+                }
+                return res != Value::ZERO;
+            }
+
+            let sq = bb.lsb_unchecked();
+            occupied ^= Bitboard::square_mask(sq);
+
+            // add a piece behind of sq. (and add a piece of sq. but it supporsed to be erased after.)
+            match Relation::new(sq, to) {
+                Relation::MISC => {}
+                Relation::FILE_NS => {
+                    attackers |= ATTACK_TABLE.lance.attack(Color::BLACK, to, &occupied)
+                        & self.pieces_cppp(
+                            Color::WHITE,
+                            PieceType::ROOK,
+                            PieceType::DRAGON,
+                            PieceType::LANCE,
+                        );
+                }
+                Relation::FILE_SN => {
+                    attackers |= ATTACK_TABLE.lance.attack(Color::WHITE, to, &occupied)
+                        & self.pieces_cppp(
+                            Color::BLACK,
+                            PieceType::ROOK,
+                            PieceType::DRAGON,
+                            PieceType::LANCE,
+                        );
+                }
+                Relation::RANK_EW | Relation::RANK_WE => {
+                    attackers |= ATTACK_TABLE.rook.magic(to).attack(&occupied)
+                        & (self.pieces_pp(PieceType::ROOK, PieceType::DRAGON));
+                }
+                Relation::DIAG_NESW
+                | Relation::DIAG_NWSE
+                | Relation::DIAG_SWNE
+                | Relation::DIAG_SENW => {
+                    attackers |= ATTACK_TABLE.bishop.magic(to).attack(&occupied)
+                        & self.pieces_pp(PieceType::BISHOP, PieceType::HORSE);
+                }
+                _ => unreachable!(),
+            }
+            // erase a piece of sq.
+            attackers &= occupied;
         }
-        us != side_to_move
+        res != Value::ZERO
     }
     pub fn is_drop_pawn_mate(&self, color_of_pawn: Color, sq_of_pawn: Square) -> bool {
         debug_assert_eq!(
@@ -2786,69 +2821,26 @@ fn test_state_info() {
 }
 
 #[test]
-fn test_position_min_attacker() {
-    let sfen = "k8/9/3b1l3/4s4/5pg1+r/4GP3/5RN2/5L3/K4L3 b - 1";
-    let pos = Position::new_from_sfen(sfen).unwrap();
-    let to = Square::SQ45;
-    let us = pos.side_to_move();
-    let mut occupied = pos.occupied_bb();
-    let mut attackers = pos.attackers_to_both_color(to, &occupied);
-    let side_to_move_attackers = attackers & pos.pieces_c(us);
-    let pt_attacker = pos.min_attacker(to, &side_to_move_attackers, &mut occupied, &mut attackers);
-    assert_eq!(pt_attacker, PieceType::PAWN);
-    let us = us.inverse();
-    let side_to_move_attackers = attackers & pos.pieces_c(us);
-    let pt_attacker = pos.min_attacker(to, &side_to_move_attackers, &mut occupied, &mut attackers);
-    assert_eq!(pt_attacker, PieceType::LANCE);
-    let us = us.inverse();
-    let side_to_move_attackers = attackers & pos.pieces_c(us);
-    let pt_attacker = pos.min_attacker(to, &side_to_move_attackers, &mut occupied, &mut attackers);
-    assert_eq!(pt_attacker, PieceType::KNIGHT);
-    let us = us.inverse();
-    let side_to_move_attackers = attackers & pos.pieces_c(us);
-    let pt_attacker = pos.min_attacker(to, &side_to_move_attackers, &mut occupied, &mut attackers);
-    assert_eq!(pt_attacker, PieceType::SILVER);
-    let us = us.inverse();
-    let side_to_move_attackers = attackers & pos.pieces_c(us);
-    let pt_attacker = pos.min_attacker(to, &side_to_move_attackers, &mut occupied, &mut attackers);
-    assert_eq!(pt_attacker, PieceType::GOLD);
-    let us = us.inverse();
-    let side_to_move_attackers = attackers & pos.pieces_c(us);
-    let pt_attacker = pos.min_attacker(to, &side_to_move_attackers, &mut occupied, &mut attackers);
-    assert_eq!(pt_attacker, PieceType::GOLD);
-    let us = us.inverse();
-    let side_to_move_attackers = attackers & pos.pieces_c(us);
-    let pt_attacker = pos.min_attacker(to, &side_to_move_attackers, &mut occupied, &mut attackers);
-    assert_eq!(pt_attacker, PieceType::ROOK);
-    let us = us.inverse();
-    let side_to_move_attackers = attackers & pos.pieces_c(us);
-    let pt_attacker = pos.min_attacker(to, &side_to_move_attackers, &mut occupied, &mut attackers);
-    assert_eq!(pt_attacker, PieceType::BISHOP);
-    let us = us.inverse();
-    let side_to_move_attackers = attackers & pos.pieces_c(us);
-    let pt_attacker = pos.min_attacker(to, &side_to_move_attackers, &mut occupied, &mut attackers);
-    assert_eq!(pt_attacker, PieceType::LANCE);
-    let us = us.inverse();
-    let side_to_move_attackers = attackers & pos.pieces_c(us);
-    let pt_attacker = pos.min_attacker(to, &side_to_move_attackers, &mut occupied, &mut attackers);
-    assert_eq!(pt_attacker, PieceType::DRAGON);
-    let us = us.inverse();
-    let side_to_move_attackers = attackers & pos.pieces_c(us);
-    let pt_attacker = pos.min_attacker(to, &side_to_move_attackers, &mut occupied, &mut attackers);
-    assert_eq!(pt_attacker, PieceType::LANCE);
-    let us = us.inverse();
-    let side_to_move_attackers = attackers & pos.pieces_c(us);
-    let pt_attacker = pos.min_attacker(to, &side_to_move_attackers, &mut occupied, &mut attackers);
-    assert_eq!(pt_attacker, PieceType::KING);
-}
-
-#[test]
 fn test_position_see_ge() {
-    let sfen = "k8/5+R3/3b1l3/4s4/6g1+r/4GP3/5LN2/9/K4L3 b - 1";
-    let pos = Position::new_from_sfen(sfen).unwrap();
-    let to = Square::SQ45;
-    let m = Move::new_unpromote(Square::SQ46, to, Piece::B_PAWN);
-    assert_eq!(pos.see_ge(m, Value(0)), true);
+    const STACK_SIZE: usize = 128 * 1024 * 1024;
+    std::thread::Builder::new()
+        .stack_size(STACK_SIZE)
+        .spawn(|| {
+            let sfen = "k8/5+R3/3b1l3/4s4/6g1+r/4GP3/5LN2/9/K4L3 b - 1";
+            let pos = Position::new_from_sfen(sfen).unwrap();
+            let to = Square::SQ45;
+            let m = Move::new_unpromote(Square::SQ46, to, Piece::B_PAWN);
+            assert_eq!(pos.see_ge(m, Value(0)), true);
+
+            let sfen = "k8/9/9/9/9/l8/p8/1B7/1K7 b - 1";
+            let pos = Position::new_from_sfen(sfen).unwrap();
+            let to = Square::SQ97;
+            let m = Move::new_unpromote(Square::SQ88, to, Piece::B_BISHOP);
+            assert_eq!(pos.see_ge(m, Value(0)), false);
+        })
+        .unwrap()
+        .join()
+        .unwrap();
 }
 
 #[test]
