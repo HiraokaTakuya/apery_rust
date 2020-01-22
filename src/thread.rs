@@ -13,6 +13,12 @@ use crate::usioption::*;
 use std::sync::atomic::{AtomicBool, AtomicI64, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
+pub struct StatsType;
+
+impl StatsType {
+    pub const NUM: usize = 2;
+}
+
 struct Thread {
     idx: usize,
     pv_idx: usize,
@@ -26,7 +32,7 @@ struct Thread {
     counter_moves: CounterMoveHistory,
     main_history: ButterflyHistory,
     capture_history: CapturePieceToHistory,
-    continuation_history: ContinuationHistory,
+    continuation_history: [ContinuationHistory; StatsType::NUM],
     limits: LimitsType, // Clone from ThreadPool for fast access.
     tt: *mut TranspositionTable,
     timeman: Arc<Mutex<TimeManagement>>, // shold I use pointer for speedup?
@@ -79,9 +85,10 @@ impl Thread {
         self.main_history.fill(0);
         self.capture_history.fill(0);
 
-        self.continuation_history.fill(0);
-        self.continuation_history.v[Piece::EMPTY.0 as usize][0]
-            .fill(COUNTER_MOVE_PRUNE_THRESHOLD - 1);
+        self.continuation_history.iter_mut().for_each(|x| {
+            x.fill(0);
+            x.v[Piece::EMPTY.0 as usize][0].fill(COUNTER_MOVE_PRUNE_THRESHOLD - 1);
+        });
     }
     fn iterative_deepening_loop(&mut self) {
         let mut stack = [Stack::new(); MAX_PLY as usize + 10];
@@ -95,7 +102,7 @@ impl Thread {
         let mut total_best_move_changes = 0.0f64;
         let mut last_info_time: Option<std::time::Instant> = None;
         for item in stack.iter_mut().take(CURRENT_STACK_INDEX) {
-            item.continuation_history = self.continuation_history.sentinel();
+            item.continuation_history = self.continuation_history[0].sentinel();
         }
         let multi_pv = std::cmp::min(
             self.usi_options.get_i64(UsiOptions::MULTI_PV) as usize,
@@ -310,6 +317,7 @@ impl Thread {
 
         // Step 1
         let in_check = self.position.in_check();
+        let prior_capture = self.position.captured_piece();
         let us = self.position.side_to_move();
         let mut best_value = -Value::INFINITE;
         let max_value = Value::INFINITE;
@@ -420,8 +428,8 @@ impl Thread {
                     }
 
                     if get_stack(stack, -1).move_count <= 2
-                        && !(self.position.is_capture_after_move()
-                            || get_stack(stack, -1)
+                        && !(prior_capture == Piece::EMPTY // prev is capture
+                             || get_stack(stack, -1)
                                 .current_move
                                 .unwrap_unchecked()
                                 .is_pawn_promotion())
@@ -567,7 +575,8 @@ impl Thread {
                         * Depth::ONE_PLY.0,
                 );
                 get_stack_mut(stack, 0).current_move = Some(Move::NULL);
-                get_stack_mut(stack, 0).continuation_history = self.continuation_history.sentinel();
+                get_stack_mut(stack, 0).continuation_history =
+                    self.continuation_history[0].sentinel();
 
                 self.position.do_null_move();
                 get_stack_mut(stack, 1).static_eval_raw = get_stack(stack, 0).static_eval_raw; // key is wrong. but it's no problem.
@@ -628,8 +637,8 @@ impl Thread {
                     if m != excluded_move.unwrap_unchecked() && self.position.legal(m) {
                         prob_cut_count += 1;
                         get_stack_mut(stack, 0).current_move = Some(m);
-                        get_stack_mut(stack, 0).continuation_history = self
-                            .continuation_history
+                        get_stack_mut(stack, 0).continuation_history = self.continuation_history
+                            [(prior_capture != Piece::EMPTY) as usize]
                             .get_mut(m.piece_moved_after_move(), m.to());
                         debug_assert!(depth.0 >= 5 * Depth::ONE_PLY.0);
 
@@ -847,8 +856,8 @@ impl Thread {
             }
 
             get_stack_mut(stack, 0).current_move = Some(m);
-            get_stack_mut(stack, 0).continuation_history = self
-                .continuation_history
+            get_stack_mut(stack, 0).continuation_history = self.continuation_history
+                [(prior_capture != Piece::EMPTY) as usize]
                 .get_mut(piece_moved_after_move, to);
 
             // Step 15
@@ -1005,7 +1014,7 @@ impl Thread {
 
             if (get_stack(stack, -1).move_count == 1
                 || get_stack(stack, -1).current_move == get_stack(stack, -1).killers[0])
-                && self.position.captured_piece() == Piece::EMPTY
+                && prior_capture == Piece::EMPTY
             {
                 update_continuation_histories(
                     stack,
@@ -1014,9 +1023,7 @@ impl Thread {
                     -stat_bonus(depth + Depth::ONE_PLY),
                 );
             }
-        } else if (pv_node || depth.0 >= 3 * Depth::ONE_PLY.0)
-            && self.position.captured_piece() == Piece::EMPTY
-        {
+        } else if (pv_node || depth.0 >= 3 * Depth::ONE_PLY.0) && prior_capture == Piece::EMPTY {
             update_continuation_histories(
                 stack,
                 self.position.piece_on(prev_sq),
@@ -1069,9 +1076,10 @@ impl Thread {
         };
         get_stack_mut(stack, 1).ply = get_stack(stack, 0).ply + 1;
         get_stack_mut(stack, 0).current_move = None;
-        get_stack_mut(stack, 0).continuation_history = self.continuation_history.sentinel();
+        get_stack_mut(stack, 0).continuation_history = self.continuation_history[0].sentinel();
         let mut best_move: Option<Move> = None;
         let in_check = self.position.in_check();
+        let prior_capture = self.position.captured_piece();
         let mut move_count = 0;
 
         // We don't have to check repetition.
@@ -1234,8 +1242,8 @@ impl Thread {
             }
 
             get_stack_mut(stack, 0).current_move = Some(m);
-            get_stack_mut(stack, 0).continuation_history = self
-                .continuation_history
+            get_stack_mut(stack, 0).continuation_history = self.continuation_history
+                [(prior_capture != Piece::EMPTY) as usize]
                 .get_mut(m.piece_moved_after_move(), m.to());
 
             self.position.do_move(m, gives_check);
@@ -1472,7 +1480,7 @@ impl ThreadPool {
                     counter_moves: CounterMoveHistory::new(),
                     main_history: ButterflyHistory::new(),
                     capture_history: CapturePieceToHistory::new(),
-                    continuation_history: ContinuationHistory::new(),
+                    continuation_history: [ContinuationHistory::new(), ContinuationHistory::new()],
                     limits: self.limits.clone(),
                     tt,
                     timeman: self.timeman.clone(),
@@ -1719,9 +1727,8 @@ impl Drop for ThreadPool {
 
 #[test]
 fn test_start_thinking() {
-    const STACK_SIZE: usize = 128 * 1024 * 1024;
     std::thread::Builder::new()
-        .stack_size(STACK_SIZE)
+        .stack_size(crate::stack_size::STACK_SIZE)
         .spawn(|| {
             let mut thread_pool = ThreadPool::new();
             let usi_options = UsiOptions::new();

@@ -376,10 +376,10 @@ fn score_quiets(
         let piece_moved = m.piece_moved_after_move();
         let side_to_move = pos.side_to_move();
         ext_move.score = unsafe { (*main_history).get(side_to_move, m) }
-            + unsafe { (*continuation_history[0]).get(to, piece_moved) }
-            + unsafe { (*continuation_history[1]).get(to, piece_moved) }
-            + unsafe { (*continuation_history[3]).get(to, piece_moved) }
-            + unsafe { (*continuation_history[5]).get(to, piece_moved) } / 2
+            + 2 * unsafe { (*continuation_history[0]).get(to, piece_moved) }
+            + 2 * unsafe { (*continuation_history[1]).get(to, piece_moved) }
+            + 2 * unsafe { (*continuation_history[3]).get(to, piece_moved) }
+            + unsafe { (*continuation_history[5]).get(to, piece_moved) }
     }
 }
 
@@ -512,7 +512,7 @@ impl<'a> MovePickerForMainSearch<'a> {
                     );
                     partial_insertion_sort(
                         self.move_list.slice_mut(self.cur),
-                        -4000 * self.depth.0 / Depth::ONE_PLY.0,
+                        -3000 * self.depth.0 / Depth::ONE_PLY.0,
                     );
                     self.stage = self.stage.next_variant().unwrap();
                 }
