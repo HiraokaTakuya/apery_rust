@@ -2822,9 +2822,8 @@ fn test_state_info() {
 
 #[test]
 fn test_position_see_ge() {
-    const STACK_SIZE: usize = 128 * 1024 * 1024;
     std::thread::Builder::new()
-        .stack_size(STACK_SIZE)
+        .stack_size(crate::stack_size::STACK_SIZE)
         .spawn(|| {
             let sfen = "k8/5+R3/3b1l3/4s4/6g1+r/4GP3/5LN2/9/K4L3 b - 1";
             let pos = Position::new_from_sfen(sfen).unwrap();
@@ -2955,9 +2954,8 @@ fn test_huffman_code() {
 
 #[test]
 fn test_is_entering_king_win() {
-    const STACK_SIZE: usize = 128 * 1024 * 1024;
     std::thread::Builder::new()
-        .stack_size(STACK_SIZE)
+        .stack_size(crate::stack_size::STACK_SIZE)
         .spawn(|| {
             let pos = Position::new_from_sfen("1p7/KRRBBPPPP/NN7/9/9/9/9/9/8k b 2P 1").unwrap();
             assert!(pos.is_entering_king_win());
@@ -3040,9 +3038,8 @@ fn test_pseudo_legal() {
 
 #[test]
 fn test_is_repetition() {
-    const STACK_SIZE: usize = 128 * 1024 * 1024;
     std::thread::Builder::new()
-        .stack_size(STACK_SIZE)
+        .stack_size(crate::stack_size::STACK_SIZE)
         .spawn(|| {
             let sfen = "8k/9/9/9/9/9/9/9/8K b R2P 1";
             let moves = [
@@ -3073,9 +3070,8 @@ fn test_is_repetition() {
 
 #[test]
 fn test_mate_move_in_1ply() {
-    const STACK_SIZE: usize = 128 * 1024 * 1024;
     std::thread::Builder::new()
-        .stack_size(STACK_SIZE)
+        .stack_size(crate::stack_size::STACK_SIZE)
         .spawn(|| {
             let sfen = "8k/9/8P/9/9/9/9/9/8K b G 1";
             let pos = Position::new_from_sfen(sfen).unwrap();
@@ -3238,9 +3234,8 @@ fn test_mate_move_in_1ply() {
 
 #[test]
 fn test_effect_bb_of_checker_where_king_cannot_escape() {
-    const STACK_SIZE: usize = 128 * 1024 * 1024;
     std::thread::Builder::new()
-        .stack_size(STACK_SIZE)
+        .stack_size(crate::stack_size::STACK_SIZE)
         .spawn(|| {
             let sfen = "4k4/4l4/9/9/4K4/9/9/9/9 b - 1";
             let pos = Position::new_from_sfen(sfen).unwrap();

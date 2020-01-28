@@ -1139,9 +1139,8 @@ fn test_block_bits() {
 
 #[test]
 fn test_bishop_magic() {
-    const STACK_SIZE: usize = 128 * 1024 * 1024;
     std::thread::Builder::new()
-        .stack_size(STACK_SIZE)
+        .stack_size(crate::stack_size::STACK_SIZE)
         .spawn(|| {
             let mut occupied = Bitboard::ZERO;
             occupied.set(Square::SQ66);
@@ -1175,9 +1174,8 @@ fn test_rook_magic() {
 
 #[test]
 fn test_lance_attack() {
-    const STACK_SIZE: usize = 128 * 1024 * 1024;
     std::thread::Builder::new()
-        .stack_size(STACK_SIZE)
+        .stack_size(crate::stack_size::STACK_SIZE)
         .spawn(|| {
             let mut occupied = Bitboard::ZERO;
             occupied.set(Square::SQ52);
@@ -1206,9 +1204,8 @@ fn test_lance_attack() {
 
 #[test]
 fn test_king_attack() {
-    const STACK_SIZE: usize = 128 * 1024 * 1024;
     std::thread::Builder::new()
-        .stack_size(STACK_SIZE)
+        .stack_size(crate::stack_size::STACK_SIZE)
         .spawn(|| {
             let mut bb = Bitboard::ZERO;
             bb.set(Square::SQ12);
@@ -1234,9 +1231,8 @@ fn test_king_attack() {
 
 #[test]
 fn test_piece_attack() {
-    const STACK_SIZE: usize = 128 * 1024 * 1024;
     std::thread::Builder::new()
-        .stack_size(STACK_SIZE)
+        .stack_size(crate::stack_size::STACK_SIZE)
         .spawn(|| {
             let bb = Bitboard::ZERO;
             assert_eq!(ATTACK_TABLE.pawn.attack(Color::BLACK, Square::SQ11), bb);
@@ -1316,9 +1312,8 @@ fn test_in_front_mask() {
 
 #[test]
 fn test_between_mask() {
-    const STACK_SIZE: usize = 128 * 1024 * 1024;
     std::thread::Builder::new()
-        .stack_size(STACK_SIZE)
+        .stack_size(crate::stack_size::STACK_SIZE)
         .spawn(|| {
             for sq0 in Square::ALL.iter() {
                 for sq1 in Square::ALL.iter() {
@@ -1349,9 +1344,8 @@ fn test_between_mask() {
 
 #[test]
 fn test_proximity_check_mask() {
-    const STACK_SIZE: usize = 128 * 1024 * 1024;
     std::thread::Builder::new()
-        .stack_size(STACK_SIZE)
+        .stack_size(crate::stack_size::STACK_SIZE)
         .spawn(|| {
             let check_candidates = Bitboard::proximity_check_mask(Piece::B_PAWN, Square::SQ53);
             assert_eq!(check_candidates.count_ones(), 3);

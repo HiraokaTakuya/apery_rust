@@ -57,9 +57,8 @@ impl Book {
 
 #[test]
 fn test_book() {
-    const STACK_SIZE: usize = 128 * 1024 * 1024;
     std::thread::Builder::new()
-        .stack_size(STACK_SIZE)
+        .stack_size(crate::stack_size::STACK_SIZE)
         .spawn(|| {
             let sfen = "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1";
             let mut pos = Position::new_from_sfen(sfen).unwrap();
@@ -125,9 +124,8 @@ fn test_book() {
 
 #[test]
 fn test_book_probe() {
-    const STACK_SIZE: usize = 128 * 1024 * 1024;
     std::thread::Builder::new()
-        .stack_size(STACK_SIZE)
+        .stack_size(crate::stack_size::STACK_SIZE)
         .spawn(|| {
             let sfen = "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1";
             let pos = Position::new_from_sfen(sfen).unwrap();
@@ -190,9 +188,8 @@ fn test_book_probe() {
 
 #[test]
 fn test_book_from_file() {
-    const STACK_SIZE: usize = 128 * 1024 * 1024;
     std::thread::Builder::new()
-        .stack_size(STACK_SIZE)
+        .stack_size(crate::stack_size::STACK_SIZE)
         .spawn(|| {
             let path = std::path::Path::new("test/book.json");
             let book = Book::from_file(path).unwrap();

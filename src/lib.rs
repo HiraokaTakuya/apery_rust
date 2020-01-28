@@ -30,6 +30,7 @@ mod piecevalue;
 mod position;
 mod search;
 mod sfen;
+pub mod stack_size;
 mod thread;
 mod timeman;
 mod tt;

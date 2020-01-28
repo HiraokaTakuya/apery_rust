@@ -267,10 +267,9 @@ pub fn generate_teachers(args: &[&str]) {
                 writer.lock().unwrap().write(&hcpes);
             }
         };
-        const STACK_SIZE: usize = 128 * 1024 * 1024;
         v.push(
             std::thread::Builder::new()
-                .stack_size(STACK_SIZE)
+                .stack_size(crate::stack_size::STACK_SIZE)
                 .spawn(worker)
                 .unwrap(),
         );
