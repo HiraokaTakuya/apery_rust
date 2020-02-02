@@ -501,19 +501,21 @@ impl<'a> MovePickerForMainSearch<'a> {
                     self.stage = self.stage.next_variant().unwrap();
                 }
                 StagesForMainSearch::QuietInit => {
-                    self.cur = self.end_bad_captures;
-                    self.move_list
-                        .generate::<QuietsWithoutPawnPromotionsType>(pos, self.cur);
-                    score_quiets(
-                        self.move_list.slice_mut(self.cur),
-                        pos,
-                        self.main_history,
-                        self.continuation_history,
-                    );
-                    partial_insertion_sort(
-                        self.move_list.slice_mut(self.cur),
-                        -3000 * self.depth.0 / Depth::ONE_PLY.0,
-                    );
+                    if !skip_quiets {
+                        self.cur = self.end_bad_captures;
+                        self.move_list
+                            .generate::<QuietsWithoutPawnPromotionsType>(pos, self.cur);
+                        score_quiets(
+                            self.move_list.slice_mut(self.cur),
+                            pos,
+                            self.main_history,
+                            self.continuation_history,
+                        );
+                        partial_insertion_sort(
+                            self.move_list.slice_mut(self.cur),
+                            -3000 * self.depth.0 / Depth::ONE_PLY.0,
+                        );
+                    }
                     self.stage = self.stage.next_variant().unwrap();
                 }
                 StagesForMainSearch::Quiet => {
