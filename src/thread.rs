@@ -502,6 +502,7 @@ impl Thread {
         let improving;
         // Step 6
         if in_check {
+            eval = pure_static_eval;
             get_stack_mut(stack, 0).static_eval = pure_static_eval;
             improving = false;
         } else {
@@ -785,8 +786,8 @@ impl Thread {
                     {
                         singular_lmr += 1;
                     }
-                } else if cut_node && singular_beta > beta {
-                    return beta;
+                } else if eval >= beta && singular_beta >= beta {
+                    return singular_beta;
                 }
             } else if gives_check
                 && ((!m.is_drop()
