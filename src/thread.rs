@@ -798,19 +798,19 @@ impl Thread {
                 } else if eval >= beta && singular_beta >= beta {
                     return singular_beta;
                 }
-            } else if gives_check
+            } else if (gives_check
                 && ((!m.is_drop()
                     && self
                         .position
                         .blockers_for_king(us.inverse())
                         .is_set(m.from()))
-                    || self.position.see_ge(m, Value::ZERO))
+                    || self.position.see_ge(m, Value::ZERO)))
+                // Upper and lower conditions result in same extension.
+                || (pv_node && depth.0 < 3 * Depth::ONE_PLY.0 && {
+                    self.shuffle_extensions += 1;
+                    self.shuffle_extensions < self.nodes.load(Ordering::Relaxed) / 4
+                })
             {
-                extension = Depth::ONE_PLY;
-            } else if pv_node && depth.0 < 3 * Depth::ONE_PLY.0 && {
-                self.shuffle_extensions += 1;
-                self.shuffle_extensions < self.nodes.load(Ordering::Relaxed) / 4
-            } {
                 extension = Depth::ONE_PLY;
             }
 
