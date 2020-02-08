@@ -22,7 +22,6 @@ impl StatsType {
 struct Thread {
     idx: usize,
     pv_idx: usize,
-    multi_pv: usize,
     sel_depth: i32,
     shuffle_extensions: i64,
     null_move_pruning_min_ply: i32,
@@ -106,7 +105,7 @@ impl Thread {
         for item in stack.iter_mut().take(CURRENT_STACK_INDEX) {
             item.continuation_history = self.continuation_history[0].sentinel();
         }
-        self.multi_pv = std::cmp::min(
+        let multi_pv = std::cmp::min(
             self.usi_options.get_i64(UsiOptions::MULTI_PV) as usize,
             self.root_moves.len(),
         );
@@ -138,7 +137,7 @@ impl Thread {
             }
 
             self.pv_idx = 0;
-            while self.pv_idx < self.multi_pv && !self.stop.load(Ordering::Relaxed) {
+            while self.pv_idx < multi_pv && !self.stop.load(Ordering::Relaxed) {
                 self.sel_depth = 0;
                 if self.root_depth >= Depth(5 * Depth::ONE_PLY.0) {
                     let previous_score = self.root_moves[self.pv_idx].previous_score;
@@ -159,7 +158,7 @@ impl Thread {
                         break;
                     }
                     if self.is_main()
-                        && self.multi_pv == 1
+                        && multi_pv == 1
                         && (best_value <= alpha || beta <= best_value)
                         && self.timeman.lock().unwrap().elapsed() > 3000
                         && (self.root_depth < Depth(10)
@@ -172,7 +171,7 @@ impl Thread {
                                 "{}",
                                 self.pv_info_to_usi_string(
                                     self.nodes_searched(),
-                                    self.multi_pv,
+                                    multi_pv,
                                     self.root_depth,
                                     alpha,
                                     beta,
@@ -204,7 +203,7 @@ impl Thread {
 
                 if self.is_main()
                     && (self.stop.load(Ordering::Relaxed)
-                        || self.pv_idx + 1 == self.multi_pv
+                        || self.pv_idx + 1 == multi_pv
                         || self.timeman.lock().unwrap().elapsed() > 3000)
                     && (self.root_depth < Depth(10)
                         || last_info_time.is_none()
@@ -216,7 +215,7 @@ impl Thread {
                             "{}",
                             self.pv_info_to_usi_string(
                                 self.nodes_searched(),
-                                self.multi_pv,
+                                multi_pv,
                                 self.root_depth,
                                 alpha,
                                 beta,
@@ -752,14 +751,6 @@ impl Thread {
 
             move_count += 1;
             get_stack_mut(stack, 0).move_count = move_count;
-
-            if root_node
-                && self.root_moves[self.pv_idx + 1..self.multi_pv]
-                    .iter()
-                    .any(|x| x.pv[0] == m)
-            {
-                continue;
-            }
 
             let mut extension = Depth::ZERO;
             let is_capture_or_pawn_promotion = m.is_capture_or_pawn_promotion(&self.position);
@@ -1486,7 +1477,6 @@ impl ThreadPool {
                 Arc::new(Mutex::new(Thread {
                     idx: i,
                     pv_idx: 0,
-                    multi_pv: 1,
                     sel_depth: 0,
                     shuffle_extensions: 0,
                     null_move_pruning_min_ply: 0,
