@@ -10,8 +10,90 @@ use crate::timeman::*;
 use crate::tt::*;
 use crate::types::*;
 use crate::usioption::*;
-use std::sync::atomic::{AtomicBool, AtomicI64, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicI64, AtomicPtr, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
+
+struct Breadcrumb {
+    thread: AtomicPtr<*mut Thread>,
+    key: AtomicU64,
+}
+
+pub struct Breadcrumbs {
+    value: Vec<Breadcrumb>,
+}
+
+impl Breadcrumbs {
+    pub fn new() -> Self {
+        let len = 1024;
+        let mut value = Vec::with_capacity(len);
+        for _ in 0..len {
+            value.push(Breadcrumb {
+                thread: AtomicPtr::new(std::ptr::null_mut()),
+                key: AtomicU64::new(0),
+            });
+        }
+        Self { value }
+    }
+    fn get_mut(&mut self, key: Key) -> &mut Breadcrumb {
+        let mask = self.value.len() - 1;
+        let index = key.0 as usize & mask;
+        unsafe { self.value.get_unchecked_mut(index) }
+    }
+}
+
+struct ThreadHolding {
+    location: *mut Breadcrumb,
+    other_thread: bool,
+    owning: bool,
+}
+
+impl ThreadHolding {
+    fn new(this_thread: &mut Thread, pos_key: Key, ply: i32) -> Self {
+        unsafe {
+            let location: *mut Breadcrumb = if ply < 8 {
+                (*this_thread.breadcrumbs).get_mut(pos_key) as *mut Breadcrumb
+            } else {
+                std::ptr::null_mut()
+            };
+            let mut other_thread = false;
+            let mut owning = false;
+            if !location.is_null() {
+                let tmp = (*location).thread.load(Ordering::Relaxed);
+                if tmp.is_null() {
+                    (*location)
+                        .thread
+                        .store(&mut (this_thread as *mut Thread), Ordering::Relaxed);
+                    (*location).key.store(pos_key.0, Ordering::Relaxed);
+                    owning = true;
+                } else if tmp != &mut (this_thread as *mut Thread)
+                    && (*location).key.load(Ordering::Relaxed) == pos_key.0
+                {
+                    other_thread = true;
+                }
+            }
+            Self {
+                location,
+                other_thread,
+                owning,
+            }
+        }
+    }
+    fn marked(&self) -> bool {
+        self.other_thread
+    }
+}
+
+impl Drop for ThreadHolding {
+    fn drop(&mut self) {
+        if self.owning {
+            unsafe {
+                (*self.location)
+                    .thread
+                    .store(std::ptr::null_mut(), Ordering::Relaxed);
+            }
+        }
+    }
+}
 
 pub struct StatsType;
 
@@ -38,6 +120,7 @@ struct Thread {
     tt: *mut TranspositionTable,
     timeman: Arc<Mutex<TimeManagement>>, // shold I use pointer for speedup?
     ehash: *mut EvalHash,
+    breadcrumbs: *mut Breadcrumbs,
     usi_options: UsiOptions,
     best_move_changes: Arc<AtomicU64>,
     best_move_changess: Vec<Arc<AtomicU64>>,
@@ -725,6 +808,8 @@ impl Thread {
                 .is_capture_or_pawn_promotion(&self.position);
         let mut singular_lmr = 0;
 
+        let th = ThreadHolding::new(self, key, get_stack(stack, 0).ply);
+
         // Step 12
         let mut move_count = 0;
         const CAPTURES_SEARCHED_NUM: usize = 32;
@@ -881,6 +966,10 @@ impl Thread {
                         <= alpha)
             {
                 let mut r = reduction(improving, depth, move_count);
+
+                if th.marked() {
+                    r += Depth::ONE_PLY;
+                }
 
                 r -= Depth(singular_lmr * Depth::ONE_PLY.0);
 
@@ -1459,7 +1548,13 @@ impl ThreadPool {
         *main_thread.previous_score.lock().unwrap() = Value::INFINITE;
         main_thread.previous_time_reduction = 1.0;
     }
-    pub fn set(&mut self, requested: usize, tt: &mut TranspositionTable, ehash: &mut EvalHash) {
+    pub fn set(
+        &mut self,
+        requested: usize,
+        tt: &mut TranspositionTable,
+        ehash: &mut EvalHash,
+        breadcrumbs: &mut Breadcrumbs,
+    ) {
         if let Some(handle) = self.handle.take() {
             handle.join().unwrap();
             self.thread_pool_base.lock().unwrap().threads.clear();
@@ -1493,6 +1588,7 @@ impl ThreadPool {
                     tt,
                     timeman: self.timeman.clone(),
                     ehash,
+                    breadcrumbs,
                     usi_options: UsiOptions::new(),
                     best_move_changes: self.best_move_changess[i].clone(),
                     best_move_changess: self.best_move_changess.clone(),
@@ -1742,6 +1838,7 @@ fn test_start_thinking() {
             let usi_options = UsiOptions::new();
             let mut tt = TranspositionTable::new();
             let mut ehash = EvalHash::new();
+            let mut breadcrumbs = Breadcrumbs::new();
             tt.resize(16, &mut thread_pool);
             ehash.resize(16, &mut thread_pool);
             match load_evaluate_files(&usi_options.get_string(UsiOptions::EVAL_DIR)) {
@@ -1752,7 +1849,7 @@ fn test_start_thinking() {
                         limits.start_time = Some(std::time::Instant::now());
                         limits
                     };
-                    thread_pool.set(3, &mut tt, &mut ehash);
+                    thread_pool.set(3, &mut tt, &mut ehash, &mut breadcrumbs);
                     let ponder_mode = false;
                     let hide_all_output = false;
                     thread_pool.start_thinking(

@@ -93,7 +93,9 @@ pub fn generate_teachers(args: &[&str]) {
     if args.len() != 5 {
         eprintln!("Invalid generate_teachers command.");
         eprintln!("expected:");
-        eprintln!(r#"generate_teachers <output_file_path> <root_positions_file_path> <search_depth> <num_threads> <num_teachers>"#);
+        eprintln!(
+            r#"generate_teachers <output_file_path> <root_positions_file_path> <search_depth> <num_threads> <num_teachers>"#
+        );
         return;
     }
     let output = args[0];
@@ -148,7 +150,8 @@ pub fn generate_teachers(args: &[&str]) {
             let mut thread_pool = ThreadPool::new();
             let mut tt = TranspositionTable::new();
             let mut ehash = EvalHash::new(); // todo: All threads use same ehash.
-            thread_pool.set(1, &mut tt, &mut ehash);
+            let mut breadcrumbs = Breadcrumbs::new();
+            thread_pool.set(1, &mut tt, &mut ehash, &mut breadcrumbs);
             let mut is_ready = false;
             let usi_options = {
                 let mut u = UsiOptions::new();
@@ -167,6 +170,7 @@ pub fn generate_teachers(args: &[&str]) {
                         &mut thread_pool,
                         &mut tt,
                         &mut ehash,
+                        &mut breadcrumbs,
                         &mut is_ready,
                     );
                 });

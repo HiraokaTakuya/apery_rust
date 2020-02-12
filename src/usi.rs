@@ -212,6 +212,7 @@ pub fn setoption(
     thread_pool: &mut ThreadPool,
     tt: &mut TranspositionTable,
     ehash: &mut EvalHash,
+    breadcrumbs: &mut Breadcrumbs,
     is_ready: &mut bool,
 ) {
     if !args.is_empty() && args[0] != "name" {
@@ -230,7 +231,7 @@ pub fn setoption(
             }
             let name = args[1];
             let value = args[3];
-            usi_options.set(name, value, thread_pool, tt, ehash, is_ready);
+            usi_options.set(name, value, thread_pool, tt, ehash, breadcrumbs, is_ready);
         }
         _ => {
             let mut s = "Error: invalid number of sections.".to_string();
@@ -488,8 +489,9 @@ fn csa_record_to_sfen(csa: &[u8]) -> Result<String, String> {
 pub fn cmd_loop() {
     let mut tt = TranspositionTable::new();
     let mut ehash = EvalHash::new();
+    let mut breadcrumbs = Breadcrumbs::new();
     let mut thread_pool = ThreadPool::new();
-    thread_pool.set(1, &mut tt, &mut ehash);
+    thread_pool.set(1, &mut tt, &mut ehash, &mut breadcrumbs);
     let mut usi_options = UsiOptions::new();
     let mut pos = Position::new();
     let mut is_ready = false;
@@ -578,6 +580,7 @@ pub fn cmd_loop() {
                 &mut thread_pool,
                 &mut tt,
                 &mut ehash,
+                &mut breadcrumbs,
                 &mut is_ready,
             ),
             "usi" => {

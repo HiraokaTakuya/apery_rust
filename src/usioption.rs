@@ -133,6 +133,7 @@ impl UsiOptions {
         thread_pool: &mut ThreadPool,
         tt: &mut TranspositionTable,
         ehash: &mut EvalHash,
+        breadcrumbs: &mut Breadcrumbs,
         is_ready: &mut bool,
     ) {
         match self.v.get_mut(key) {
@@ -160,7 +161,7 @@ impl UsiOptions {
                     *current = n;
                     match key {
                         Self::EVAL_HASH => ehash.resize(n as usize, thread_pool),
-                        Self::THREADS => thread_pool.set(n as usize, tt, ehash),
+                        Self::THREADS => thread_pool.set(n as usize, tt, ehash, breadcrumbs),
                         Self::USI_HASH => tt.resize(n as usize, thread_pool),
                         _ => {}
                     }

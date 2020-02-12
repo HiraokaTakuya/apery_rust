@@ -180,7 +180,8 @@ fn test_probe() {
             let mut thread_pool = ThreadPool::new();
             let mut tt = TranspositionTable::new();
             let mut ehash = EvalHash::new();
-            thread_pool.set(1, &mut tt, &mut ehash);
+            let mut breadcrumbs = Breadcrumbs::new();
+            thread_pool.set(1, &mut tt, &mut ehash, &mut breadcrumbs);
             tt.resize(1, &mut thread_pool);
             ehash.resize(1, &mut thread_pool);
             let pv = false;
