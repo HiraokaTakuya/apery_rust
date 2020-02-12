@@ -996,7 +996,7 @@ impl Thread {
                     {
                         r += Depth::ONE_PLY;
                     }
-                    r -= Depth(get_stack(stack, 0).stat_score / 20000 * Depth::ONE_PLY.0);
+                    r -= Depth(get_stack(stack, 0).stat_score / 16384 * Depth::ONE_PLY.0);
                 }
                 let d = std::cmp::max(new_depth - std::cmp::max(r, Depth::ZERO), Depth::ONE_PLY);
                 value =
