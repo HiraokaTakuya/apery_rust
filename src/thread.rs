@@ -24,7 +24,7 @@ pub struct Breadcrumbs {
 
 impl Breadcrumbs {
     pub fn new() -> Self {
-        let len = 1024;
+        let len = 8192;
         let mut value = Vec::with_capacity(len);
         for _ in 0..len {
             value.push(Breadcrumb {
