@@ -957,7 +957,7 @@ impl Thread {
             get_stack_mut(stack, 1).static_eval_raw.set_not_evaluated();
 
             // Step 16
-            let do_full_depth_search = if depth.0 >= 3 * Depth::ONE_PLY.0
+            let (do_full_depth_search, do_lmr) = if depth.0 >= 3 * Depth::ONE_PLY.0
                 && move_count > 1 + if root_node { 3 } else { 0 }
                 && (!is_capture_or_pawn_promotion
                     || move_count_pruning
@@ -1001,9 +1001,9 @@ impl Thread {
                 let d = std::cmp::max(new_depth - std::cmp::max(r, Depth::ZERO), Depth::ONE_PLY);
                 value =
                     -self.search::<NonPv>(&mut stack[1..], -(alpha + Value(1)), -alpha, d, true);
-                value > alpha && d != new_depth
+                (value > alpha && d != new_depth, true)
             } else {
-                !pv_node || move_count > 1
+                (!pv_node || move_count > 1, false)
             };
 
             // Step 17
@@ -1015,6 +1015,14 @@ impl Thread {
                     new_depth,
                     !cut_node,
                 );
+
+                if do_lmr && !is_capture_or_pawn_promotion {
+                    let mut bonus = stat_bonus(new_depth) / 2;
+                    if value <= alpha {
+                        bonus = -bonus;
+                    }
+                    update_continuation_histories(stack, piece_moved_after_move, to, bonus);
+                }
             }
             if pv_node && (move_count == 1 || (value > alpha && (root_node || value < beta))) {
                 value = -self.search::<Pv>(&mut stack[1..], -beta, -alpha, new_depth, false);
