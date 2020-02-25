@@ -350,7 +350,7 @@ fn score_captures(
         let to = m.to();
         let pc_to = pos.piece_on(to);
         let pt_to = PieceType::new(pc_to);
-        ext_move.score = capture_piece_type_value(pt_to).0 * 6
+        ext_move.score = capture_piece_type_value(pt_to).0
             + unsafe { (*capture_history).get(m.piece_moved_after_move(), to, pt_to) };
     }
 }
@@ -840,7 +840,7 @@ fn test_move_list_select_best() {
         &pos,
         None,
     );
-    assert_eq!(m.unwrap().to_csa_string(&pos), "9493RY");
+    assert_eq!(m.unwrap().to_csa_string(&pos), "8483TO");
 }
 
 #[test]
