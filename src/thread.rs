@@ -989,6 +989,14 @@ impl Thread {
                         + unsafe { (*cont_hists[3]).get(to, piece_moved_after_move) }
                         - 4000;
 
+                    if get_stack(stack, 0).stat_score < 0
+                        && unsafe { (*cont_hists[0]).get(to, piece_moved_after_move) } >= 0
+                        && unsafe { (*cont_hists[1]).get(to, piece_moved_after_move) } >= 0
+                        && self.main_history.get(us, m) >= 0
+                    {
+                        get_stack_mut(stack, 0).stat_score = 0;
+                    }
+
                     if get_stack(stack, 0).stat_score >= 0 && get_stack(stack, -1).stat_score < 0 {
                         r -= Depth::ONE_PLY;
                     } else if get_stack(stack, -1).stat_score >= 0
