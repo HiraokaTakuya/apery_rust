@@ -925,10 +925,10 @@ impl Thread {
                     {
                         continue;
                     }
-                    if !self
-                        .position
-                        .see_ge(m, Value(-29 * lmr_depth.0 * lmr_depth.0))
-                    {
+                    if !self.position.see_ge(
+                        m,
+                        Value(-(31 - std::cmp::min(lmr_depth.0, 18)) * lmr_depth.0 * lmr_depth.0),
+                    ) {
                         continue;
                     }
                 } else if (!gives_check || extension == Depth::ZERO)
