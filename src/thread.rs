@@ -1017,10 +1017,11 @@ impl Thread {
                 );
 
                 if do_lmr && !is_capture_or_pawn_promotion {
-                    let mut bonus = stat_bonus(new_depth) / 2;
-                    if value <= alpha {
-                        bonus = -bonus;
-                    }
+                    let bonus = if value > alpha {
+                        stat_bonus(new_depth)
+                    } else {
+                        -stat_bonus(new_depth)
+                    };
                     update_continuation_histories(stack, piece_moved_after_move, to, bonus);
                 }
             }
