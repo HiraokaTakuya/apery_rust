@@ -348,7 +348,7 @@ impl Thread {
                     } else {
                         1.0
                     };
-                let reduction = self.previous_time_reduction.powf(0.528) / time_reduction;
+                let reduction = (1.25 + self.previous_time_reduction) / (2.25 * time_reduction);
                 for best_move_changes in self.best_move_changess.iter() {
                     total_best_move_changes += best_move_changes.load(Ordering::Relaxed) as f64;
                     best_move_changes.store(0, Ordering::Relaxed);
