@@ -222,9 +222,9 @@ impl Thread {
             self.pv_idx = 0;
             while self.pv_idx < multi_pv && !self.stop.load(Ordering::Relaxed) {
                 self.sel_depth = 0;
-                if self.root_depth >= Depth(5 * Depth::ONE_PLY.0) {
+                if self.root_depth >= Depth(4 * Depth::ONE_PLY.0) {
                     let previous_score = self.root_moves[self.pv_idx].previous_score;
-                    delta = Value(20);
+                    delta = Value(23);
                     alpha = std::cmp::max(previous_score - delta, -Value::INFINITE);
                     beta = std::cmp::min(previous_score + delta, Value::INFINITE);
                 }
@@ -338,17 +338,17 @@ impl Thread {
                 && !self.stop.load(Ordering::Relaxed)
                 && !self.stop_on_ponderhit.load(Ordering::Relaxed)
             {
-                let falling_eval = 314.0
-                    + 9.0 * f64::from((*self.previous_score.lock().unwrap() - best_value).0)
-                        / 581.0;
+                let falling_eval = 354.0
+                    + 10.0 * f64::from((*self.previous_score.lock().unwrap() - best_value).0)
+                        / 692.0;
                 let falling_eval = num::clamp(falling_eval, 0.5, 1.5);
                 time_reduction =
                     if last_best_move_depth.0 + 10 * Depth::ONE_PLY.0 < self.completed_depth.0 {
-                        1.95
+                        1.97
                     } else {
-                        1.0
+                        0.98
                     };
-                let reduction = (1.25 + self.previous_time_reduction) / (2.25 * time_reduction);
+                let reduction = (1.36 + self.previous_time_reduction) / (2.29 * time_reduction);
                 for best_move_changes in self.best_move_changess.iter() {
                     total_best_move_changes += best_move_changes.load(Ordering::Relaxed) as f64;
                     best_move_changes.store(0, Ordering::Relaxed);
@@ -645,18 +645,18 @@ impl Thread {
             // Step 9
             if !pv_node
                 && get_stack(stack, -1).current_move.is_some()
-                && get_stack(stack, -1).stat_score < 23200
+                && get_stack(stack, -1).stat_score < 22661
                 && eval >= beta
                 && get_stack(stack, 0).static_eval.0
-                    >= beta.0 - 36 * depth.0 / Depth::ONE_PLY.0 + 225
+                    >= beta.0 - 33 * depth.0 / Depth::ONE_PLY.0 + 299
                 && excluded_move.is_none()
                 && (get_stack(stack, 0).ply >= self.null_move_pruning_min_ply
                     || us != self.null_move_pruning_color)
             {
                 debug_assert!(eval - beta >= Value(0));
                 let r = Depth(
-                    ((823 + 67 * depth.0 / Depth::ONE_PLY.0) / 256
-                        + std::cmp::min((eval.0 - beta.0) / 200, 3))
+                    ((835 + 70 * depth.0 / Depth::ONE_PLY.0) / 256
+                        + std::cmp::min((eval.0 - beta.0) / 185, 3))
                         * Depth::ONE_PLY.0,
                 );
                 get_stack_mut(stack, 0).current_move = Some(Move::NULL);
@@ -680,7 +680,7 @@ impl Thread {
                     }
 
                     if self.null_move_pruning_min_ply != 0
-                        || (beta.0.abs() < Value::KNOWN_WIN.0 && depth.0 < 12 * Depth::ONE_PLY.0)
+                        || (beta.0.abs() < Value::KNOWN_WIN.0 && depth.0 < 13 * Depth::ONE_PLY.0)
                     {
                         return null_value;
                     }
@@ -705,7 +705,7 @@ impl Thread {
                 && beta.0.abs() < Value::MATE_IN_MAX_PLY.0
             {
                 let raised_beta = std::cmp::min(
-                    Value(beta.0 + 216 - 48 * i32::from(improving)),
+                    Value(beta.0 + 191 - 46 * i32::from(improving)),
                     Value::INFINITE,
                 );
                 let mut mp = MovePickerForProbCut::new(
@@ -755,7 +755,7 @@ impl Thread {
             }
 
             // Step 11
-            if depth.0 >= 8 * Depth::ONE_PLY.0 && tt_move.is_none() {
+            if depth.0 >= 7 * Depth::ONE_PLY.0 && tt_move.is_none() {
                 self.search::<IsPv>(
                     stack,
                     alpha,
@@ -843,7 +843,7 @@ impl Thread {
             let gives_check = self.position.gives_check(m);
 
             // Step 13
-            if depth.0 >= 8 * Depth::ONE_PLY.0
+            if depth.0 >= 6 * Depth::ONE_PLY.0
                 && m == tt_move.unwrap_unchecked()
                 && !root_node
                 && excluded_move.is_none()
@@ -867,7 +867,7 @@ impl Thread {
                     extension = Depth::ONE_PLY;
                     singular_lmr += 1;
                     if value
-                        < singular_beta - Value(std::cmp::min(3 * depth.0 / Depth::ONE_PLY.0, 39))
+                        < singular_beta - Value(std::cmp::min(4 * depth.0 / Depth::ONE_PLY.0, 36))
                     {
                         singular_lmr += 1;
                     }
@@ -919,9 +919,9 @@ impl Thread {
                     {
                         continue;
                     }
-                    if lmr_depth < Depth(7)
+                    if lmr_depth < Depth(6)
                         && !in_check
-                        && get_stack(stack, 0).static_eval.0 + 256 + 200 * lmr_depth.0 <= alpha.0
+                        && get_stack(stack, 0).static_eval.0 + 250 + 211 * lmr_depth.0 <= alpha.0
                     {
                         continue;
                     }
@@ -932,10 +932,9 @@ impl Thread {
                         continue;
                     }
                 } else if (!gives_check || extension == Depth::ZERO)
-                    && !self.position.see_ge(
-                        m,
-                        Value(-piece_type_value(PieceType::PAWN).0 * (depth.0 / Depth::ONE_PLY.0)),
-                    )
+                    && !self
+                        .position
+                        .see_ge(m, Value(-199 * (depth.0 / Depth::ONE_PLY.0)))
                 {
                     continue;
                 }
@@ -987,7 +986,7 @@ impl Thread {
                         + unsafe { (*cont_hists[0]).get(to, piece_moved_after_move) }
                         + unsafe { (*cont_hists[1]).get(to, piece_moved_after_move) }
                         + unsafe { (*cont_hists[3]).get(to, piece_moved_after_move) }
-                        - 4000;
+                        - 4729;
 
                     if get_stack(stack, 0).stat_score < 0
                         && unsafe { (*cont_hists[0]).get(to, piece_moved_after_move) } >= 0
@@ -997,10 +996,12 @@ impl Thread {
                         get_stack_mut(stack, 0).stat_score = 0;
                     }
 
-                    if get_stack(stack, 0).stat_score >= 0 && get_stack(stack, -1).stat_score < 0 {
+                    if get_stack(stack, 0).stat_score >= -99
+                        && get_stack(stack, -1).stat_score < -116
+                    {
                         r -= Depth::ONE_PLY;
-                    } else if get_stack(stack, -1).stat_score >= 0
-                        && get_stack(stack, 0).stat_score < 0
+                    } else if get_stack(stack, -1).stat_score >= -117
+                        && get_stack(stack, 0).stat_score < -144
                     {
                         r += Depth::ONE_PLY;
                     }
@@ -1290,7 +1291,7 @@ impl Thread {
                 alpha = best_value;
             }
 
-            futility_base = best_value + Value(128);
+            futility_base = best_value + Value(153);
         }
 
         let cont_hists = [

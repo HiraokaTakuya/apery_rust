@@ -190,9 +190,9 @@ pub const TEMPO: Value = Value(28);
 pub fn stat_bonus(depth: Depth) -> i32 {
     let d = depth.0 / Depth::ONE_PLY.0;
     if d > 17 {
-        0
+        -8
     } else {
-        29 * d * d + 138 * d - 134
+        22 * d * d + 151 * d - 140
     }
 }
 
@@ -207,7 +207,7 @@ pub fn update_continuation_histories(stack: &mut [Stack], pc: Piece, to: Square,
     }
 }
 
-pub const RAZOR_MARGIN: Value = Value(600);
+pub const RAZOR_MARGIN: Value = Value(661);
 
 pub fn futility_margin(depth: Depth) -> Value {
     Value(75 * depth.0 / Depth::ONE_PLY.0)
@@ -221,7 +221,7 @@ lazy_static! {
     static ref REDUCTIONS: [i32; ExtMove::MAX_LEGAL_MOVES] = {
         let mut reductions: [i32; ExtMove::MAX_LEGAL_MOVES] = [0; ExtMove::MAX_LEGAL_MOVES];
         for (i, reduction) in reductions.iter_mut().enumerate().skip(1) {
-            *reduction = (22.9 * f64::from(i as i32).ln()) as i32;
+            *reduction = (23.4 * f64::from(i as i32).ln()) as i32;
         }
         reductions
     };
@@ -232,7 +232,7 @@ pub fn reduction(improving: bool, depth: Depth, move_count: i32) -> Depth {
         *REDUCTIONS.get_unchecked((depth.0 / Depth::ONE_PLY.0) as usize)
             * *REDUCTIONS.get_unchecked(move_count as usize)
     };
-    Depth(((r + 512) / 1024 + i32::from(!improving && r > 1024)) * Depth::ONE_PLY.0)
+    Depth(((r + 520) / 1024 + i32::from(!improving && r > 999)) * Depth::ONE_PLY.0)
 }
 
 pub const SKIP_SIZE: [i32; 20] = [1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4];
