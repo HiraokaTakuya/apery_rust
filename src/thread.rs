@@ -962,7 +962,8 @@ impl Thread {
                     || move_count_pruning
                     || get_stack(stack, 0).static_eval
                         + capture_piece_value(self.position.captured_piece())
-                        <= alpha)
+                        <= alpha
+                    || cut_node)
             {
                 let mut r = reduction(improving, depth, move_count);
 
