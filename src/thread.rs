@@ -1776,13 +1776,19 @@ impl ThreadPool {
                     .iter()
                     // get first "max" score.
                     .min_by(|x, y| {
-                        let x_score = *votes
-                            .get(&x.lock().unwrap().root_moves[0].pv[0].0.get())
-                            .unwrap();
-                        let y_score = *votes
-                            .get(&y.lock().unwrap().root_moves[0].pv[0].0.get())
-                            .unwrap();
-                        y_score.cmp(&x_score)
+                        let x_score = x.lock().unwrap().root_moves[0].score;
+                        let y_score = y.lock().unwrap().root_moves[0].score;
+                        if x_score >= Value::MATE_IN_MAX_PLY || y_score >= Value::MATE_IN_MAX_PLY {
+                            y_score.cmp(&x_score)
+                        } else {
+                            let x_vote_score = *votes
+                                .get(&x.lock().unwrap().root_moves[0].pv[0].0.get())
+                                .unwrap();
+                            let y_vote_score = *votes
+                                .get(&y.lock().unwrap().root_moves[0].pv[0].0.get())
+                                .unwrap();
+                            y_vote_score.cmp(&x_vote_score)
+                        }
                     })
                     .unwrap()
                     .clone()
