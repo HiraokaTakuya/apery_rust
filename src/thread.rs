@@ -647,8 +647,9 @@ impl Thread {
                 && get_stack(stack, -1).current_move.is_some()
                 && get_stack(stack, -1).stat_score < 22661
                 && eval >= beta
+                && eval >= get_stack(stack, 0).static_eval
                 && get_stack(stack, 0).static_eval.0
-                    >= beta.0 - 33 * depth.0 / Depth::ONE_PLY.0 + 299
+                    >= beta.0 - 33 * depth.0 / Depth::ONE_PLY.0 + 299 - i32::from(improving) * 30
                 && excluded_move.is_none()
                 && (get_stack(stack, 0).ply >= self.null_move_pruning_min_ply
                     || us != self.null_move_pruning_color)
