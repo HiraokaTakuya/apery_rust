@@ -982,7 +982,7 @@ impl Thread {
                     }
                     if cut_node {
                         r += Depth(2 * Depth::ONE_PLY.0);
-                    } else if !self.position.see_ge(m, Value::ZERO) {
+                    } else if !self.position.see_ge(m.reverse(), Value::ZERO) {
                         r -= Depth(2 * Depth::ONE_PLY.0);
                     }
 

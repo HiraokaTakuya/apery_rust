@@ -170,6 +170,10 @@ impl Move {
 
         Some(m)
     }
+    pub fn reverse(self) -> Move {
+        let pc = Piece(((self.0.get() & Move::MOVED_PIECE_MASK) >> Move::MOVED_PIECE_SHIFT) as i32);
+        Move::new_unpromote(self.to(), self.to(), pc)
+    }
     #[inline]
     pub fn to(self) -> Square {
         Square((self.0.get() & Move::TO_MASK) as i32)
