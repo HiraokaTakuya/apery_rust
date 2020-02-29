@@ -54,6 +54,7 @@ pub struct RootMove {
     pub score: Value,
     pub previous_score: Value,
     pub sel_depth: i32,
+    pub best_move_count: usize,
     pub pv: Vec<Move>,
 }
 
@@ -82,6 +83,7 @@ impl RootMove {
             score: -Value::INFINITE,
             previous_score: -Value::INFINITE,
             sel_depth: 0,
+            best_move_count: 0,
             pv: vec![m],
         }
     }
