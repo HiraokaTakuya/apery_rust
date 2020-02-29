@@ -1484,6 +1484,10 @@ impl Thread {
         self.main_history.update(us, m, bonus);
         update_continuation_histories(&mut stack[1..], m.piece_moved_after_move(), m.to(), bonus);
 
+        if PieceType::new(m.piece_moved_after_move()) == PieceType::PAWN {
+            self.main_history.update(us, m, -bonus);
+        }
+
         let prev_move = get_stack(stack, -1).current_move;
         if prev_move.is_normal_move() {
             let prev_sq = prev_move.unwrap_unchecked().to();
