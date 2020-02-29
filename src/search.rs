@@ -198,6 +198,14 @@ pub fn stat_bonus(depth: Depth) -> i32 {
     }
 }
 
+pub fn value_draw(depth: Depth, nodes: i64) -> Value {
+    if depth.0 * 4 * Depth::ONE_PLY.0 != 0 {
+        Value::DRAW
+    } else {
+        Value::DRAW + Value(2 * (nodes as i32 & 1) - 1)
+    }
+}
+
 pub fn update_continuation_histories(stack: &mut [Stack], pc: Piece, to: Square, bonus: i32) {
     for i in [2i64, 3, 5, 7].iter() {
         let m = get_stack(stack, -i).current_move;

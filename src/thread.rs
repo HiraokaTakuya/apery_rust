@@ -425,7 +425,7 @@ impl Thread {
                         return if get_stack(stack, 0).ply >= MAX_PLY && !in_check {
                             evaluate(&mut self.position, stack, self.ehash)
                         } else {
-                            Value::DRAW
+                            value_draw(depth, self.nodes.load(Ordering::Release))
                         };
                     }
                 }
@@ -596,6 +596,9 @@ impl Thread {
                 if eval == Value::NONE {
                     eval = pure_static_eval;
                     get_stack_mut(stack, 0).static_eval = eval;
+                }
+                if eval == Value::NONE {
+                    eval = value_draw(depth, self.nodes.load(Ordering::Relaxed));
                 }
                 if tt_value != Value::NONE
                     && if tt_value > eval {
