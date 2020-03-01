@@ -96,8 +96,12 @@ impl Drop for ThreadHolding {
 }
 
 pub struct StatsType;
-
 impl StatsType {
+    pub const NUM: usize = 2;
+}
+
+pub struct InCheckType;
+impl InCheckType {
     pub const NUM: usize = 2;
 }
 
@@ -115,7 +119,7 @@ struct Thread {
     counter_moves: CounterMoveHistory,
     main_history: ButterflyHistory,
     capture_history: CapturePieceToHistory,
-    continuation_history: [ContinuationHistory; StatsType::NUM],
+    continuation_history: [[ContinuationHistory; StatsType::NUM]; InCheckType::NUM],
     limits: LimitsType, // Clone from ThreadPool for fast access.
     tt: *mut TranspositionTable,
     timeman: Arc<Mutex<TimeManagement>>, // shold I use pointer for speedup?
@@ -171,8 +175,10 @@ impl Thread {
         self.capture_history.fill(0);
 
         self.continuation_history.iter_mut().for_each(|x| {
-            x.fill(0);
-            x.v[Piece::EMPTY.0 as usize][0].fill(COUNTER_MOVE_PRUNE_THRESHOLD - 1);
+            x.iter_mut().for_each(|y| {
+                y.fill(0);
+                y.v[Piece::EMPTY.0 as usize][0].fill(COUNTER_MOVE_PRUNE_THRESHOLD - 1);
+            })
         });
     }
     fn iterative_deepening_loop(&mut self) {
@@ -187,7 +193,7 @@ impl Thread {
         let mut total_best_move_changes = 0.0f64;
         let mut last_info_time: Option<std::time::Instant> = None;
         for item in stack.iter_mut().take(CURRENT_STACK_INDEX) {
-            item.continuation_history = self.continuation_history[0].sentinel();
+            item.continuation_history = self.continuation_history[0][0].sentinel();
         }
         let multi_pv = std::cmp::min(
             self.usi_options.get_i64(UsiOptions::MULTI_PV) as usize,
@@ -667,7 +673,7 @@ impl Thread {
                 );
                 get_stack_mut(stack, 0).current_move = Some(Move::NULL);
                 get_stack_mut(stack, 0).continuation_history =
-                    self.continuation_history[0].sentinel();
+                    self.continuation_history[0][0].sentinel();
 
                 self.position.do_null_move();
                 get_stack_mut(stack, 1).static_eval_raw = get_stack(stack, 0).static_eval_raw; // key is wrong. but it's no problem.
@@ -729,6 +735,7 @@ impl Thread {
                         prob_cut_count += 1;
                         get_stack_mut(stack, 0).current_move = Some(m);
                         get_stack_mut(stack, 0).continuation_history = self.continuation_history
+                            [usize::from(in_check)]
                             [(prior_capture != Piece::EMPTY) as usize]
                             .get_mut(m.piece_moved_after_move(), m.to());
                         debug_assert!(depth.0 >= 5 * Depth::ONE_PLY.0);
@@ -954,7 +961,7 @@ impl Thread {
 
             get_stack_mut(stack, 0).current_move = Some(m);
             get_stack_mut(stack, 0).continuation_history = self.continuation_history
-                [(prior_capture != Piece::EMPTY) as usize]
+                [usize::from(in_check)][(prior_capture != Piece::EMPTY) as usize]
                 .get_mut(piece_moved_after_move, to);
 
             // Step 15
@@ -1201,7 +1208,7 @@ impl Thread {
         };
         get_stack_mut(stack, 1).ply = get_stack(stack, 0).ply + 1;
         get_stack_mut(stack, 0).current_move = None;
-        get_stack_mut(stack, 0).continuation_history = self.continuation_history[0].sentinel();
+        get_stack_mut(stack, 0).continuation_history = self.continuation_history[0][0].sentinel();
         let mut best_move: Option<Move> = None;
         let in_check = self.position.in_check();
         let prior_capture = self.position.captured_piece();
@@ -1368,7 +1375,7 @@ impl Thread {
 
             get_stack_mut(stack, 0).current_move = Some(m);
             get_stack_mut(stack, 0).continuation_history = self.continuation_history
-                [(prior_capture != Piece::EMPTY) as usize]
+                [usize::from(in_check)][(prior_capture != Piece::EMPTY) as usize]
                 .get_mut(m.piece_moved_after_move(), m.to());
 
             self.position.do_move(m, gives_check);
@@ -1629,7 +1636,10 @@ impl ThreadPool {
                     counter_moves: CounterMoveHistory::new(),
                     main_history: ButterflyHistory::new(),
                     capture_history: CapturePieceToHistory::new(),
-                    continuation_history: [ContinuationHistory::new(), ContinuationHistory::new()],
+                    continuation_history: [
+                        [ContinuationHistory::new(), ContinuationHistory::new()],
+                        [ContinuationHistory::new(), ContinuationHistory::new()],
+                    ],
                     limits: self.limits.clone(),
                     tt,
                     timeman: self.timeman.clone(),
