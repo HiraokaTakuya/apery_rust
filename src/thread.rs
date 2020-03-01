@@ -1735,143 +1735,160 @@ impl ThreadPool {
         let hide_all_output_cloned = self.hide_all_output.clone();
         let usi_options_cloned = usi_options.clone();
         let last_best_root_move_cloned = self.last_best_root_move.clone();
-        self.handle = Some(std::thread::spawn(move || {
-            let mut v = vec![];
-            for (i, thread) in thread_pool_base_cloned
-                .lock()
-                .unwrap()
-                .threads
-                .iter_mut()
-                .enumerate()
-                // i == 0 => not using a worker thread.
-                .rev()
-            {
-                let nodes_cloned = nodess_cloned[i].clone();
-                let pos = Position::new_from_position(&pos, nodes_cloned.clone());
-                nodes_cloned.store(0, Ordering::Relaxed);
-                let root_moves_cloned = root_moves.clone();
-                let thread_cloned = thread.clone();
-                let limits_cloned = limits.clone();
-                let usi_options_cloned = usi_options_cloned.clone();
-                let timeman_cloned = timeman_cloned.clone();
-                let worker = move || {
-                    let mut th = thread_cloned.lock().unwrap();
-                    th.best_move_changes.store(0, Ordering::Relaxed);
-                    th.limits = limits_cloned;
-                    th.nodes = nodes_cloned;
-                    th.root_depth = Depth::ZERO;
-                    th.root_moves = root_moves_cloned;
-                    th.position = pos;
-                    th.usi_options = usi_options_cloned;
-                    th.timeman = timeman_cloned;
-                    th.iterative_deepening_loop();
-                };
-                if i == 0 {
-                    worker(); // The main thread doesn't use std::thread::spawn().
-                } else {
-                    v.push(std::thread::spawn(worker));
-                }
-            }
-            while !stop_cloned.load(Ordering::Relaxed)
-                && (ponder_cloned.load(Ordering::Relaxed) || limits.infinite.is_some())
-            {
-                // nop
-            }
-            // main thread finished.
-            // stop the other threads.
-            stop_cloned.store(true, Ordering::Relaxed);
-            for handle in v {
-                handle.join().unwrap();
-            }
-
-            let multi_pv = std::cmp::min(
-                usi_options_cloned.get_i64(UsiOptions::MULTI_PV) as usize,
-                root_moves.len(),
-            );
-            let best_thread = if multi_pv == 1 && limits.depth.is_none() && !root_moves.is_empty() {
-                let mut votes = std::collections::BTreeMap::new();
-                let min_score: Value = thread_pool_base_cloned
-                    .lock()
-                    .unwrap()
-                    .threads
-                    .iter()
-                    .map(|x| x.lock().unwrap().root_moves[0].score)
-                    .min()
-                    .unwrap();
-
-                for th in thread_pool_base_cloned.lock().unwrap().threads.iter() {
-                    let th = th.lock().unwrap();
-                    *votes.entry(th.root_moves[0].pv[0].0.get()).or_insert(0) += i64::from(
-                        (th.root_moves[0].score.0 - min_score.0 + 14) * th.completed_depth.0,
-                    );
-                }
-
-                thread_pool_base_cloned
-                    .lock()
-                    .unwrap()
-                    .threads
-                    .iter()
-                    // get first "max" score.
-                    .min_by(|x, y| {
-                        let x_score = x.lock().unwrap().root_moves[0].score;
-                        let y_score = y.lock().unwrap().root_moves[0].score;
-                        if x_score >= Value::MATE_IN_MAX_PLY || y_score >= Value::MATE_IN_MAX_PLY {
-                            y_score.cmp(&x_score)
-                        } else {
-                            let x_vote_score = *votes
-                                .get(&x.lock().unwrap().root_moves[0].pv[0].0.get())
-                                .unwrap();
-                            let y_vote_score = *votes
-                                .get(&y.lock().unwrap().root_moves[0].pv[0].0.get())
-                                .unwrap();
-                            y_vote_score.cmp(&x_vote_score)
-                        }
-                    })
-                    .unwrap()
-                    .clone()
-            } else {
-                thread_pool_base_cloned.lock().unwrap().threads[0].clone()
-            };
-
-            *previous_score_cloned.lock().unwrap() =
-                best_thread.lock().unwrap().root_moves[0].score;
-
-            let nodes_searched = thread_pool_base_cloned.lock().unwrap().threads[0]
-                .lock()
-                .unwrap()
-                .nodes_searched();
-            if let Ok(best_thread) = best_thread.lock() {
-                if !hide_all_output_cloned.load(Ordering::Relaxed) {
-                    // Always send again PV info.
-                    println!(
-                        "{}",
-                        best_thread.pv_info_to_usi_string(
-                            nodes_searched,
-                            multi_pv,
-                            best_thread.completed_depth,
-                            -Value::INFINITE,
-                            Value::INFINITE,
-                            true,
-                        )
-                    );
-                    let mut s = format!(
-                        "bestmove {}",
-                        best_thread.root_moves[0].pv[0].to_usi_string(),
-                    );
-                    if usi_options_cloned.get_bool(UsiOptions::USI_PONDER)
-                        && best_thread.root_moves[0].pv.len() >= 2
+        self.handle = Some(
+            std::thread::Builder::new()
+                .stack_size(crate::stack_size::STACK_SIZE)
+                .spawn(move || {
                     {
-                        s += &format!(
-                            " ponder {}",
-                            best_thread.root_moves[0].pv[1].to_usi_string()
+                        let mut v = vec![];
+                        for (i, thread) in thread_pool_base_cloned
+                            .lock()
+                            .unwrap()
+                            .threads
+                            .iter_mut()
+                            .enumerate()
+                            // i == 0 => not using a worker thread.
+                            .rev()
+                        {
+                            let nodes_cloned = nodess_cloned[i].clone();
+                            let pos = Position::new_from_position(&pos, nodes_cloned.clone());
+                            nodes_cloned.store(0, Ordering::Relaxed);
+                            let root_moves_cloned = root_moves.clone();
+                            let thread_cloned = thread.clone();
+                            let limits_cloned = limits.clone();
+                            let usi_options_cloned = usi_options_cloned.clone();
+                            let timeman_cloned = timeman_cloned.clone();
+                            let worker = move || {
+                                let mut th = thread_cloned.lock().unwrap();
+                                th.best_move_changes.store(0, Ordering::Relaxed);
+                                th.limits = limits_cloned;
+                                th.nodes = nodes_cloned;
+                                th.root_depth = Depth::ZERO;
+                                th.root_moves = root_moves_cloned;
+                                th.position = pos;
+                                th.usi_options = usi_options_cloned;
+                                th.timeman = timeman_cloned;
+                                th.iterative_deepening_loop();
+                            };
+                            if i == 0 {
+                                worker(); // The main thread doesn't use std::thread::spawn().
+                            } else {
+                                v.push(
+                                    std::thread::Builder::new()
+                                        .stack_size(crate::stack_size::STACK_SIZE)
+                                        .spawn(worker)
+                                        .unwrap(),
+                                );
+                            }
+                        }
+                        while !stop_cloned.load(Ordering::Relaxed)
+                            && (ponder_cloned.load(Ordering::Relaxed) || limits.infinite.is_some())
+                        {
+                            // nop
+                        }
+                        // main thread finished.
+                        // stop the other threads.
+                        stop_cloned.store(true, Ordering::Relaxed);
+                        for handle in v {
+                            handle.join().unwrap();
+                        }
+
+                        let multi_pv = std::cmp::min(
+                            usi_options_cloned.get_i64(UsiOptions::MULTI_PV) as usize,
+                            root_moves.len(),
                         );
+                        let best_thread =
+                            if multi_pv == 1 && limits.depth.is_none() && !root_moves.is_empty() {
+                                let mut votes = std::collections::BTreeMap::new();
+                                let min_score: Value = thread_pool_base_cloned
+                                    .lock()
+                                    .unwrap()
+                                    .threads
+                                    .iter()
+                                    .map(|x| x.lock().unwrap().root_moves[0].score)
+                                    .min()
+                                    .unwrap();
+
+                                for th in thread_pool_base_cloned.lock().unwrap().threads.iter() {
+                                    let th = th.lock().unwrap();
+                                    *votes.entry(th.root_moves[0].pv[0].0.get()).or_insert(0) +=
+                                        i64::from(
+                                            (th.root_moves[0].score.0 - min_score.0 + 14)
+                                                * th.completed_depth.0,
+                                        );
+                                }
+
+                                thread_pool_base_cloned
+                                    .lock()
+                                    .unwrap()
+                                    .threads
+                                    .iter()
+                                    // get first "max" score.
+                                    .min_by(|x, y| {
+                                        let x_score = x.lock().unwrap().root_moves[0].score;
+                                        let y_score = y.lock().unwrap().root_moves[0].score;
+                                        if x_score >= Value::MATE_IN_MAX_PLY
+                                            || y_score >= Value::MATE_IN_MAX_PLY
+                                        {
+                                            y_score.cmp(&x_score)
+                                        } else {
+                                            let x_vote_score = *votes
+                                                .get(&x.lock().unwrap().root_moves[0].pv[0].0.get())
+                                                .unwrap();
+                                            let y_vote_score = *votes
+                                                .get(&y.lock().unwrap().root_moves[0].pv[0].0.get())
+                                                .unwrap();
+                                            y_vote_score.cmp(&x_vote_score)
+                                        }
+                                    })
+                                    .unwrap()
+                                    .clone()
+                            } else {
+                                thread_pool_base_cloned.lock().unwrap().threads[0].clone()
+                            };
+
+                        *previous_score_cloned.lock().unwrap() =
+                            best_thread.lock().unwrap().root_moves[0].score;
+
+                        let nodes_searched = thread_pool_base_cloned.lock().unwrap().threads[0]
+                            .lock()
+                            .unwrap()
+                            .nodes_searched();
+                        if let Ok(best_thread) = best_thread.lock() {
+                            if !hide_all_output_cloned.load(Ordering::Relaxed) {
+                                // Always send again PV info.
+                                println!(
+                                    "{}",
+                                    best_thread.pv_info_to_usi_string(
+                                        nodes_searched,
+                                        multi_pv,
+                                        best_thread.completed_depth,
+                                        -Value::INFINITE,
+                                        Value::INFINITE,
+                                        true,
+                                    )
+                                );
+                                let mut s = format!(
+                                    "bestmove {}",
+                                    best_thread.root_moves[0].pv[0].to_usi_string(),
+                                );
+                                if usi_options_cloned.get_bool(UsiOptions::USI_PONDER)
+                                    && best_thread.root_moves[0].pv.len() >= 2
+                                {
+                                    s += &format!(
+                                        " ponder {}",
+                                        best_thread.root_moves[0].pv[1].to_usi_string()
+                                    );
+                                }
+                                println!("{}", s);
+                            }
+                        }
+                        *last_best_root_move_cloned.lock().unwrap() =
+                            Some(best_thread.lock().unwrap().root_moves[0].clone());
                     }
-                    println!("{}", s);
-                }
-            }
-            *last_best_root_move_cloned.lock().unwrap() =
-                Some(best_thread.lock().unwrap().root_moves[0].clone());
-        }));
+                })
+                .unwrap(),
+        );
     }
     pub fn wait_for_search_finished(&mut self) {
         if let Some(handle) = self.handle.take() {

@@ -1,1 +1,1 @@
-pub const STACK_SIZE: usize = 256 * 1024 * 1024;
+pub const STACK_SIZE: usize = 512 * 1024 * 1024;
