@@ -819,7 +819,7 @@ impl Thread {
             && tt_move
                 .unwrap_unchecked()
                 .is_capture_or_pawn_promotion(&self.position);
-        let mut singular_lmr = 0;
+        let mut singular_lmr = false;
 
         let th = ThreadHolding::new(self, key, get_stack(stack, 0).ply);
 
@@ -878,12 +878,7 @@ impl Thread {
                 get_stack_mut(stack, 0).excluded_move = None;
                 if value < singular_beta {
                     extension = Depth::ONE_PLY;
-                    singular_lmr += 1;
-                    if value
-                        < singular_beta - Value(std::cmp::min(4 * depth.0 / Depth::ONE_PLY.0, 36))
-                    {
-                        singular_lmr += 1;
-                    }
+                    singular_lmr = true;
                 } else if eval >= beta && singular_beta >= beta {
                     return singular_beta;
                 }
@@ -985,7 +980,9 @@ impl Thread {
                     r += Depth::ONE_PLY;
                 }
 
-                r -= Depth(singular_lmr * Depth::ONE_PLY.0);
+                if singular_lmr {
+                    r -= Depth(2 * Depth::ONE_PLY.0);
+                }
 
                 if !is_capture_or_pawn_promotion {
                     if tt_capture {
