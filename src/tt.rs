@@ -174,6 +174,7 @@ fn test_size() {
 #[test]
 fn test_probe() {
     use crate::evaluate::*;
+    use crate::search::*;
     std::thread::Builder::new()
         .stack_size(crate::stack_size::STACK_SIZE)
         .spawn(|| {
@@ -181,7 +182,8 @@ fn test_probe() {
             let mut tt = TranspositionTable::new();
             let mut ehash = EvalHash::new();
             let mut breadcrumbs = Breadcrumbs::new();
-            thread_pool.set(1, &mut tt, &mut ehash, &mut breadcrumbs);
+            let mut reductions = Reductions::new(1);
+            thread_pool.set(1, &mut tt, &mut ehash, &mut breadcrumbs, &mut reductions);
             tt.resize(1, &mut thread_pool);
             ehash.resize(1, &mut thread_pool);
             let pv = false;

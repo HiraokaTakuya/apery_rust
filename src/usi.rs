@@ -213,6 +213,7 @@ pub fn setoption(
     tt: &mut TranspositionTable,
     ehash: &mut EvalHash,
     breadcrumbs: &mut Breadcrumbs,
+    reductions: &mut Reductions,
     is_ready: &mut bool,
 ) {
     if !args.is_empty() && args[0] != "name" {
@@ -231,7 +232,16 @@ pub fn setoption(
             }
             let name = args[1];
             let value = args[3];
-            usi_options.set(name, value, thread_pool, tt, ehash, breadcrumbs, is_ready);
+            usi_options.set(
+                name,
+                value,
+                thread_pool,
+                tt,
+                ehash,
+                breadcrumbs,
+                reductions,
+                is_ready,
+            );
         }
         _ => {
             let mut s = "Error: invalid number of sections.".to_string();
@@ -490,8 +500,9 @@ pub fn cmd_loop() {
     let mut tt = TranspositionTable::new();
     let mut ehash = EvalHash::new();
     let mut breadcrumbs = Breadcrumbs::new();
+    let mut reductions = Reductions::new(1);
     let mut thread_pool = ThreadPool::new();
-    thread_pool.set(1, &mut tt, &mut ehash, &mut breadcrumbs);
+    thread_pool.set(1, &mut tt, &mut ehash, &mut breadcrumbs, &mut reductions);
     let mut usi_options = UsiOptions::new();
     let mut pos = Position::new();
     let mut is_ready = false;
@@ -581,6 +592,7 @@ pub fn cmd_loop() {
                 &mut tt,
                 &mut ehash,
                 &mut breadcrumbs,
+                &mut reductions,
                 &mut is_ready,
             ),
             "usi" => {

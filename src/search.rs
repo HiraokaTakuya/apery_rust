@@ -223,22 +223,28 @@ pub fn futility_move_count(improving: bool, depth_per_one_ply: i32) -> i32 {
     (5 + depth_per_one_ply * depth_per_one_ply) * (1 + i32::from(improving)) / 2
 }
 
-lazy_static! {
-    static ref REDUCTIONS: [i32; ExtMove::MAX_LEGAL_MOVES] = {
-        let mut reductions: [i32; ExtMove::MAX_LEGAL_MOVES] = [0; ExtMove::MAX_LEGAL_MOVES];
-        for (i, reduction) in reductions.iter_mut().enumerate().skip(1) {
-            *reduction = (23.4 * f64::from(i as i32).ln()) as i32;
-        }
-        reductions
-    };
+pub struct Reductions {
+    values: [i32; ExtMove::MAX_LEGAL_MOVES],
 }
 
-pub fn reduction(improving: bool, depth: Depth, move_count: i32) -> Depth {
-    let r = unsafe {
-        *REDUCTIONS.get_unchecked((depth.0 / Depth::ONE_PLY.0) as usize)
-            * *REDUCTIONS.get_unchecked(move_count as usize)
-    };
-    Depth(((r + 520) / 1024 + i32::from(!improving && r > 999)) * Depth::ONE_PLY.0)
+impl Reductions {
+    pub fn new(thread_num: usize) -> Reductions {
+        let mut r = Reductions {
+            values: [0; ExtMove::MAX_LEGAL_MOVES],
+        };
+        for (i, v) in r.values.iter_mut().enumerate().skip(1) {
+            *v = ((23.4 + f64::from(thread_num as i32).ln()) * f64::from(i as i32).ln()) as i32;
+        }
+        r
+    }
+    pub fn get(&self, improving: bool, depth: Depth, move_count: i32) -> Depth {
+        let r = unsafe {
+            self.values
+                .get_unchecked((depth.0 / Depth::ONE_PLY.0) as usize)
+                * self.values.get_unchecked(move_count as usize)
+        };
+        Depth(((r + 520) / 1024 + i32::from(!improving && r > 999)) * Depth::ONE_PLY.0)
+    }
 }
 
 pub const SKIP_SIZE: [i32; 20] = [1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4];

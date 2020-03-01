@@ -151,7 +151,8 @@ pub fn generate_teachers(args: &[&str]) {
             let mut tt = TranspositionTable::new();
             let mut ehash = EvalHash::new(); // todo: All threads use same ehash.
             let mut breadcrumbs = Breadcrumbs::new();
-            thread_pool.set(1, &mut tt, &mut ehash, &mut breadcrumbs);
+            let mut reductions = Reductions::new(1);
+            thread_pool.set(1, &mut tt, &mut ehash, &mut breadcrumbs, &mut reductions);
             let mut is_ready = false;
             let usi_options = {
                 let mut u = UsiOptions::new();
@@ -171,6 +172,7 @@ pub fn generate_teachers(args: &[&str]) {
                         &mut tt,
                         &mut ehash,
                         &mut breadcrumbs,
+                        &mut reductions,
                         &mut is_ready,
                     );
                 });

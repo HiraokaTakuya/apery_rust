@@ -121,6 +121,7 @@ struct Thread {
     timeman: Arc<Mutex<TimeManagement>>, // shold I use pointer for speedup?
     ehash: *mut EvalHash,
     breadcrumbs: *mut Breadcrumbs,
+    reductions: *mut Reductions,
     usi_options: UsiOptions,
     best_move_changes: Arc<AtomicU64>,
     best_move_changess: Vec<Arc<AtomicU64>>,
@@ -908,7 +909,7 @@ impl Thread {
                     }
 
                     let lmr_depth = std::cmp::max(
-                        new_depth - reduction(improving, depth, move_count),
+                        new_depth - unsafe { (*self.reductions).get(improving, depth, move_count) },
                         Depth::ZERO,
                     );
                     let lmr_depth = Depth(lmr_depth.0 / Depth::ONE_PLY.0);
@@ -971,7 +972,7 @@ impl Thread {
                         <= alpha
                     || cut_node)
             {
-                let mut r = reduction(improving, depth, move_count);
+                let mut r = unsafe { (*self.reductions).get(improving, depth, move_count) };
 
                 if th.marked() {
                     r += Depth::ONE_PLY;
@@ -1597,6 +1598,7 @@ impl ThreadPool {
         tt: &mut TranspositionTable,
         ehash: &mut EvalHash,
         breadcrumbs: &mut Breadcrumbs,
+        reductions: &mut Reductions,
     ) {
         if let Some(handle) = self.handle.take() {
             handle.join().unwrap();
@@ -1610,6 +1612,7 @@ impl ThreadPool {
         self.best_move_changess = (0..requested)
             .map(|_| Arc::new(AtomicU64::new(0)))
             .collect();
+        *reductions = Reductions::new(requested);
         self.thread_pool_base.lock().unwrap().threads = (0..requested)
             .map(|i| {
                 Arc::new(Mutex::new(Thread {
@@ -1632,6 +1635,7 @@ impl ThreadPool {
                     timeman: self.timeman.clone(),
                     ehash,
                     breadcrumbs,
+                    reductions,
                     usi_options: UsiOptions::new(),
                     best_move_changes: self.best_move_changess[i].clone(),
                     best_move_changess: self.best_move_changess.clone(),
@@ -1888,6 +1892,7 @@ fn test_start_thinking() {
             let mut tt = TranspositionTable::new();
             let mut ehash = EvalHash::new();
             let mut breadcrumbs = Breadcrumbs::new();
+            let mut reductions = Reductions::new(1);
             tt.resize(16, &mut thread_pool);
             ehash.resize(16, &mut thread_pool);
             match load_evaluate_files(&usi_options.get_string(UsiOptions::EVAL_DIR)) {
@@ -1898,7 +1903,7 @@ fn test_start_thinking() {
                         limits.start_time = Some(std::time::Instant::now());
                         limits
                     };
-                    thread_pool.set(3, &mut tt, &mut ehash, &mut breadcrumbs);
+                    thread_pool.set(3, &mut tt, &mut ehash, &mut breadcrumbs, &mut reductions);
                     let ponder_mode = false;
                     let hide_all_output = false;
                     thread_pool.start_thinking(

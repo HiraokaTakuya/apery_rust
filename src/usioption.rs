@@ -1,4 +1,5 @@
 use crate::evaluate::*;
+use crate::search::*;
 use crate::thread::*;
 use crate::tt::*;
 
@@ -134,6 +135,7 @@ impl UsiOptions {
         tt: &mut TranspositionTable,
         ehash: &mut EvalHash,
         breadcrumbs: &mut Breadcrumbs,
+        reductions: &mut Reductions,
         is_ready: &mut bool,
     ) {
         match self.v.get_mut(key) {
@@ -161,7 +163,9 @@ impl UsiOptions {
                     *current = n;
                     match key {
                         Self::EVAL_HASH => ehash.resize(n as usize, thread_pool),
-                        Self::THREADS => thread_pool.set(n as usize, tt, ehash, breadcrumbs),
+                        Self::THREADS => {
+                            thread_pool.set(n as usize, tt, ehash, breadcrumbs, reductions)
+                        }
                         Self::USI_HASH => tt.resize(n as usize, thread_pool),
                         _ => {}
                     }
