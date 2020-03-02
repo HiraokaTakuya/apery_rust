@@ -964,7 +964,7 @@ impl Thread {
             get_stack_mut(stack, 1).static_eval_raw.set_not_evaluated();
 
             // Step 16
-            let (do_full_depth_search, do_lmr) = if depth.0 >= 3 * Depth::ONE_PLY.0
+            let (do_full_depth_search, did_lmr) = if depth.0 >= 3 * Depth::ONE_PLY.0
                 && move_count > 1 + if root_node { 2 } else { 0 }
                 && (!root_node || self.best_move_count(m) == 0)
                 && (!is_capture_or_pawn_promotion
@@ -1037,7 +1037,7 @@ impl Thread {
                     !cut_node,
                 );
 
-                if do_lmr && !is_capture_or_pawn_promotion {
+                if did_lmr && !is_capture_or_pawn_promotion {
                     let mut bonus = if value > alpha {
                         stat_bonus(new_depth)
                     } else {
