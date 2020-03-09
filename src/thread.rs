@@ -900,10 +900,6 @@ impl Thread {
                 move_count_pruning =
                     move_count >= futility_move_count(improving, depth.0 / Depth::ONE_PLY.0);
                 if !is_capture_or_pawn_promotion && !gives_check {
-                    if move_count_pruning {
-                        continue;
-                    }
-
                     let lmr_depth = std::cmp::max(
                         new_depth - unsafe { (*self.reductions).get(improving, depth, move_count) },
                         Depth::ZERO,
