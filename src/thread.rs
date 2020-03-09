@@ -109,7 +109,6 @@ struct Thread {
     idx: usize,
     pv_idx: usize,
     sel_depth: i32,
-    shuffle_extensions: i64,
     null_move_pruning_min_ply: i32,
     null_move_pruning_color: Color,
     position: Position,
@@ -882,18 +881,13 @@ impl Thread {
                 } else if eval >= beta && singular_beta >= beta {
                     return singular_beta;
                 }
-            } else if (gives_check
+            } else if gives_check
                 && ((!m.is_drop()
                     && self
                         .position
                         .blockers_for_king(us.inverse())
                         .is_set(m.from()))
-                    || self.position.see_ge(m, Value::ZERO)))
-                // Upper and lower conditions result in same extension.
-                || (pv_node && depth.0 < 3 * Depth::ONE_PLY.0 && {
-                    self.shuffle_extensions += 1;
-                    self.shuffle_extensions < self.nodes.load(Ordering::Relaxed) / 4
-                })
+                    || self.position.see_ge(m, Value::ZERO))
             {
                 extension = Depth::ONE_PLY;
             }
@@ -1632,7 +1626,6 @@ impl ThreadPool {
                     idx: i,
                     pv_idx: 0,
                     sel_depth: 0,
-                    shuffle_extensions: 0,
                     null_move_pruning_min_ply: 0,
                     null_move_pruning_color: Color::BLACK,
                     position: Position::new(),
