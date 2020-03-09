@@ -516,7 +516,7 @@ impl Thread {
                         // Then can be as follows.
                         //     tt_move.piece_moved_after_move().0 >= Piece::NUM
                         // It causes "index out of bounds" in update_continuation_histoies() in in update_quiet_stats().
-                        self.update_quiet_stats(stack, tt_move, &[], stat_bonus(depth));
+                        self.update_quiet_stats(stack, tt_move, stat_bonus(depth));
                     }
 
                     if get_stack(stack, -1).move_count <= 2
@@ -1124,34 +1124,16 @@ impl Thread {
                 value_mated_in(get_stack(stack, 0).ply)
             };
         } else if let Some(best_move) = best_move {
-            if !best_move.is_capture_or_pawn_promotion(&self.position) {
-                let bonus = stat_bonus(
-                    depth
-                        + if best_value > beta + piece_type_value(PieceType::PAWN) {
-                            Depth::ONE_PLY
-                        } else {
-                            Depth::ZERO
-                        },
-                );
-                self.update_quiet_stats(stack, best_move, &quiets_searched[..], bonus);
-            }
-            self.update_capture_stats(
+            self.update_all_stats(
+                stack,
                 best_move,
+                best_value,
+                beta,
+                prev_sq,
+                &quiets_searched[..],
                 &captures_searched[..],
-                stat_bonus(depth + Depth::ONE_PLY),
+                depth,
             );
-
-            if (get_stack(stack, -1).move_count == 1
-                || get_stack(stack, -1).current_move == get_stack(stack, -1).killers[0])
-                && prior_capture == Piece::EMPTY
-            {
-                update_continuation_histories(
-                    stack,
-                    self.position.piece_on(prev_sq),
-                    prev_sq,
-                    -stat_bonus(depth + Depth::ONE_PLY),
-                );
-            }
         } else if (pv_node || depth.0 >= 3 * Depth::ONE_PLY.0) && prior_capture == Piece::EMPTY {
             update_continuation_histories(
                 stack,
@@ -1469,20 +1451,57 @@ impl Thread {
             self.stop.store(true, Ordering::Relaxed);
         }
     }
-    fn update_capture_stats(&mut self, m: Move, captures: &[Move], bonus: i32) {
-        let capture_history = &mut self.capture_history;
-        if m.is_capture_or_pawn_promotion(&self.position) {
-            let moved_piece = m.piece_moved_after_move();
-            let captured = PieceType::new(self.position.piece_on(m.to()));
-            capture_history.update(moved_piece, m.to(), captured, bonus);
+    fn update_all_stats(
+        &mut self,
+        stack: &mut [Stack],
+        best_move: Move,
+        best_value: Value,
+        beta: Value,
+        prev_sq: Square,
+        quiets_searched: &[Move],
+        captures_searched: &[Move],
+        depth: Depth,
+    ) {
+        let us = self.position.side_to_move();
+        let moved_piece = best_move.piece_moved_after_move();
+        let captured = PieceType::new(self.position.piece_on(best_move.to()));
+        let bonus1 = stat_bonus(depth + Depth::ONE_PLY);
+        let bonus2 = if best_value > beta + piece_type_value(PieceType::PAWN) {
+            bonus1
+        } else {
+            stat_bonus(depth)
+        };
+        if !best_move.is_capture_or_pawn_promotion(&self.position) {
+            self.update_quiet_stats(stack, best_move, bonus2);
+            for &quiet_move in quiets_searched {
+                self.main_history.update(us, quiet_move, -bonus2);
+                update_continuation_histories(
+                    &mut stack[1..],
+                    quiet_move.piece_moved_after_move(),
+                    quiet_move.to(),
+                    -bonus2,
+                );
+            }
+        } else {
+            let capture_history = &mut self.capture_history;
+            capture_history.update(moved_piece, best_move.to(), captured, bonus1);
         }
-        for &capture_move in captures {
+
+        if (get_stack(stack, -1).move_count == 1
+            || get_stack(stack, -1).current_move == get_stack(stack, -1).killers[0])
+            && self.position.captured_piece() == Piece::EMPTY
+        {
+            update_continuation_histories(stack, self.position.piece_on(prev_sq), prev_sq, -bonus1);
+        }
+
+        for &capture_move in captures_searched {
             let moved_piece = capture_move.piece_moved_after_move();
             let captured = PieceType::new(self.position.piece_on(capture_move.to()));
-            capture_history.update(moved_piece, capture_move.to(), captured, -bonus);
+            self.capture_history
+                .update(moved_piece, capture_move.to(), captured, -bonus1);
         }
     }
-    fn update_quiet_stats(&mut self, stack: &mut [Stack], m: Move, quiets: &[Move], bonus: i32) {
+    fn update_quiet_stats(&mut self, stack: &mut [Stack], m: Move, bonus: i32) {
         if get_stack(stack, 0).killers[0].unwrap_unchecked() != m {
             let ss = get_stack_mut(stack, 0);
             ss.killers[1] = ss.killers[0];
@@ -1501,16 +1520,6 @@ impl Thread {
             let prev_sq = prev_move.unwrap_unchecked().to();
             self.counter_moves
                 .set(prev_sq, self.position.piece_on(prev_sq), m);
-        }
-
-        for &quiet_move in quiets {
-            self.main_history.update(us, quiet_move, -bonus);
-            update_continuation_histories(
-                &mut stack[1..],
-                quiet_move.piece_moved_after_move(),
-                quiet_move.to(),
-                -bonus,
-            );
         }
     }
     fn pv_info_to_usi_string(
