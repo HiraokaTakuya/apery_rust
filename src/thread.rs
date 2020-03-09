@@ -108,6 +108,7 @@ impl InCheckType {
 struct Thread {
     idx: usize,
     pv_idx: usize,
+    tt_hit_average: u64,
     sel_depth: i32,
     null_move_pruning_min_ply: i32,
     null_move_pruning_color: Color,
@@ -198,6 +199,8 @@ impl Thread {
             self.usi_options.get_i64(UsiOptions::MULTI_PV) as usize,
             self.root_moves.len(),
         );
+        self.tt_hit_average = TT_HIT_AVERAGE_WINDOW * TT_HIT_AVERAGE_RESOLUTION / 2;
+
         evaluate_at_root(&self.position, &mut stack);
         while {
             self.root_depth += Depth::ONE_PLY;
@@ -494,6 +497,9 @@ impl Thread {
             None
         };
         let tt_pv = pv_node || (tt_hit && tte.is_pv());
+        self.tt_hit_average = (TT_HIT_AVERAGE_WINDOW - 1) * self.tt_hit_average
+            / TT_HIT_AVERAGE_WINDOW
+            + TT_HIT_AVERAGE_RESOLUTION * u64::from(tt_hit);
 
         if !pv_node
             && tt_hit
@@ -967,6 +973,12 @@ impl Thread {
                     || cut_node)
             {
                 let mut r = unsafe { (*self.reductions).get(improving, depth, move_count) };
+
+                if self.tt_hit_average
+                    > 544 * TT_HIT_AVERAGE_RESOLUTION * TT_HIT_AVERAGE_WINDOW / 1024
+                {
+                    r -= Depth::ONE_PLY;
+                }
 
                 if th.marked() {
                     r += Depth::ONE_PLY;
@@ -1623,6 +1635,7 @@ impl ThreadPool {
                 Arc::new(Mutex::new(Thread {
                     idx: i,
                     pv_idx: 0,
+                    tt_hit_average: 0,
                     sel_depth: 0,
                     null_move_pruning_min_ply: 0,
                     null_move_pruning_color: Color::BLACK,

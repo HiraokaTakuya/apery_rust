@@ -11,6 +11,9 @@ pub const CURRENT_STACK_INDEX: usize = 7;
 pub type Pv = True;
 pub type NonPv = False;
 
+pub const TT_HIT_AVERAGE_WINDOW: u64 = 4096;
+pub const TT_HIT_AVERAGE_RESOLUTION: u64 = 1024;
+
 #[derive(Clone)]
 pub struct LimitsType {
     pub time: [std::time::Duration; 2],
