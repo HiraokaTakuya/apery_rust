@@ -854,48 +854,10 @@ impl Thread {
             let piece_moved_after_move = m.piece_moved_after_move();
             let gives_check = self.position.gives_check(m);
 
-            // Step 13
-            if depth.0 >= 6 * Depth::ONE_PLY.0
-                && m == tt_move.unwrap_unchecked()
-                && !root_node
-                && excluded_move.is_none()
-                && tt_value.0.abs() < Value::KNOWN_WIN.0
-                && tte.bound().include_lower()
-                && tte.depth().0 >= depth.0 - 3 * Depth::ONE_PLY.0
-                && self.position.legal(m)
-            {
-                let singular_beta = Value(tt_value.0 - 2 * depth.0 / Depth::ONE_PLY.0);
-                let half_depth = Depth(depth.0 / (2 * Depth::ONE_PLY.0) * Depth::ONE_PLY.0);
-                get_stack_mut(stack, 0).excluded_move = Some(m);
-                value = self.search::<NonPv>(
-                    stack,
-                    singular_beta - Value(1),
-                    singular_beta,
-                    half_depth,
-                    cut_node,
-                );
-                get_stack_mut(stack, 0).excluded_move = None;
-                if value < singular_beta {
-                    extension = Depth::ONE_PLY;
-                    singular_lmr = true;
-                } else if eval >= beta && singular_beta >= beta {
-                    return singular_beta;
-                }
-            } else if gives_check
-                && ((!m.is_drop()
-                    && self
-                        .position
-                        .blockers_for_king(us.inverse())
-                        .is_set(m.from()))
-                    || self.position.see_ge(m, Value::ZERO))
-            {
-                extension = Depth::ONE_PLY;
-            }
-
-            let new_depth = depth - Depth::ONE_PLY + extension;
+            let new_depth = depth - Depth::ONE_PLY;
             let to = m.to();
 
-            // Step 14
+            // Step 13
             if !root_node && best_value > Value::MATED_IN_MAX_PLY {
                 move_count_pruning =
                     move_count >= futility_move_count(improving, depth.0 / Depth::ONE_PLY.0);
@@ -937,6 +899,46 @@ impl Thread {
                     continue;
                 }
             }
+
+            // Step 14
+            if depth.0 >= 6 * Depth::ONE_PLY.0
+                && m == tt_move.unwrap_unchecked()
+                && !root_node
+                && excluded_move.is_none()
+                && tt_value.0.abs() < Value::KNOWN_WIN.0
+                && tte.bound().include_lower()
+                && tte.depth().0 >= depth.0 - 3 * Depth::ONE_PLY.0
+                && self.position.legal(m)
+            {
+                let singular_beta = Value(tt_value.0 - 2 * depth.0 / Depth::ONE_PLY.0);
+                let half_depth = Depth(depth.0 / (2 * Depth::ONE_PLY.0) * Depth::ONE_PLY.0);
+                get_stack_mut(stack, 0).excluded_move = Some(m);
+                value = self.search::<NonPv>(
+                    stack,
+                    singular_beta - Value(1),
+                    singular_beta,
+                    half_depth,
+                    cut_node,
+                );
+                get_stack_mut(stack, 0).excluded_move = None;
+                if value < singular_beta {
+                    extension = Depth::ONE_PLY;
+                    singular_lmr = true;
+                } else if eval >= beta && singular_beta >= beta {
+                    return singular_beta;
+                }
+            } else if gives_check
+                && ((!m.is_drop()
+                    && self
+                        .position
+                        .blockers_for_king(us.inverse())
+                        .is_set(m.from()))
+                    || self.position.see_ge(m, Value::ZERO))
+            {
+                extension = Depth::ONE_PLY;
+            }
+
+            let new_depth = new_depth + extension;
 
             if !root_node && !self.position.legal(m) {
                 move_count -= 1;
