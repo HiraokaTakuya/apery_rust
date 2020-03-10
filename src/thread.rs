@@ -1361,14 +1361,7 @@ impl Thread {
                 && best_value > Value::MATED_IN_MAX_PLY
                 && !m.is_capture(&self.position);
 
-            if (!in_check || evasion_prunable)
-                && (!gives_check
-                    || !self
-                        .position
-                        .blockers_for_king(self.position.side_to_move().inverse())
-                        .is_set(m.from())) // the possibility of drop move is low.
-                && !self.position.see_ge(m, Value::ZERO)
-            {
+            if (!in_check || evasion_prunable) && !self.position.see_ge(m, Value::ZERO) {
                 continue;
             }
 
