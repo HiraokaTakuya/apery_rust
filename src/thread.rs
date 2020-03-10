@@ -131,7 +131,9 @@ struct Thread {
     best_move_changess: Vec<Arc<AtomicU64>>,
 
     nodes: Arc<AtomicI64>,
+    // following variables are shared one object that ThreadPool has.
     previous_score: Arc<Mutex<Value>>,
+    iter_values: Arc<Mutex<[Value; 4]>>,
     // following variables are used only main thread.
     previous_time_reduction: f64,
     calls_count: i32,
@@ -154,6 +156,7 @@ pub struct ThreadPool {
     pub book: Option<Book>,
     timeman: Arc<Mutex<TimeManagement>>,
     previous_score: Arc<Mutex<Value>>,
+    iter_values: Arc<Mutex<[Value; 4]>>,
     best_move_changess: Vec<Arc<AtomicU64>>,
     stop_on_ponderhit: Arc<AtomicBool>,
     pub ponder: Arc<AtomicBool>,
@@ -192,8 +195,21 @@ impl Thread {
         let mut time_reduction = 1.0;
         let mut total_best_move_changes = 0.0f64;
         let mut last_info_time: Option<std::time::Instant> = None;
+        let mut iter_index = 0;
         for item in stack.iter_mut().take(CURRENT_STACK_INDEX) {
             item.continuation_history = self.continuation_history[0][0].sentinel();
+        }
+        if self.is_main() {
+            let previous_score = *self.previous_score.lock().unwrap();
+            if previous_score == Value::INFINITE {
+                for item in self.iter_values.lock().unwrap().iter_mut() {
+                    *item = Value::ZERO;
+                }
+            } else {
+                for item in self.iter_values.lock().unwrap().iter_mut() {
+                    *item = previous_score;
+                }
+            }
         }
         let multi_pv = std::cmp::min(
             self.usi_options.get_i64(UsiOptions::MULTI_PV) as usize,
@@ -348,9 +364,10 @@ impl Thread {
                 && !self.stop.load(Ordering::Relaxed)
                 && !self.stop_on_ponderhit.load(Ordering::Relaxed)
             {
-                let falling_eval =
-                    f64::from(354 + 10 * (self.previous_score.lock().unwrap().0 - best_value.0))
-                        / 692.0;
+                let falling_eval = f64::from(
+                    354 + 6 * (self.previous_score.lock().unwrap().0 - best_value.0)
+                        + 6 * (self.iter_values.lock().unwrap()[iter_index].0 - best_value.0),
+                ) / 692.0;
                 let falling_eval = num::clamp(falling_eval, 0.5, 1.5);
                 time_reduction =
                     if last_best_move_depth.0 + 10 * Depth::ONE_PLY.0 < self.completed_depth.0 {
@@ -380,6 +397,8 @@ impl Thread {
                     }
                 }
             }
+            self.iter_values.lock().unwrap()[iter_index] = best_value;
+            iter_index = (iter_index + 1) & 3;
         }
 
         if !self.is_main() {
@@ -1589,6 +1608,7 @@ impl ThreadPool {
             book: None,
             timeman: Arc::new(Mutex::new(TimeManagement::new())),
             previous_score: Arc::new(Mutex::new(Value::INFINITE)),
+            iter_values: Arc::new(Mutex::new([Value::ZERO; 4])),
             best_move_changess: vec![],
             stop_on_ponderhit: Arc::new(AtomicBool::new(false)),
             ponder: Arc::new(AtomicBool::new(false)),
@@ -1663,6 +1683,7 @@ impl ThreadPool {
                     best_move_changess: self.best_move_changess.clone(),
                     nodes: self.nodess[i].clone(),
                     previous_score: self.previous_score.clone(),
+                    iter_values: self.iter_values.clone(),
                     previous_time_reduction: 1.0,
                     calls_count: 0,
                     stop_on_ponderhit: self.stop_on_ponderhit.clone(),
