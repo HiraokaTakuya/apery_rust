@@ -348,8 +348,8 @@ impl Thread {
                 && !self.stop.load(Ordering::Relaxed)
                 && !self.stop_on_ponderhit.load(Ordering::Relaxed)
             {
-                let falling_eval = 354.0
-                    + 10.0 * f64::from((*self.previous_score.lock().unwrap() - best_value).0)
+                let falling_eval =
+                    f64::from(354 + 10 * (self.previous_score.lock().unwrap().0 - best_value.0))
                         / 692.0;
                 let falling_eval = num::clamp(falling_eval, 0.5, 1.5);
                 time_reduction =
