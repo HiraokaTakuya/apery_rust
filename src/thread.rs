@@ -1558,7 +1558,7 @@ impl Thread {
     ) -> String {
         let elapsed_millis = self.limits.start_time.unwrap().elapsed().as_millis() as i64 + 1; // "+ 1": avoid dividing by 0
         let info_with_multi_pv_index = |i: usize, rm: &RootMove| -> Option<String> {
-            let updated = i <= self.pv_idx && rm.score != -Value::INFINITE;
+            let updated = rm.score != -Value::INFINITE;
             if depth == Depth::ONE_PLY && !updated {
                 return None;
             }
