@@ -674,7 +674,7 @@ impl Thread {
 
             // Step 8
             if !pv_node
-                && depth.0 < 9 * Depth::ONE_PLY.0
+                && depth.0 < 6 * Depth::ONE_PLY.0
                 && eval - futility_margin(depth) >= beta
                 && eval < Value::KNOWN_WIN
             {
