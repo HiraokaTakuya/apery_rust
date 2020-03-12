@@ -684,11 +684,11 @@ impl Thread {
             // Step 9
             if !pv_node
                 && get_stack(stack, -1).current_move.is_some()
-                && get_stack(stack, -1).stat_score < 23405
+                && get_stack(stack, -1).stat_score < 23397
                 && eval >= beta
                 && eval >= get_stack(stack, 0).static_eval
                 && get_stack(stack, 0).static_eval.0
-                    >= beta.0 - 32 * depth.0 / Depth::ONE_PLY.0 + 317 - i32::from(improving) * 30
+                    >= beta.0 - 32 * depth.0 / Depth::ONE_PLY.0 + 292 - i32::from(improving) * 30
                 && excluded_move.is_none()
                 && (get_stack(stack, 0).ply >= self.null_move_pruning_min_ply
                     || us != self.null_move_pruning_color)
