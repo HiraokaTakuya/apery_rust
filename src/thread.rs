@@ -134,6 +134,7 @@ struct Thread {
     // following variables are shared one object that ThreadPool has.
     previous_score: Arc<Mutex<Value>>,
     iter_values: Arc<Mutex<[Value; 4]>>,
+    increase_depth: Arc<AtomicBool>,
     // following variables are used only main thread.
     previous_time_reduction: f64,
     calls_count: i32,
@@ -161,6 +162,7 @@ pub struct ThreadPool {
     stop_on_ponderhit: Arc<AtomicBool>,
     pub ponder: Arc<AtomicBool>,
     pub stop: Arc<AtomicBool>,
+    increase_depth: Arc<AtomicBool>,
     pub hide_all_output: Arc<AtomicBool>,
     pub limits: LimitsType,
     pub last_best_root_move: Arc<Mutex<Option<RootMove>>>, // Not for usi engine. For debug or some tools.
@@ -217,6 +219,8 @@ impl Thread {
         );
         self.tt_hit_average = TT_HIT_AVERAGE_WINDOW * TT_HIT_AVERAGE_RESOLUTION / 2;
 
+        let mut search_again_counter = 0;
+
         evaluate_at_root(&self.position, &mut stack);
         while {
             self.root_depth += Depth::ONE_PLY;
@@ -245,6 +249,10 @@ impl Thread {
             }
 
             self.pv_idx = 0;
+
+            if !self.increase_depth.load(Ordering::Relaxed) {
+                search_again_counter += 1;
+            }
             while self.pv_idx < multi_pv && !self.stop.load(Ordering::Relaxed) {
                 self.sel_depth = 0;
                 if self.root_depth >= Depth(4 * Depth::ONE_PLY.0) {
@@ -258,7 +266,8 @@ impl Thread {
                 loop {
                     let adjusted_depth = std::cmp::max(
                         Depth::ONE_PLY,
-                        self.root_depth - Depth(failed_high_count * Depth::ONE_PLY.0),
+                        self.root_depth
+                            - Depth((failed_high_count + search_again_counter) * Depth::ONE_PLY.0),
                     );
                     best_value = self.search::<Pv>(&mut stack, alpha, beta, adjusted_depth, false);
                     self.root_moves[self.pv_idx..].sort_by(|x, y| y.cmp(x));
@@ -395,6 +404,24 @@ impl Thread {
                     } else {
                         self.stop.store(true, Ordering::Relaxed);
                     }
+                } else if self.increase_depth.load(Ordering::Relaxed)
+                    && self.ponder.load(Ordering::Relaxed)
+                    && {
+                        let (elapsed, optimum) = {
+                            let timeman = self.timeman.lock().unwrap();
+                            (timeman.elapsed(), timeman.optimum_millis())
+                        };
+                        elapsed as f64
+                            > optimum as f64
+                                * falling_eval
+                                * reduction
+                                * best_move_instability
+                                * 0.6
+                    }
+                {
+                    self.increase_depth.store(false, Ordering::Relaxed);
+                } else {
+                    self.increase_depth.store(true, Ordering::Relaxed);
                 }
             }
             self.iter_values.lock().unwrap()[iter_index] = best_value;
@@ -1623,6 +1650,7 @@ impl ThreadPool {
             stop_on_ponderhit: Arc::new(AtomicBool::new(false)),
             ponder: Arc::new(AtomicBool::new(false)),
             stop: Arc::new(AtomicBool::new(false)),
+            increase_depth: Arc::new(AtomicBool::new(true)),
             hide_all_output: Arc::new(AtomicBool::new(false)),
             limits: LimitsType::new(),
             last_best_root_move: Arc::new(Mutex::new(None)),
@@ -1694,6 +1722,7 @@ impl ThreadPool {
                     nodes: self.nodess[i].clone(),
                     previous_score: self.previous_score.clone(),
                     iter_values: self.iter_values.clone(),
+                    increase_depth: self.increase_depth.clone(),
                     previous_time_reduction: 1.0,
                     calls_count: 0,
                     stop_on_ponderhit: self.stop_on_ponderhit.clone(),
