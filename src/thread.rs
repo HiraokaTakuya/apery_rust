@@ -693,10 +693,10 @@ impl Thread {
                 return self.qsearch::<IsPv>(stack, alpha, beta, Depth::ZERO);
             }
             improving = if get_stack(stack, -2).static_eval == Value::NONE {
-                get_stack(stack, 0).static_eval >= get_stack(stack, -4).static_eval
+                get_stack(stack, 0).static_eval > get_stack(stack, -4).static_eval
                     || get_stack(stack, -4).static_eval == Value::NONE
             } else {
-                get_stack(stack, 0).static_eval >= get_stack(stack, -2).static_eval
+                get_stack(stack, 0).static_eval > get_stack(stack, -2).static_eval
             };
 
             // Step 8
