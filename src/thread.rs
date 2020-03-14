@@ -957,6 +957,9 @@ impl Thread {
                         .position
                         .see_ge(m, Value(-194 * (depth.0 / Depth::ONE_PLY.0)))
                 {
+                    if is_capture_or_pawn_promotion {
+                        let _ = captures_searched.try_push(m);
+                    }
                     continue;
                 }
             }
