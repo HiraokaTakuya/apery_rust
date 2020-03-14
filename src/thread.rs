@@ -937,12 +937,12 @@ impl Thread {
                     }
                     if lmr_depth < Depth(6)
                         && !in_check
-                        && get_stack(stack, 0).static_eval.0 + 255 + 182 * lmr_depth.0 <= alpha.0
+                        && get_stack(stack, 0).static_eval.0 + 235 + 172 * lmr_depth.0 <= alpha.0
                         && self.main_history.get(us, m)
                             + unsafe { (*cont_hists[0]).get(to, piece_moved_after_move) }
                             + unsafe { (*cont_hists[1]).get(to, piece_moved_after_move) }
                             + unsafe { (*cont_hists[3]).get(to, piece_moved_after_move) }
-                            < 30000
+                            < 25000
                     {
                         continue;
                     }
