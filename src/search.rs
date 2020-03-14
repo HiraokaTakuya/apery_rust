@@ -223,7 +223,7 @@ pub fn futility_margin(depth: Depth) -> Value {
 }
 
 pub fn futility_move_count(improving: bool, depth_per_one_ply: i32) -> i32 {
-    (5 + depth_per_one_ply * depth_per_one_ply) * (1 + i32::from(improving)) / 2
+    (4 + depth_per_one_ply * depth_per_one_ply) / (2 - i32::from(improving))
 }
 
 pub struct Reductions {
