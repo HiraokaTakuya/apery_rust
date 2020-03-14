@@ -1065,7 +1065,7 @@ impl Thread {
                     if cut_node {
                         r += Depth(2 * Depth::ONE_PLY.0);
                     } else if !self.position.see_ge(m.reverse(), Value::ZERO) {
-                        r -= Depth(2 * Depth::ONE_PLY.0);
+                        r -= Depth((2 + i32::from(tt_pv)) * Depth::ONE_PLY.0);
                     }
 
                     get_stack_mut(stack, 0).stat_score = self.main_history.get(us, m)
