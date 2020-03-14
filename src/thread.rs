@@ -567,7 +567,11 @@ impl Thread {
                         // Then can be as follows.
                         //     tt_move.piece_moved_after_move().0 >= Piece::NUM
                         // It causes "index out of bounds" in update_continuation_histoies() in in update_quiet_stats().
-                        self.update_quiet_stats(stack, tt_move, stat_bonus(depth));
+                        self.update_quiet_stats(
+                            stack,
+                            tt_move,
+                            stat_bonus(Depth(depth.0 + i32::from(!pv_node && tt_pv))),
+                        );
                     }
 
                     if get_stack(stack, -1).move_count <= 2
@@ -585,7 +589,7 @@ impl Thread {
                         );
                     }
                 } else if !(tt_move.is_capture(&self.position)/*|| tt_move.is_pawn_promotion()*/) {
-                    let penalty = -stat_bonus(depth);
+                    let penalty = -stat_bonus(Depth(depth.0 + i32::from(!pv_node && tt_pv)));
                     self.main_history.update(us, tt_move, penalty);
                     update_continuation_histories(
                         &mut stack[1..],
@@ -1214,6 +1218,7 @@ impl Thread {
                 &quiets_searched[..],
                 &captures_searched[..],
                 depth,
+                !pv_node && tt_pv,
             );
         } else if (pv_node || depth.0 >= 3 * Depth::ONE_PLY.0) && prior_capture == Piece::EMPTY {
             update_continuation_histories(
@@ -1535,12 +1540,13 @@ impl Thread {
         quiets_searched: &[Move],
         captures_searched: &[Move],
         depth: Depth,
+        past_pv: bool,
     ) {
         let us = self.position.side_to_move();
         let moved_piece = best_move.piece_moved_after_move();
         let captured = PieceType::new(self.position.piece_on(best_move.to()));
         let bonus1 = stat_bonus(depth + Depth::ONE_PLY);
-        let bonus2 = if best_value > beta + piece_type_value(PieceType::PAWN) {
+        let bonus2 = if past_pv || best_value > beta + piece_type_value(PieceType::PAWN) {
             bonus1
         } else {
             stat_bonus(depth)
