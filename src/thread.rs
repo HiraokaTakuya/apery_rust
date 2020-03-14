@@ -1087,6 +1087,8 @@ impl Thread {
                         r += Depth::ONE_PLY;
                     }
                     r -= Depth(get_stack(stack, 0).stat_score / 16384 * Depth::ONE_PLY.0);
+                } else if depth < Depth(8) && move_count > 2 {
+                    r += Depth::ONE_PLY;
                 }
                 let d = std::cmp::max(new_depth - std::cmp::max(r, Depth::ZERO), Depth::ONE_PLY);
                 value =
