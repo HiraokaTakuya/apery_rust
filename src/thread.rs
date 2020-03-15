@@ -691,7 +691,7 @@ impl Thread {
             }
 
             // Step 7
-            if !root_node && depth.0 < 2 * Depth::ONE_PLY.0 && eval <= alpha - RAZOR_MARGIN {
+            if !root_node && depth == Depth::ONE_PLY && eval <= alpha - RAZOR_MARGIN {
                 return self.qsearch::<IsPv>(stack, alpha, beta, Depth::ZERO);
             }
             improving = if get_stack(stack, -2).static_eval == Value::NONE {
@@ -1353,7 +1353,7 @@ impl Thread {
                     tte.save(
                         key,
                         value_to_tt(best_value, get_stack(stack, 0).ply),
-                        pv_hit,
+                        false,
                         Bound::LOWER,
                         Depth::NONE,
                         None,
