@@ -871,7 +871,7 @@ impl Thread {
             &cont_hists,
             counter_move,
             &get_stack(stack, 0).killers,
-            if depth > Depth(12 * Depth::ONE_PLY.0) && tt_pv {
+            if depth > Depth(12 * Depth::ONE_PLY.0) {
                 get_stack(stack, 0).ply
             } else {
                 MAX_PLY
