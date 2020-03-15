@@ -930,7 +930,7 @@ impl Thread {
                 if value < singular_beta {
                     extension = Depth::ONE_PLY;
                     singular_lmr = true;
-                } else if eval >= beta {
+                } else if eval >= beta && singular_beta >= beta {
                     return singular_beta;
                 }
             } else if gives_check
