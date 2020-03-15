@@ -1230,7 +1230,7 @@ impl Thread {
             best_value = std::cmp::min(best_value, max_value);
         }
 
-        if excluded_move.is_none() {
+        if excluded_move.is_none() && !(root_node && self.pv_idx != 0) {
             tte.save(
                 key,
                 value_to_tt(best_value, get_stack(stack, 0).ply),
