@@ -118,6 +118,7 @@ struct Thread {
     completed_depth: Depth,
     counter_moves: CounterMoveHistory,
     main_history: ButterflyHistory,
+    low_ply_history: LowPlyHistory,
     capture_history: CapturePieceToHistory,
     continuation_history: [[ContinuationHistory; StatsType::NUM]; InCheckType::NUM],
     limits: LimitsType, // Clone from ThreadPool for fast access.
@@ -177,6 +178,7 @@ impl Thread {
         self.calls_count = 0;
         self.counter_moves.fill(None);
         self.main_history.fill(0);
+        self.low_ply_history.fill(0);
         self.capture_history.fill(0);
 
         self.continuation_history.iter_mut().for_each(|x| {
@@ -567,7 +569,7 @@ impl Thread {
                         // Then can be as follows.
                         //     tt_move.piece_moved_after_move().0 >= Piece::NUM
                         // It causes "index out of bounds" in update_continuation_histoies() in in update_quiet_stats().
-                        self.update_quiet_stats(stack, tt_move, stat_bonus(depth));
+                        self.update_quiet_stats(stack, tt_move, stat_bonus(depth), depth);
                     }
 
                     if get_stack(stack, -1).move_count <= 2
@@ -864,10 +866,16 @@ impl Thread {
             tt_move,
             depth,
             &self.main_history,
+            &self.low_ply_history,
             &self.capture_history,
             &cont_hists,
             counter_move,
             &get_stack(stack, 0).killers,
+            if depth > Depth(12 * Depth::ONE_PLY.0) && tt_pv {
+                get_stack(stack, 0).ply
+            } else {
+                MAX_PLY
+            },
         );
 
         let mut value = best_value;
@@ -1540,7 +1548,7 @@ impl Thread {
             stat_bonus(depth)
         };
         if !best_move.is_capture_or_pawn_promotion(&self.position) {
-            self.update_quiet_stats(stack, best_move, bonus2);
+            self.update_quiet_stats(stack, best_move, bonus2, depth);
             for &quiet_move in quiets_searched {
                 self.main_history.update(us, quiet_move, -bonus2);
                 update_continuation_histories(
@@ -1569,7 +1577,7 @@ impl Thread {
                 .update(moved_piece, capture_move.to(), captured, -bonus1);
         }
     }
-    fn update_quiet_stats(&mut self, stack: &mut [Stack], m: Move, bonus: i32) {
+    fn update_quiet_stats(&mut self, stack: &mut [Stack], m: Move, bonus: i32, depth: Depth) {
         if get_stack(stack, 0).killers[0].unwrap_unchecked() != m {
             let ss = get_stack_mut(stack, 0);
             ss.killers[1] = ss.killers[0];
@@ -1588,6 +1596,10 @@ impl Thread {
             let prev_sq = prev_move.unwrap_unchecked().to();
             self.counter_moves
                 .set(prev_sq, self.position.piece_on(prev_sq), m);
+        }
+        if depth.0 > 12 && get_stack(stack, 0).ply < LowPlyHistory::MAX_LPH as i32 {
+            self.low_ply_history
+                .update(get_stack(stack, 0).ply, m, stat_bonus(depth - Depth(7)));
         }
     }
     fn pv_info_to_usi_string(
@@ -1711,6 +1723,7 @@ impl ThreadPool {
                     completed_depth: Depth::ZERO,
                     counter_moves: CounterMoveHistory::new(),
                     main_history: ButterflyHistory::new(),
+                    low_ply_history: LowPlyHistory::new(),
                     capture_history: CapturePieceToHistory::new(),
                     continuation_history: [
                         [ContinuationHistory::new(), ContinuationHistory::new()],
@@ -1846,6 +1859,7 @@ impl ThreadPool {
                                 th.position = pos;
                                 th.usi_options = usi_options_cloned;
                                 th.timeman = timeman_cloned;
+                                th.low_ply_history.fill(0);
                                 th.iterative_deepening_loop();
                             };
                             if i == 0 {

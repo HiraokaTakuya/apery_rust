@@ -51,6 +51,35 @@ impl ButterflyHistory {
     }
 }
 
+pub struct LowPlyHistory {
+    v: [[i16; 0xffff]; Self::MAX_LPH], // using lower 16bit of Move as array index of v.
+}
+
+impl LowPlyHistory {
+    pub const MAX_LPH: usize = 4;
+    pub fn new() -> Self {
+        Self {
+            v: [[0; 0xffff]; Self::MAX_LPH],
+        }
+    }
+    pub fn get(&self, ply: i32, m: Move) -> i32 {
+        i32::from(self.v[ply as usize][m.0.get() as u16 as usize])
+    }
+    pub fn update(&mut self, ply: i32, m: Move, bonus: i32) {
+        let entry = &mut self.v[ply as usize][m.0.get() as u16 as usize];
+        let mut val = *entry;
+        val += (bonus - i32::from(val) * bonus.abs() / 10692) as i16;
+        *entry = val;
+    }
+    pub fn fill(&mut self, val: i16) {
+        for x in self.v.iter_mut() {
+            for y in x.iter_mut() {
+                *y = val;
+            }
+        }
+    }
+}
+
 pub struct CounterMoveHistory {
     v: [[Option<Move>; Piece::NUM]; Square::NUM],
 }
@@ -368,7 +397,9 @@ fn score_quiets(
     move_list: &mut [ExtMove],
     pos: &Position,
     main_history: *const ButterflyHistory,
+    low_ply_history: *const LowPlyHistory,
     continuation_history: &[*const PieceToHistory],
+    ply: i32,
 ) {
     for ext_move in move_list {
         let m = ext_move.mv;
@@ -380,6 +411,11 @@ fn score_quiets(
             + 2 * unsafe { (*continuation_history[1]).get(to, piece_moved) }
             + 2 * unsafe { (*continuation_history[3]).get(to, piece_moved) }
             + unsafe { (*continuation_history[5]).get(to, piece_moved) }
+            + if ply < LowPlyHistory::MAX_LPH as i32 {
+                4 * unsafe { (*low_ply_history).get(ply, m) }
+            } else {
+                0
+            }
     }
 }
 
@@ -406,6 +442,7 @@ fn score_evasion(
 
 pub struct MovePickerForMainSearch<'a> {
     main_history: *const ButterflyHistory,
+    low_ply_history: *const LowPlyHistory,
     capture_history: *const CapturePieceToHistory,
     continuation_history: &'a [*const PieceToHistory],
     cur: usize,
@@ -416,6 +453,7 @@ pub struct MovePickerForMainSearch<'a> {
     refutations_size: usize,
     depth: Depth,
     move_list: MoveList,
+    ply: i32,
 }
 
 impl<'a> MovePickerForMainSearch<'a> {
@@ -424,10 +462,12 @@ impl<'a> MovePickerForMainSearch<'a> {
         ttm: Option<Move>,
         depth: Depth,
         mh: &ButterflyHistory,
+        lph: &LowPlyHistory,
         cph: &CapturePieceToHistory,
         ch: &'a [*const PieceToHistory],
         cm: Option<Move>,
         killers: &[Option<Move>],
+        ply: i32,
     ) -> MovePickerForMainSearch<'a> {
         let mut stage = if pos.in_check() {
             StagesForMainSearch::EvasionTT
@@ -443,6 +483,7 @@ impl<'a> MovePickerForMainSearch<'a> {
         };
         MovePickerForMainSearch {
             main_history: mh,
+            low_ply_history: lph,
             capture_history: cph,
             continuation_history: ch,
             cur: 0,
@@ -453,6 +494,7 @@ impl<'a> MovePickerForMainSearch<'a> {
             refutations_size: 3,
             depth,
             move_list: MoveList::new(),
+            ply,
         }
     }
     pub fn next_move(&mut self, pos: &Position, skip_quiets: bool) -> Option<Move> {
@@ -509,7 +551,9 @@ impl<'a> MovePickerForMainSearch<'a> {
                             self.move_list.slice_mut(self.cur),
                             pos,
                             self.main_history,
+                            self.low_ply_history,
                             self.continuation_history,
+                            self.ply,
                         );
                         partial_insertion_sort(
                             self.move_list.slice_mut(self.cur),
@@ -853,6 +897,7 @@ fn test_move_picker_for_main_search_next_move() {
         Piece::B_BISHOP,
     ));
     let mh = ButterflyHistory::new();
+    let lph = LowPlyHistory::new();
     let cph = CapturePieceToHistory::new();
     let ch = [
         PieceToHistory::new(),
@@ -884,8 +929,18 @@ fn test_move_picker_for_main_search_next_move() {
         Piece::B_BISHOP,
     ));
     let skip_quiets = false;
-    let mut mp =
-        MovePickerForMainSearch::new(&pos, tt_move, Depth(5), &mh, &cph, &ch, cm, &killers);
+    let mut mp = MovePickerForMainSearch::new(
+        &pos,
+        tt_move,
+        Depth(5),
+        &mh,
+        &lph,
+        &cph,
+        &ch,
+        cm,
+        &killers,
+        0,
+    );
     let moves_size;
     {
         let mut mlist = MoveList::new();
@@ -944,6 +999,7 @@ fn test_move_picker_for_main_search_next_move_evasion() {
         Piece::B_KING,
     ));
     let mh = ButterflyHistory::new();
+    let lph = LowPlyHistory::new();
     let cph = CapturePieceToHistory::new();
     let ch = [
         PieceToHistory::new(),
@@ -973,8 +1029,18 @@ fn test_move_picker_for_main_search_next_move_evasion() {
         Piece::B_BISHOP,
     ));
     let skip_quiets = false;
-    let mut mp =
-        MovePickerForMainSearch::new(&pos, tt_move, Depth(5), &mh, &cph, &ch, cm, &killers);
+    let mut mp = MovePickerForMainSearch::new(
+        &pos,
+        tt_move,
+        Depth(5),
+        &mh,
+        &lph,
+        &cph,
+        &ch,
+        cm,
+        &killers,
+        0,
+    );
     let moves_size;
     {
         let mut mlist = MoveList::new();
