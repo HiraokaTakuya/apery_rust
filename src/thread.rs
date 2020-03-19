@@ -1800,13 +1800,6 @@ impl ThreadPool {
             }
             root_moves
         };
-        if root_moves.is_empty() {
-            if !self.hide_all_output.load(Ordering::Relaxed) {
-                println!("bestmove resign");
-            }
-            *self.last_best_root_move.lock().unwrap() = Some(RootMove::new(Move::RESIGN));
-            return;
-        }
         let dummy_nodes = Arc::new(AtomicI64::new(0)); // This isn't used.
         let pos = Position::new_from_position(pos, dummy_nodes);
         let nodess_cloned = self.nodess.clone();
@@ -1822,6 +1815,26 @@ impl ThreadPool {
             std::thread::Builder::new()
                 .stack_size(crate::stack_size::STACK_SIZE)
                 .spawn(move || {
+                    if root_moves.is_empty() || pos.is_entering_king_win() {
+                        while !stop_cloned.load(Ordering::Relaxed)
+                            && (ponder_cloned.load(Ordering::Relaxed) || limits.infinite.is_some())
+                        {
+                            std::thread::sleep(std::time::Duration::from_millis(1));
+                        }
+                        let m = if root_moves.is_empty() {
+                            *last_best_root_move_cloned.lock().unwrap() =
+                                Some(RootMove::new(Move::RESIGN));
+                            "resign"
+                        } else {
+                            *last_best_root_move_cloned.lock().unwrap() =
+                                Some(RootMove::new(Move::WIN));
+                            "win"
+                        };
+                        if !hide_all_output_cloned.load(Ordering::Relaxed) {
+                            println!("bestmove {}", m);
+                        }
+                        return;
+                    }
                     let mut v = vec![];
                     for (i, thread) in thread_pool_base_cloned
                         .lock()
