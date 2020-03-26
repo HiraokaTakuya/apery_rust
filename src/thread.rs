@@ -942,10 +942,6 @@ impl Thread {
                     || self.position.see_ge(m, Value::ZERO))
             {
                 extension = Depth::ONE_PLY;
-            } else if pv_node
-                && piece_value(self.position.captured_piece()) > piece_type_value(PieceType::PAWN)
-            {
-                extension = Depth::ONE_PLY;
             }
 
             let new_depth = new_depth + extension;
