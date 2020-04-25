@@ -819,11 +819,11 @@ impl PieceType {
     }
     #[allow(dead_code)]
     fn is_slider(self) -> bool {
-        const IS_SLIDER_VAL: u32 = ((1 << PieceType::LANCE.0)
+        const IS_SLIDER_VAL: u32 = (1 << PieceType::LANCE.0)
             | (1 << PieceType::BISHOP.0)
             | (1 << PieceType::ROOK.0)
             | (1 << PieceType::HORSE.0)
-            | (1 << PieceType::DRAGON.0));
+            | (1 << PieceType::DRAGON.0);
         (IS_SLIDER_VAL & (1 << self.0)) != 0
     }
     pub fn is_promotable(self) -> bool {
