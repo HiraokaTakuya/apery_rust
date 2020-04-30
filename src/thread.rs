@@ -1615,7 +1615,7 @@ impl Thread {
                 (depth - Depth::ONE_PLY, rm.previous_score)
             };
             let line = format!(
-                "info depth {depth} seldepth {seldepth} multipv {multipv} score {score} {bound}wr {wr:.4} nodes {nodes} nps {nps} time {time} pv {pv}",
+                "info depth {depth} seldepth {seldepth} multipv {multipv} score {score} {bound}nodes {nodes} nps {nps} time {time} pv {pv}",
                 depth = d.0 / Depth::ONE_PLY.0,
                 seldepth = rm.sel_depth,
                 multipv = i + 1,
@@ -1625,7 +1625,6 @@ impl Thread {
                 } else if v <= alpha {
                     "upperbound "
                 } else {""},
-                wr = v.to_win_rate(),
                 nodes = nodes_searched,
                 nps = nodes_searched * 1000 / elapsed_millis,
                 time = elapsed_millis,

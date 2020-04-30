@@ -747,6 +747,7 @@ impl Value {
             )
         }
     }
+    #[allow(dead_code)]
     pub fn to_win_rate(self) -> f64 {
         if Value::MATED_IN_MAX_PLY < self && self < Value::MATE_IN_MAX_PLY {
             1.0 / (1.0 + (f64::from(-self.0) / 600.0).exp())
