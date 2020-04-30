@@ -1,5 +1,5 @@
 [build]
 rustflags = [
     #"--emit", "asm,llvm-bc,llvm-ir", "-C", "llvm-args=--x86-asm-syntax=intel",
-    #"-C", "target-cpu=native",
+    "-C", "target-cpu=native",
 ]
