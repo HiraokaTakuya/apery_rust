@@ -1,5 +1,8 @@
 use crate::book::*;
-use crate::evaluate::*;
+#[cfg(feature = "kppt")]
+use crate::evaluate::kppt::*;
+#[cfg(feature = "material")]
+use crate::evaluate::material::*;
 use crate::movegen::*;
 use crate::movepick::*;
 use crate::movetypes::*;
@@ -124,6 +127,7 @@ struct Thread {
     limits: LimitsType, // Clone from ThreadPool for fast access.
     tt: *mut TranspositionTable,
     timeman: Arc<Mutex<TimeManagement>>, // shold I use pointer for speedup?
+    #[cfg(feature = "kppt")]
     ehash: *mut EvalHash,
     breadcrumbs: *mut Breadcrumbs,
     reductions: *mut Reductions,
@@ -480,7 +484,12 @@ impl Thread {
                 Repetition::Not => {
                     if self.stop.load(Ordering::Relaxed) || get_stack(stack, 0).ply >= MAX_PLY {
                         return if get_stack(stack, 0).ply >= MAX_PLY && !in_check {
-                            evaluate(&mut self.position, stack, self.ehash)
+                            evaluate(
+                                &mut self.position,
+                                stack,
+                                #[cfg(feature = "kppt")]
+                                self.ehash,
+                            )
                         } else {
                             value_draw(self.nodes.load(Ordering::Relaxed))
                         };
@@ -640,7 +649,12 @@ impl Thread {
         let pure_static_eval = if root_node {
             evaluate_at_root(&self.position, stack)
         } else {
-            evaluate(&mut self.position, stack, self.ehash)
+            evaluate(
+                &mut self.position,
+                stack,
+                #[cfg(feature = "kppt")]
+                self.ehash,
+            )
         };
         let mut eval;
         let improving;
@@ -735,7 +749,11 @@ impl Thread {
                     self.continuation_history[0][0].sentinel();
 
                 self.position.do_null_move();
-                get_stack_mut(stack, 1).static_eval_raw = get_stack(stack, 0).static_eval_raw; // key is wrong. but it's no problem.
+                #[cfg(feature = "kppt")]
+                {
+                    // key is wrong. but it's no problem.
+                    get_stack_mut(stack, 1).static_eval_raw = get_stack(stack, 0).static_eval_raw;
+                }
                 let mut null_value = -self.search::<NonPv>(
                     &mut stack[1..],
                     -beta,
@@ -801,6 +819,7 @@ impl Thread {
 
                         let gives_check = self.position.gives_check(m);
                         self.position.do_move(m, gives_check);
+                        #[cfg(feature = "kppt")]
                         get_stack_mut(stack, 1).static_eval_raw.set_not_evaluated();
                         let mut value = -self.qsearch::<NonPv>(
                             &mut stack[1..],
@@ -1026,6 +1045,7 @@ impl Thread {
 
             // Step 15
             self.position.do_move(m, gives_check);
+            #[cfg(feature = "kppt")]
             get_stack_mut(stack, 1).static_eval_raw.set_not_evaluated();
 
             // Step 16
@@ -1319,7 +1339,12 @@ impl Thread {
                 best_value = tte.eval();
                 get_stack_mut(stack, 0).static_eval = best_value;
                 if best_value == Value::NONE {
-                    best_value = evaluate(&mut self.position, stack, self.ehash);
+                    best_value = evaluate(
+                        &mut self.position,
+                        stack,
+                        #[cfg(feature = "kppt")]
+                        self.ehash,
+                    );
                     get_stack_mut(stack, 0).static_eval = best_value;
                 }
                 if tt_value != Value::NONE
@@ -1333,7 +1358,12 @@ impl Thread {
                 }
             } else {
                 best_value = if get_stack(stack, -1).current_move.unwrap_unchecked() != Move::NULL {
-                    evaluate(&mut self.position, stack, self.ehash)
+                    evaluate(
+                        &mut self.position,
+                        stack,
+                        #[cfg(feature = "kppt")]
+                        self.ehash,
+                    )
                 } else {
                     -get_stack(stack, -1).static_eval + Value(2 * TEMPO.0)
                 };
@@ -1381,7 +1411,12 @@ impl Thread {
             depth,
         );
 
-        evaluate(&mut self.position, stack, self.ehash); // for difference calculation
+        evaluate(
+            &mut self.position,
+            stack,
+            #[cfg(feature = "kppt")]
+            self.ehash,
+        ); // for difference calculation
         while let Some(m) = mp.next_move(&self.position) {
             debug_assert!(m != Move::NULL);
             let gives_check = self.position.gives_check(m);
@@ -1426,6 +1461,7 @@ impl Thread {
                 .get_mut(m.piece_moved_after_move(), m.to());
 
             self.position.do_move(m, gives_check);
+            #[cfg(feature = "kppt")]
             get_stack_mut(stack, 1).static_eval_raw.set_not_evaluated();
             let value =
                 -self.qsearch::<IsPv>(&mut stack[1..], -beta, -alpha, depth - Depth::ONE_PLY);
@@ -1682,7 +1718,7 @@ impl ThreadPool {
         &mut self,
         requested: usize,
         tt: &mut TranspositionTable,
-        ehash: &mut EvalHash,
+        #[cfg(feature = "kppt")] ehash: &mut EvalHash,
         breadcrumbs: &mut Breadcrumbs,
         reductions: &mut Reductions,
     ) {
@@ -1723,6 +1759,7 @@ impl ThreadPool {
                     limits: self.limits.clone(),
                     tt,
                     timeman: self.timeman.clone(),
+                    #[cfg(feature = "kppt")]
                     ehash,
                     breadcrumbs,
                     reductions,
@@ -2009,13 +2046,15 @@ fn test_start_thinking() {
         .stack_size(crate::stack_size::STACK_SIZE)
         .spawn(|| {
             let mut thread_pool = ThreadPool::new();
-            let usi_options = UsiOptions::new();
             let mut tt = TranspositionTable::new();
+            #[cfg(feature = "kppt")]
+            let usi_options = UsiOptions::new();
+            #[cfg(feature = "kppt")]
             let mut ehash = EvalHash::new();
-            let mut breadcrumbs = Breadcrumbs::new();
-            let mut reductions = Reductions::new(1);
             tt.resize(16, &mut thread_pool);
+            #[cfg(feature = "kppt")]
             ehash.resize(16, &mut thread_pool);
+            #[cfg(feature = "kppt")]
             match load_evaluate_files(&usi_options.get_string(UsiOptions::EVAL_DIR)) {
                 Ok(_) => {
                     let limits = {
@@ -2024,7 +2063,16 @@ fn test_start_thinking() {
                         limits.start_time = Some(std::time::Instant::now());
                         limits
                     };
-                    thread_pool.set(3, &mut tt, &mut ehash, &mut breadcrumbs, &mut reductions);
+                    let mut breadcrumbs = Breadcrumbs::new();
+                    let mut reductions = Reductions::new(1);
+                    thread_pool.set(
+                        3,
+                        &mut tt,
+                        #[cfg(feature = "kppt")]
+                        &mut ehash,
+                        &mut breadcrumbs,
+                        &mut reductions,
+                    );
                     let ponder_mode = false;
                     let hide_all_output = false;
                     thread_pool.start_thinking(

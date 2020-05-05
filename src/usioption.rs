@@ -1,4 +1,5 @@
-use crate::evaluate::*;
+#[cfg(feature = "kppt")]
+use crate::evaluate::kppt::*;
 use crate::search::*;
 use crate::thread::*;
 use crate::tt::*;
@@ -70,6 +71,7 @@ impl UsiOptions {
     pub const BYOYOMI_MARGIN: &'static str = "Byoyomi_Margin";
     const CLEAR_HASH: &'static str = "Clear_Hash";
     pub const EVAL_DIR: &'static str = "Eval_Dir";
+    #[cfg(feature = "kppt")]
     pub const EVAL_HASH: &'static str = "Eval_Hash";
     pub const MINIMUM_THINKING_TIME: &'static str = "Minimum_Thinking_Time";
     pub const MULTI_PV: &'static str = "MultiPV";
@@ -94,6 +96,7 @@ impl UsiOptions {
         );
         options.insert(Self::CLEAR_HASH, UsiOptionValue::Button);
         options.insert(Self::EVAL_DIR, UsiOptionValue::string("eval/20190617"));
+        #[cfg(feature = "kppt")]
         options.insert(Self::EVAL_HASH, UsiOptionValue::spin(256, 1, 1024 * 1024));
         options.insert(
             Self::MINIMUM_THINKING_TIME,
@@ -133,7 +136,7 @@ impl UsiOptions {
         value: &str,
         thread_pool: &mut ThreadPool,
         tt: &mut TranspositionTable,
-        ehash: &mut EvalHash,
+        #[cfg(feature = "kppt")] ehash: &mut EvalHash,
         breadcrumbs: &mut Breadcrumbs,
         reductions: &mut Reductions,
         is_ready: &mut bool,
@@ -162,10 +165,16 @@ impl UsiOptions {
                     let n = std::cmp::max(n, *min);
                     *current = n;
                     match key {
+                        #[cfg(feature = "kppt")]
                         Self::EVAL_HASH => ehash.resize(n as usize, thread_pool),
-                        Self::THREADS => {
-                            thread_pool.set(n as usize, tt, ehash, breadcrumbs, reductions)
-                        }
+                        Self::THREADS => thread_pool.set(
+                            n as usize,
+                            tt,
+                            #[cfg(feature = "kppt")]
+                            ehash,
+                            breadcrumbs,
+                            reductions,
+                        ),
                         Self::USI_HASH => tt.resize(n as usize, thread_pool),
                         _ => {}
                     }

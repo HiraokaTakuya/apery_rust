@@ -1,5 +1,8 @@
 use crate::book::*;
-use crate::evaluate::*;
+#[cfg(feature = "kppt")]
+use crate::evaluate::kppt::*;
+#[cfg(feature = "material")]
+use crate::evaluate::material::*;
 use crate::file_to_vec::*;
 use crate::huffman_code::*;
 use crate::learn::*;
@@ -211,7 +214,7 @@ pub fn setoption(
     usi_options: &mut UsiOptions,
     thread_pool: &mut ThreadPool,
     tt: &mut TranspositionTable,
-    ehash: &mut EvalHash,
+    #[cfg(feature = "kppt")] ehash: &mut EvalHash,
     breadcrumbs: &mut Breadcrumbs,
     reductions: &mut Reductions,
     is_ready: &mut bool,
@@ -237,6 +240,7 @@ pub fn setoption(
                 value,
                 thread_pool,
                 tt,
+                #[cfg(feature = "kppt")]
                 ehash,
                 breadcrumbs,
                 reductions,
@@ -498,11 +502,19 @@ fn csa_record_to_sfen(csa: &[u8]) -> Result<String, String> {
 
 pub fn cmd_loop() {
     let mut tt = TranspositionTable::new();
+    #[cfg(feature = "kppt")]
     let mut ehash = EvalHash::new();
     let mut breadcrumbs = Breadcrumbs::new();
     let mut reductions = Reductions::new(1);
     let mut thread_pool = ThreadPool::new();
-    thread_pool.set(1, &mut tt, &mut ehash, &mut breadcrumbs, &mut reductions);
+    thread_pool.set(
+        1,
+        &mut tt,
+        #[cfg(feature = "kppt")]
+        &mut ehash,
+        &mut breadcrumbs,
+        &mut reductions,
+    );
     let mut usi_options = UsiOptions::new();
     let mut pos = Position::new();
     let mut is_ready = false;
@@ -545,7 +557,11 @@ pub fn cmd_loop() {
             }
             "isready" => {
                 if !is_ready {
+                    #[cfg(feature = "kppt")]
                     let mut all_ok = true;
+                    #[cfg(feature = "material")]
+                    let all_ok = true;
+                    #[cfg(feature = "kppt")]
                     match load_evaluate_files(&usi_options.get_string(UsiOptions::EVAL_DIR)) {
                         Ok(_) => {}
                         Err(err) => {
@@ -567,6 +583,7 @@ pub fn cmd_loop() {
                             usi_options.get_i64(UsiOptions::USI_HASH) as usize,
                             &mut thread_pool,
                         );
+                        #[cfg(feature = "kppt")]
                         ehash.resize(
                             usi_options.get_i64(UsiOptions::EVAL_HASH) as usize,
                             &mut thread_pool,
@@ -590,6 +607,7 @@ pub fn cmd_loop() {
                 &mut usi_options,
                 &mut thread_pool,
                 &mut tt,
+                #[cfg(feature = "kppt")]
                 &mut ehash,
                 &mut breadcrumbs,
                 &mut reductions,
@@ -631,6 +649,7 @@ pub fn cmd_loop() {
             "wait" => thread_pool.wait_for_search_finished(),
             "write_eval" => {
                 if is_ready {
+                    #[cfg(feature = "kppt")]
                     match write_evaluate_files() {
                         Ok(_) => {}
                         Err(err) => eprintln!("{}", err),

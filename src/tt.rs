@@ -173,18 +173,28 @@ fn test_size() {
 
 #[test]
 fn test_probe() {
-    use crate::evaluate::*;
+    #[cfg(feature = "kppt")]
+    use crate::evaluate::kppt::*;
     use crate::search::*;
     std::thread::Builder::new()
         .stack_size(crate::stack_size::STACK_SIZE)
         .spawn(|| {
             let mut thread_pool = ThreadPool::new();
             let mut tt = TranspositionTable::new();
+            #[cfg(feature = "kppt")]
             let mut ehash = EvalHash::new();
             let mut breadcrumbs = Breadcrumbs::new();
             let mut reductions = Reductions::new(1);
-            thread_pool.set(1, &mut tt, &mut ehash, &mut breadcrumbs, &mut reductions);
+            thread_pool.set(
+                1,
+                &mut tt,
+                #[cfg(feature = "kppt")]
+                &mut ehash,
+                &mut breadcrumbs,
+                &mut reductions,
+            );
             tt.resize(1, &mut thread_pool);
+            #[cfg(feature = "kppt")]
             ehash.resize(1, &mut thread_pool);
             let pv = false;
             let gen8 = tt.generation8;

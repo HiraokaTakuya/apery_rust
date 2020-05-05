@@ -1,5 +1,6 @@
 use crate::bitboard::*;
-use crate::evaluate::*;
+#[cfg(feature = "kppt")]
+use crate::evaluate::kppt::*;
 use crate::hand::*;
 use crate::huffman_code::*;
 use crate::movetypes::*;
@@ -173,9 +174,11 @@ lazy_static! {
     };
 }
 
+#[cfg(feature = "kppt")]
 #[derive(Clone)]
 pub struct EvalList(pub [[EvalIndex; 2]; LIST_NUM]);
 
+#[cfg(feature = "kppt")]
 impl EvalList {
     pub fn new(pos: &PositionBase) -> EvalList {
         let mut list = EvalList([[EvalIndex(0); 2]; LIST_NUM]);
@@ -252,9 +255,11 @@ impl EvalList {
     }
 }
 
+#[cfg(feature = "kppt")]
 #[derive(Clone)]
 struct EvalIndexToEvalListIndex([usize; EvalIndex::FE_END.0]);
 
+#[cfg(feature = "kppt")]
 impl EvalIndexToEvalListIndex {
     fn new(eval_list: &EvalList) -> EvalIndexToEvalListIndex {
         let mut eval_index_to_eval_list_index = EvalIndexToEvalListIndex([0; EvalIndex::FE_END.0]);
@@ -285,7 +290,9 @@ pub struct StateInfo {
     checkers_bb: Bitboard,
     captured_piece: Piece,
     check_info: CheckInfo,
+    #[cfg(feature = "kppt")]
     changed_eval_index: ChangedEvalIndex,
+    #[cfg(feature = "kppt")]
     changed_eval_index_captured: ChangedEvalIndex,
 }
 
@@ -301,7 +308,9 @@ impl StateInfo {
             checkers_bb: Bitboard::ZERO,
             captured_piece: Piece::EMPTY,
             check_info: CheckInfo::ZERO,
+            #[cfg(feature = "kppt")]
             changed_eval_index: ChangedEvalIndex::ZERO,
+            #[cfg(feature = "kppt")]
             changed_eval_index_captured: ChangedEvalIndex::ZERO,
         }
     }
@@ -316,7 +325,9 @@ impl StateInfo {
             checkers_bb: std::mem::MaybeUninit::uninit().assume_init(),
             captured_piece: std::mem::MaybeUninit::uninit().assume_init(),
             check_info: std::mem::MaybeUninit::uninit().assume_init(),
+            #[cfg(feature = "kppt")]
             changed_eval_index: std::mem::MaybeUninit::uninit().assume_init(),
+            #[cfg(feature = "kppt")]
             changed_eval_index_captured: std::mem::MaybeUninit::uninit().assume_init(),
         }
     }
@@ -334,7 +345,9 @@ impl StateInfo {
             checkers_bb: pos.attackers_to_except_king(them, king_sq, &pos.occupied_bb()),
             captured_piece: Piece::EMPTY,
             check_info: CheckInfo::new(&pos),
+            #[cfg(feature = "kppt")]
             changed_eval_index: ChangedEvalIndex::ZERO,
+            #[cfg(feature = "kppt")]
             changed_eval_index_captured: ChangedEvalIndex::ZERO,
         }
     }
@@ -415,7 +428,9 @@ impl StateInfo {
         checkers_bb: Bitboard::ZERO,
         captured_piece: Piece::EMPTY,
         check_info: CheckInfo::ZERO,
+        #[cfg(feature = "kppt")]
         changed_eval_index: ChangedEvalIndex::ZERO,
+        #[cfg(feature = "kppt")]
         changed_eval_index_captured: ChangedEvalIndex::ZERO,
     };
 }
@@ -1043,7 +1058,9 @@ impl PositionBase {
 
 pub struct Position {
     pub base: PositionBase,
+    #[cfg(feature = "kppt")]
     eval_list: EvalList,
+    #[cfg(feature = "kppt")]
     eval_index_to_eval_list_index: EvalIndexToEvalListIndex,
     states: Vec<StateInfo>,
     nodes: Arc<AtomicI64>,
@@ -1060,11 +1077,15 @@ impl Position {
         match PositionBase::new_from_sfen_args(sfen_slice) {
             Ok(base) => {
                 let state = StateInfo::new_from_position(&base);
+                #[cfg(feature = "kppt")]
                 let eval_list = EvalList::new(&base);
+                #[cfg(feature = "kppt")]
                 let eval_index_to_eval_list_index = EvalIndexToEvalListIndex::new(&eval_list);
                 let mut pos = Position {
                     base,
+                    #[cfg(feature = "kppt")]
                     eval_list,
+                    #[cfg(feature = "kppt")]
                     eval_index_to_eval_list_index,
                     states: Vec::new(),
                     nodes: Arc::new(AtomicI64::new(0)),
@@ -1080,11 +1101,15 @@ impl Position {
         match PositionBase::new_from_huffman_coded_position(hcp) {
             Ok(base) => {
                 let state = StateInfo::new_from_position(&base);
+                #[cfg(feature = "kppt")]
                 let eval_list = EvalList::new(&base);
+                #[cfg(feature = "kppt")]
                 let eval_index_to_eval_list_index = EvalIndexToEvalListIndex::new(&eval_list);
                 let mut pos = Position {
                     base,
+                    #[cfg(feature = "kppt")]
                     eval_list,
+                    #[cfg(feature = "kppt")]
                     eval_index_to_eval_list_index,
                     states: Vec::new(),
                     nodes: Arc::new(AtomicI64::new(0)),
@@ -1099,7 +1124,9 @@ impl Position {
     pub fn new_from_position(pos: &Position, nodes: Arc<AtomicI64>) -> Position {
         let mut p = Position {
             base: pos.base.clone(),
+            #[cfg(feature = "kppt")]
             eval_list: pos.eval_list.clone(),
+            #[cfg(feature = "kppt")]
             eval_index_to_eval_list_index: pos.eval_index_to_eval_list_index.clone(),
             states: pos.states.clone(),
             nodes,
@@ -1875,17 +1902,20 @@ impl Position {
             let pc_to = m.piece_dropped();
             let pt_to = PieceType::new(pc_to);
             let hand_num = self.hand(us).num(pt_to);
-            let old_eval_index = EvalIndex(EvalIndex::new_hand(pc_to).0 + hand_num as usize);
-            let new_eval_index = EvalIndex(EvalIndex::new_board(pc_to).0 + to.0 as usize);
-            self.st_mut().changed_eval_index.old_index = old_eval_index;
-            self.st_mut().changed_eval_index.new_index = new_eval_index;
-            let eval_list_index = self.eval_index_to_eval_list_index.get(old_eval_index);
-            self.eval_index_to_eval_list_index
-                .set(new_eval_index, eval_list_index);
-            self.eval_list
-                .set(eval_list_index, Color::BLACK, new_eval_index);
-            self.eval_list
-                .set(eval_list_index, Color::WHITE, new_eval_index.inverse());
+            #[cfg(feature = "kppt")]
+            {
+                let old_eval_index = EvalIndex(EvalIndex::new_hand(pc_to).0 + hand_num as usize);
+                let new_eval_index = EvalIndex(EvalIndex::new_board(pc_to).0 + to.0 as usize);
+                self.st_mut().changed_eval_index.old_index = old_eval_index;
+                self.st_mut().changed_eval_index.new_index = new_eval_index;
+                let eval_list_index = self.eval_index_to_eval_list_index.get(old_eval_index);
+                self.eval_index_to_eval_list_index
+                    .set(new_eval_index, eval_list_index);
+                self.eval_list
+                    .set(eval_list_index, Color::BLACK, new_eval_index);
+                self.eval_list
+                    .set(eval_list_index, Color::WHITE, new_eval_index.inverse());
+            }
             hand_key ^= Zobrist::get_hand(pt_to, hand_num, us);
             board_key ^= Zobrist::get_field(pt_to, to, us);
             self.base.hands[us.0 as usize].minus_one(pt_to);
@@ -1916,20 +1946,24 @@ impl Position {
                 self.base.hands[us.0 as usize].plus_one(pt_captured_demoted);
                 let hand_num = self.hand(us).num(pt_captured_demoted);
 
-                let old_eval_index =
-                    EvalIndex(EvalIndex::new_board(captured_piece).0 + to.0 as usize);
-                let new_eval_index = EvalIndex(
-                    EvalIndex::new_hand(Piece::new(us, pt_captured_demoted)).0 + hand_num as usize,
-                );
-                self.st_mut().changed_eval_index_captured.old_index = old_eval_index;
-                self.st_mut().changed_eval_index_captured.new_index = new_eval_index;
-                let eval_list_index = self.eval_index_to_eval_list_index.get(old_eval_index);
-                self.eval_index_to_eval_list_index
-                    .set(new_eval_index, eval_list_index);
-                self.eval_list
-                    .set(eval_list_index, Color::BLACK, new_eval_index);
-                self.eval_list
-                    .set(eval_list_index, Color::WHITE, new_eval_index.inverse());
+                #[cfg(feature = "kppt")]
+                {
+                    let old_eval_index =
+                        EvalIndex(EvalIndex::new_board(captured_piece).0 + to.0 as usize);
+                    let new_eval_index = EvalIndex(
+                        EvalIndex::new_hand(Piece::new(us, pt_captured_demoted)).0
+                            + hand_num as usize,
+                    );
+                    self.st_mut().changed_eval_index_captured.old_index = old_eval_index;
+                    self.st_mut().changed_eval_index_captured.new_index = new_eval_index;
+                    let eval_list_index = self.eval_index_to_eval_list_index.get(old_eval_index);
+                    self.eval_index_to_eval_list_index
+                        .set(new_eval_index, eval_list_index);
+                    self.eval_list
+                        .set(eval_list_index, Color::BLACK, new_eval_index);
+                    self.eval_list
+                        .set(eval_list_index, Color::WHITE, new_eval_index.inverse());
+                }
 
                 board_key ^= Zobrist::get_field(pt_captured, to, them);
                 hand_key ^= Zobrist::get_hand(pt_captured_demoted, hand_num, us);
@@ -1960,17 +1994,21 @@ impl Position {
                 self.base.king_squares[us.0 as usize] =
                     self.pieces_cp(us, PieceType::KING).lsb_unchecked();
             } else {
-                let old_eval_index = EvalIndex(EvalIndex::new_board(pc_from).0 + from.0 as usize);
-                let new_eval_index = EvalIndex(EvalIndex::new_board(pc_to).0 + to.0 as usize);
-                self.st_mut().changed_eval_index.old_index = old_eval_index;
-                self.st_mut().changed_eval_index.new_index = new_eval_index;
-                let eval_list_index = self.eval_index_to_eval_list_index.get(old_eval_index);
-                self.eval_index_to_eval_list_index
-                    .set(new_eval_index, eval_list_index);
-                self.eval_list
-                    .set(eval_list_index, Color::BLACK, new_eval_index);
-                self.eval_list
-                    .set(eval_list_index, Color::WHITE, new_eval_index.inverse());
+                #[cfg(feature = "kppt")]
+                {
+                    let old_eval_index =
+                        EvalIndex(EvalIndex::new_board(pc_from).0 + from.0 as usize);
+                    let new_eval_index = EvalIndex(EvalIndex::new_board(pc_to).0 + to.0 as usize);
+                    self.st_mut().changed_eval_index.old_index = old_eval_index;
+                    self.st_mut().changed_eval_index.new_index = new_eval_index;
+                    let eval_list_index = self.eval_index_to_eval_list_index.get(old_eval_index);
+                    self.eval_index_to_eval_list_index
+                        .set(new_eval_index, eval_list_index);
+                    self.eval_list
+                        .set(eval_list_index, Color::BLACK, new_eval_index);
+                    self.eval_list
+                        .set(eval_list_index, Color::WHITE, new_eval_index.inverse());
+                }
             }
 
             board_key ^= Zobrist::get_field(pt_from, from, us);
@@ -2008,29 +2046,12 @@ impl Position {
             self.base.remove_piece(pc_dropped, to);
             self.base.hands[them.0 as usize].plus_one(pt_dropped);
 
-            let hand_num = self.hand(them).num(pt_dropped);
-            let old_eval_index = EvalIndex(EvalIndex::new_board(pc_dropped).0 + to.0 as usize);
-            let new_eval_index = EvalIndex(EvalIndex::new_hand(pc_dropped).0 + hand_num as usize);
-            let eval_list_index = self.eval_index_to_eval_list_index.get(old_eval_index);
-            self.eval_index_to_eval_list_index
-                .set(new_eval_index, eval_list_index);
-            self.eval_list
-                .set(eval_list_index, Color::BLACK, new_eval_index);
-            self.eval_list
-                .set(eval_list_index, Color::WHITE, new_eval_index.inverse());
-        } else {
-            let pc_to = self.piece_on(to);
-            if self.st().is_capture_move() {
-                let pc_captured = self.st().captured_piece;
-                let pt_captured = PieceType::new(pc_captured);
-                let pt_captured_demoted = pt_captured.to_demote_if_possible();
-
-                let hand_num = self.hand(them).num(pt_captured_demoted);
-                let old_eval_index = EvalIndex(
-                    EvalIndex::new_hand(Piece::new(them, pt_captured_demoted)).0
-                        + hand_num as usize,
-                );
-                let new_eval_index = EvalIndex(EvalIndex::new_board(pc_captured).0 + to.0 as usize);
+            #[cfg(feature = "kppt")]
+            {
+                let hand_num = self.hand(them).num(pt_dropped);
+                let old_eval_index = EvalIndex(EvalIndex::new_board(pc_dropped).0 + to.0 as usize);
+                let new_eval_index =
+                    EvalIndex(EvalIndex::new_hand(pc_dropped).0 + hand_num as usize);
                 let eval_list_index = self.eval_index_to_eval_list_index.get(old_eval_index);
                 self.eval_index_to_eval_list_index
                     .set(new_eval_index, eval_list_index);
@@ -2038,6 +2059,31 @@ impl Position {
                     .set(eval_list_index, Color::BLACK, new_eval_index);
                 self.eval_list
                     .set(eval_list_index, Color::WHITE, new_eval_index.inverse());
+            }
+        } else {
+            let pc_to = self.piece_on(to);
+            if self.st().is_capture_move() {
+                let pc_captured = self.st().captured_piece;
+                let pt_captured = PieceType::new(pc_captured);
+                let pt_captured_demoted = pt_captured.to_demote_if_possible();
+
+                #[cfg(feature = "kppt")]
+                {
+                    let hand_num = self.hand(them).num(pt_captured_demoted);
+                    let old_eval_index = EvalIndex(
+                        EvalIndex::new_hand(Piece::new(them, pt_captured_demoted)).0
+                            + hand_num as usize,
+                    );
+                    let new_eval_index =
+                        EvalIndex(EvalIndex::new_board(pc_captured).0 + to.0 as usize);
+                    let eval_list_index = self.eval_index_to_eval_list_index.get(old_eval_index);
+                    self.eval_index_to_eval_list_index
+                        .set(new_eval_index, eval_list_index);
+                    self.eval_list
+                        .set(eval_list_index, Color::BLACK, new_eval_index);
+                    self.eval_list
+                        .set(eval_list_index, Color::WHITE, new_eval_index.inverse());
+                }
 
                 self.base.exchange_pieces(pc_captured, to);
                 self.base.hands[them.0 as usize].minus_one(pt_captured_demoted);
@@ -2054,17 +2100,21 @@ impl Position {
             if pc_to.is_king() {
                 self.base.king_squares[them.0 as usize] = from;
             } else {
-                let old_eval_index = EvalIndex(EvalIndex::new_board(pc_to).0 + to.0 as usize);
-                let new_eval_index = EvalIndex(EvalIndex::new_board(pc_from).0 + from.0 as usize);
-                self.st_mut().changed_eval_index.old_index = old_eval_index;
-                self.st_mut().changed_eval_index.new_index = new_eval_index;
-                let eval_list_index = self.eval_index_to_eval_list_index.get(old_eval_index);
-                self.eval_index_to_eval_list_index
-                    .set(new_eval_index, eval_list_index);
-                self.eval_list
-                    .set(eval_list_index, Color::BLACK, new_eval_index);
-                self.eval_list
-                    .set(eval_list_index, Color::WHITE, new_eval_index.inverse());
+                #[cfg(feature = "kppt")]
+                {
+                    let old_eval_index = EvalIndex(EvalIndex::new_board(pc_to).0 + to.0 as usize);
+                    let new_eval_index =
+                        EvalIndex(EvalIndex::new_board(pc_from).0 + from.0 as usize);
+                    self.st_mut().changed_eval_index.old_index = old_eval_index;
+                    self.st_mut().changed_eval_index.new_index = new_eval_index;
+                    let eval_list_index = self.eval_index_to_eval_list_index.get(old_eval_index);
+                    self.eval_index_to_eval_list_index
+                        .set(new_eval_index, eval_list_index);
+                    self.eval_list
+                        .set(eval_list_index, Color::BLACK, new_eval_index);
+                    self.eval_list
+                        .set(eval_list_index, Color::WHITE, new_eval_index.inverse());
+                }
             }
         }
         self.base.set_golds_bb();
@@ -2562,39 +2612,47 @@ impl Position {
             panic!("position is ng. line: {}", line!());
         }
 
-        let mut eval_list_vec_correct = EvalList::new(&self.base)
-            .0
-            .iter()
-            .map(|x| x.iter().map(|y| y.0).collect::<Vec<_>>())
-            .collect::<Vec<_>>();
-        eval_list_vec_correct.sort();
-        let mut eval_list_vec = self
-            .eval_list()
-            .0
-            .iter()
-            .map(|x| x.iter().map(|y| y.0).collect::<Vec<_>>())
-            .collect::<Vec<_>>();
-        eval_list_vec.sort();
-        if eval_list_vec != eval_list_vec_correct {
-            panic!("position is ng. line: {}", line!());
+        #[cfg(feature = "kppt")]
+        {
+            let mut eval_list_vec_correct = EvalList::new(&self.base)
+                .0
+                .iter()
+                .map(|x| x.iter().map(|y| y.0).collect::<Vec<_>>())
+                .collect::<Vec<_>>();
+            eval_list_vec_correct.sort();
+            let mut eval_list_vec = self
+                .eval_list()
+                .0
+                .iter()
+                .map(|x| x.iter().map(|y| y.0).collect::<Vec<_>>())
+                .collect::<Vec<_>>();
+            eval_list_vec.sort();
+            if eval_list_vec != eval_list_vec_correct {
+                panic!("position is ng. line: {}", line!());
+            }
         }
         true
     }
     pub fn ply(&self) -> i32 {
         self.base.game_ply
     }
+    #[cfg(feature = "kppt")]
     pub fn eval_list(&self) -> &EvalList {
         &self.eval_list
     }
+    #[cfg(feature = "kppt")]
     pub fn eval_list_mut(&mut self) -> &mut EvalList {
         &mut self.eval_list
     }
+    #[cfg(feature = "kppt")]
     pub fn changed_eval_index(&self) -> ChangedEvalIndex {
         self.st().changed_eval_index.clone()
     }
+    #[cfg(feature = "kppt")]
     pub fn changed_eval_index_captured(&self) -> ChangedEvalIndex {
         self.st().changed_eval_index_captured.clone()
     }
+    #[cfg(feature = "kppt")]
     pub fn eval_list_index(&self, eval_index: EvalIndex) -> usize {
         self.eval_index_to_eval_list_index.get(eval_index)
     }

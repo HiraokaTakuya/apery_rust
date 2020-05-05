@@ -38,6 +38,11 @@ An execute binary file is generated at apery_rust/target/release/apery
 cargo build --release
 ```
 
+If you do not use the evaluation file, build with "material" feature instead of "kppt" feature.
+```bash
+cargo build --release --no-default-features --features "material"
+```
+
 ## Install
 
 ```bash
