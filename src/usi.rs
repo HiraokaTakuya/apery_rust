@@ -33,7 +33,7 @@ fn go(
             .ok_or_else(|| format!("Error: No token after {}.", limit_type))?;
         let n = item
             .parse()
-            .or_else(|_| Err("Error: Parse error.".to_string()))?;
+            .map_err(|_| "Error: Parse error.".to_string())?;
         Ok(n)
     };
     let mut ponder_mode = false;

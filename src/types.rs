@@ -828,15 +828,15 @@ impl PieceType {
         (IS_SLIDER_VAL & (1 << self.0)) != 0
     }
     pub fn is_promotable(self) -> bool {
-        match self {
+        matches!(
+            self,
             PieceType::PAWN
-            | PieceType::LANCE
-            | PieceType::KNIGHT
-            | PieceType::SILVER
-            | PieceType::BISHOP
-            | PieceType::ROOK => true,
-            _ => false,
-        }
+                | PieceType::LANCE
+                | PieceType::KNIGHT
+                | PieceType::SILVER
+                | PieceType::BISHOP
+                | PieceType::ROOK
+        )
     }
     pub fn to_promote(self) -> PieceType {
         debug_assert!(self.is_promotable());
@@ -1024,21 +1024,21 @@ impl Piece {
         Piece::new(c.inverse(), pt)
     }
     pub fn is_promotable(self) -> bool {
-        match self {
+        matches!(
+            self,
             Piece::B_PAWN
-            | Piece::B_LANCE
-            | Piece::B_KNIGHT
-            | Piece::B_SILVER
-            | Piece::B_BISHOP
-            | Piece::B_ROOK
-            | Piece::W_PAWN
-            | Piece::W_LANCE
-            | Piece::W_KNIGHT
-            | Piece::W_SILVER
-            | Piece::W_BISHOP
-            | Piece::W_ROOK => true,
-            _ => false,
-        }
+                | Piece::B_LANCE
+                | Piece::B_KNIGHT
+                | Piece::B_SILVER
+                | Piece::B_BISHOP
+                | Piece::B_ROOK
+                | Piece::W_PAWN
+                | Piece::W_LANCE
+                | Piece::W_KNIGHT
+                | Piece::W_SILVER
+                | Piece::W_BISHOP
+                | Piece::W_ROOK
+        )
     }
     pub fn to_promote(self) -> Piece {
         debug_assert!(self.is_promotable());
