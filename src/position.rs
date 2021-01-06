@@ -994,7 +994,7 @@ impl PositionBase {
         let mut s = "".to_string();
         for rank in Rank::ALL_FROM_UPPER.iter() {
             let mut empty_squares = 0;
-            if s != "" {
+            if !s.is_empty() {
                 s += "/";
             }
             for file in File::ALL_FROM_LEFT.iter() {

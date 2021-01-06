@@ -36,7 +36,7 @@ impl TeacherWriter {
 }
 
 fn random_move(pos: &mut Position, rng: &mut ThreadRng) {
-    match rng.gen_range(0, 2) {
+    match rng.gen_range(0..2) {
         0 => {
             // King move and opponent king move 1/2 probability.
             let mut mlist = MoveList::new();
@@ -51,7 +51,7 @@ fn random_move(pos: &mut Position, rng: &mut ThreadRng) {
                 let m = ext_move.mv;
                 let gives_check = pos.gives_check(m);
                 pos.do_move(m, gives_check);
-                match rng.gen_range(0, 2) {
+                match rng.gen_range(0..2) {
                     0 => {} // nop
                     1 => {
                         // opponent king move 1/2 probability.
@@ -192,7 +192,7 @@ pub fn generate_teachers(args: &[&str]) {
                 < num_teachers
             {
                 hcpes.clear();
-                let hcp = &roots[rng.gen_range(0, roots.len())];
+                let hcp = &roots[rng.gen_range(0..roots.len())];
                 let mut pos = Position::new_from_huffman_coded_position(hcp).unwrap();
                 random_move(&mut pos, &mut rng);
                 let mut position_key_appearances = std::collections::HashMap::new();
