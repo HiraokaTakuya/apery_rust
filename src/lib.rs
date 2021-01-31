@@ -12,8 +12,6 @@ extern crate custom_derive;
 extern crate derive_more;
 #[macro_use]
 extern crate enum_derive;
-#[macro_use]
-extern crate lazy_static;
 mod authors;
 mod bitboard;
 mod book;

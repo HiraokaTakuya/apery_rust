@@ -130,8 +130,8 @@ impl EvalIndex {
     }
 }
 
-lazy_static! {
-    static ref INVERSE_EVAL_INDEX_TABLE: [EvalIndex; EvalIndex::FE_END.0] = {
+static INVERSE_EVAL_INDEX_TABLE: once_cell::sync::Lazy<[EvalIndex; EvalIndex::FE_END.0]> =
+    once_cell::sync::Lazy::new(|| {
         let mut buf = [EvalIndex(0); EvalIndex::FE_END.0];
         for (index, item) in buf.iter_mut().enumerate() {
             let eval_index = EvalIndex(index);
@@ -220,8 +220,7 @@ lazy_static! {
             }
         }
         buf
-    };
-}
+    });
 
 pub struct Evaluator {
     pub kpp: *const [[[[i16; 2]; EvalIndex::FE_END.0]; EvalIndex::FE_END.0]; Square::NUM],
@@ -606,14 +605,18 @@ impl Evaluator {
     }
 }
 
-lazy_static! {
-    static ref BUFFER_KPP: std::sync::Mutex<Vec<i16>> = std::sync::Mutex::new(
-        Vec::<i16>::with_capacity(2 * EvalIndex::FE_END.0 * EvalIndex::FE_END.0 * Square::NUM)
-    );
-    static ref BUFFER_KKP: std::sync::Mutex<Vec<i16>> = std::sync::Mutex::new(
-        Vec::<i16>::with_capacity(2 * EvalIndex::FE_END.0 * Square::NUM * Square::NUM)
-    );
-}
+static BUFFER_KPP: once_cell::sync::Lazy<std::sync::Mutex<Vec<i16>>> =
+    once_cell::sync::Lazy::new(|| {
+        std::sync::Mutex::new(Vec::<i16>::with_capacity(
+            2 * EvalIndex::FE_END.0 * EvalIndex::FE_END.0 * Square::NUM,
+        ))
+    });
+static BUFFER_KKP: once_cell::sync::Lazy<std::sync::Mutex<Vec<i16>>> =
+    once_cell::sync::Lazy::new(|| {
+        std::sync::Mutex::new(Vec::<i16>::with_capacity(
+            2 * EvalIndex::FE_END.0 * Square::NUM * Square::NUM,
+        ))
+    });
 
 pub static mut EVALUATOR: Evaluator = Evaluator {
     kpp: std::ptr::null(),

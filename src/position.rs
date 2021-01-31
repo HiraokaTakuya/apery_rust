@@ -142,37 +142,35 @@ impl Zobrist {
     }
 }
 
-lazy_static! {
-    static ref ZOBRIST_TABLES: Zobrist = {
-        let mut zobrist = Zobrist {
-            field: [[[Key(0); Color::NUM]; Square::NUM]; PieceType::NUM],
-            hand: [[[Key(0); Color::NUM]; 19]; PieceType::NUM],
-        };
-        let seed = {
-            let mut items = [0_u8; 32];
-            for (i, item) in items.iter_mut().enumerate() {
-                *item = (i + 1) as u8;
-            }
-            items
-        };
-        let mut rng: StdRng = SeedableRng::from_seed(seed);
-        for itemss in zobrist.field.iter_mut() {
-            for items in itemss.iter_mut() {
-                for item in items {
-                    *item = Key(rng.gen::<u64>() & !1_u64); // Zobrist::COLOR is 1.
-                }
-            }
-        }
-        for itemss in zobrist.hand.iter_mut() {
-            for items in itemss {
-                for item in items {
-                    *item = Key(rng.gen::<u64>() & !1_u64); // Zobrist::COLOR is 1.
-                }
-            }
-        }
-        zobrist
+static ZOBRIST_TABLES: once_cell::sync::Lazy<Zobrist> = once_cell::sync::Lazy::new(|| {
+    let mut zobrist = Zobrist {
+        field: [[[Key(0); Color::NUM]; Square::NUM]; PieceType::NUM],
+        hand: [[[Key(0); Color::NUM]; 19]; PieceType::NUM],
     };
-}
+    let seed = {
+        let mut items = [0_u8; 32];
+        for (i, item) in items.iter_mut().enumerate() {
+            *item = (i + 1) as u8;
+        }
+        items
+    };
+    let mut rng: StdRng = SeedableRng::from_seed(seed);
+    for itemss in zobrist.field.iter_mut() {
+        for items in itemss.iter_mut() {
+            for item in items {
+                *item = Key(rng.gen::<u64>() & !1_u64); // Zobrist::COLOR is 1.
+            }
+        }
+    }
+    for itemss in zobrist.hand.iter_mut() {
+        for items in itemss {
+            for item in items {
+                *item = Key(rng.gen::<u64>() & !1_u64); // Zobrist::COLOR is 1.
+            }
+        }
+    }
+    zobrist
+});
 
 #[cfg(feature = "kppt")]
 #[derive(Clone)]

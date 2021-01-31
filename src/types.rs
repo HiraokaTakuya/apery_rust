@@ -661,9 +661,8 @@ impl RelationTable {
     }
 }
 
-lazy_static! {
-    static ref RELATION_TABLE: RelationTable = RelationTable::new();
-}
+static RELATION_TABLE: once_cell::sync::Lazy<RelationTable> =
+    once_cell::sync::Lazy::new(|| RelationTable::new());
 
 pub fn is_aligned_and_sq2_is_not_between_sq0_and_sq1(
     sq0: Square,

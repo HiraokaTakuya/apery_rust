@@ -437,8 +437,8 @@ impl std::fmt::Display for Bitboard {
     }
 }
 
-lazy_static! {
-    static ref IN_FRONT_MASKS: [[Bitboard; Color::NUM]; Rank::NUM] = {
+static IN_FRONT_MASKS: once_cell::sync::Lazy<[[Bitboard; Color::NUM]; Rank::NUM]> =
+    once_cell::sync::Lazy::new(|| {
         let mut bbss: [[Bitboard; Color::NUM]; Rank::NUM] =
             [[Bitboard::ZERO; Color::NUM]; Rank::NUM];
         for r in Rank::ALL.iter() {
@@ -452,8 +452,9 @@ lazy_static! {
             }
         }
         bbss
-    };
-    static ref BETWEEN_MASK: [[Bitboard; Square::NUM]; Square::NUM] = {
+    });
+static BETWEEN_MASK: once_cell::sync::Lazy<[[Bitboard; Square::NUM]; Square::NUM]> =
+    once_cell::sync::Lazy::new(|| {
         let mut bbss: [[Bitboard; Square::NUM]; Square::NUM] =
             [[Bitboard::ZERO; Square::NUM]; Square::NUM];
         for sq0 in Square::ALL.iter() {
@@ -476,8 +477,9 @@ lazy_static! {
             }
         }
         bbss
-    };
-    static ref PROXIMITY_CHECK_MASK: [[Bitboard; Square::NUM]; Piece::NUM] = {
+    });
+static PROXIMITY_CHECK_MASK: once_cell::sync::Lazy<[[Bitboard; Square::NUM]; Piece::NUM]> =
+    once_cell::sync::Lazy::new(|| {
         let mut bbss: [[Bitboard; Square::NUM]; Piece::NUM] =
             [[Bitboard::ZERO; Square::NUM]; Piece::NUM];
         for &ksq in Square::ALL.iter() {
@@ -541,8 +543,7 @@ lazy_static! {
             }
         }
         bbss
-    };
-}
+    });
 
 fn sliding_attacks(deltas: &[Square], sq: Square, occupied: &Bitboard) -> Bitboard {
     let mut bb = Bitboard::ZERO;
@@ -994,8 +995,8 @@ impl<'a> AttackTable<'a> {
     }
 }
 
-lazy_static! {
-    pub static ref ATTACK_TABLE: AttackTable<'static> = AttackTable {
+pub static ATTACK_TABLE: once_cell::sync::Lazy<AttackTable<'static>> =
+    once_cell::sync::Lazy::new(|| AttackTable {
         pawn: PieceAttackTable::new(&[
             &PieceAttackTable::BLACK_PAWN_DELTAS,
             &PieceAttackTable::WHITE_PAWN_DELTAS,
@@ -1026,8 +1027,7 @@ lazy_static! {
             &AttackTable::ROOK_MAGICS,
             &AttackTable::ROOK_DELTAS,
         ),
-    };
-}
+    });
 
 //#[test]
 //fn test_bitboard_union() {
