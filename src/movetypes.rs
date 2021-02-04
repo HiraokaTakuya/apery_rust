@@ -36,35 +36,24 @@ impl Move {
     const PIECE_DROPPED_SHIFT: i32 = 9;
     pub const MOVED_PIECE_SHIFT: i32 = 16;
 
-    pub const NULL: Move =
-        Move(unsafe { std::num::NonZeroU32::new_unchecked(1 | (1 << Move::FROM_SHIFT)) }); // !is_promotion() && to() == from()
-    pub const WIN: Move =
-        Move(unsafe { std::num::NonZeroU32::new_unchecked(2 | (2 << Move::FROM_SHIFT)) });
-    pub const RESIGN: Move =
-        Move(unsafe { std::num::NonZeroU32::new_unchecked(3 | (3 << Move::FROM_SHIFT)) });
+    pub const NULL: Move = Move(unsafe { std::num::NonZeroU32::new_unchecked(1 | (1 << Move::FROM_SHIFT)) }); // !is_promotion() && to() == from()
+    pub const WIN: Move = Move(unsafe { std::num::NonZeroU32::new_unchecked(2 | (2 << Move::FROM_SHIFT)) });
+    pub const RESIGN: Move = Move(unsafe { std::num::NonZeroU32::new_unchecked(3 | (3 << Move::FROM_SHIFT)) });
 
     pub fn new_unpromote(from: Square, to: Square, pc: Piece) -> Move {
         Move(unsafe {
             std::num::NonZeroU32::new_unchecked(
-                ((pc.0 as u32) << Move::MOVED_PIECE_SHIFT)
-                    | ((from.0 as u32) << Move::FROM_SHIFT)
-                    | (to.0 as u32),
+                ((pc.0 as u32) << Move::MOVED_PIECE_SHIFT) | ((from.0 as u32) << Move::FROM_SHIFT) | (to.0 as u32),
             )
         })
     }
     #[inline]
     pub fn new_promote(from: Square, to: Square, pc: Piece) -> Move {
-        Move(unsafe {
-            std::num::NonZeroU32::new_unchecked(
-                Move::PROMOTE_FLAG | Move::new_unpromote(from, to, pc).0.get(),
-            )
-        })
+        Move(unsafe { std::num::NonZeroU32::new_unchecked(Move::PROMOTE_FLAG | Move::new_unpromote(from, to, pc).0.get()) })
     }
     pub fn new_drop(pc: Piece, to: Square) -> Move {
         Move(unsafe {
-            std::num::NonZeroU32::new_unchecked(
-                Move::DROP_FLAG | ((pc.0 as u32) << Move::PIECE_DROPPED_SHIFT) | (to.0 as u32),
-            )
+            std::num::NonZeroU32::new_unchecked(Move::DROP_FLAG | ((pc.0 as u32) << Move::PIECE_DROPPED_SHIFT) | (to.0 as u32))
         })
     }
     pub fn new_from_usi_str(s: &str, pos: &Position) -> Option<Move> {
@@ -185,10 +174,7 @@ impl Move {
         Piece(((self.0.get() & Move::PIECE_DROPPED_MASK) >> Move::PIECE_DROPPED_SHIFT) as i32)
     }
     pub fn piece_type_dropped(self) -> PieceType {
-        PieceType(
-            ((self.0.get() & Move::PIECE_TYPE_DROPPED_MASK) >> Move::PIECE_TYPE_DROPPED_SHIFT)
-                as i32,
-        )
+        PieceType(((self.0.get() & Move::PIECE_TYPE_DROPPED_MASK) >> Move::PIECE_TYPE_DROPPED_SHIFT) as i32)
     }
     pub fn piece_moved_before_move(self) -> Piece {
         if self.is_drop() {
@@ -288,10 +274,7 @@ impl IsNormalMove for Option<Move> {
         let ret = (val & 0x1ff) != (val >> 9);
         debug_assert_eq!(
             ret,
-            self.is_some()
-                && self.unwrap() != Move::NULL
-                && self.unwrap() != Move::WIN
-                && self.unwrap() != Move::RESIGN
+            self.is_some() && self.unwrap() != Move::NULL && self.unwrap() != Move::WIN && self.unwrap() != Move::RESIGN
         );
         ret
     }

@@ -21,10 +21,7 @@ impl Book {
     }
     #[allow(dead_code)]
     fn insert(&mut self, sfen: String, mv: Move, info: Info) {
-        let set = self
-            .0
-            .entry(sfen)
-            .or_insert_with(std::collections::BTreeMap::new);
+        let set = self.0.entry(sfen).or_insert_with(std::collections::BTreeMap::new);
         set.insert(mv.to_usi(), info);
     }
     #[allow(dead_code)]
@@ -39,8 +36,7 @@ impl Book {
                 (usi_move, weight)
             })
             .collect::<Vec<_>>();
-        let dist =
-            rand::distributions::WeightedIndex::new(move_and_weights.iter().map(|x| x.1)).unwrap();
+        let dist = rand::distributions::WeightedIndex::new(move_and_weights.iter().map(|x| x.1)).unwrap();
         let usi_move = move_and_weights[dist.sample(rng)].0;
         Move::new_from_usi(usi_move, pos)
     }

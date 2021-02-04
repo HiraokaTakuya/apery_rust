@@ -245,9 +245,7 @@ impl Reductions {
     }
     pub fn get(&self, improving: bool, depth: Depth, move_count: i32) -> Depth {
         let r = unsafe {
-            self.values
-                .get_unchecked((depth.0 / Depth::ONE_PLY.0) as usize)
-                * self.values.get_unchecked(move_count as usize)
+            self.values.get_unchecked((depth.0 / Depth::ONE_PLY.0) as usize) * self.values.get_unchecked(move_count as usize)
         };
         Depth(((r + 511) / 1024 + i32::from(!improving && r > 1007)) * Depth::ONE_PLY.0)
     }
@@ -263,10 +261,7 @@ pub struct Perft {
 impl Perft {
     pub fn new(pos: &Position) -> Perft {
         Perft {
-            position: Position::new_from_position(
-                pos,
-                std::sync::Arc::new(std::sync::atomic::AtomicI64::new(0)),
-            ),
+            position: Position::new_from_position(pos, std::sync::Arc::new(std::sync::atomic::AtomicI64::new(0))),
         }
     }
     pub fn go(&mut self, depth: u32) {

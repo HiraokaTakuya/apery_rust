@@ -63,14 +63,10 @@ impl ThreadHolding {
             if !location.is_null() {
                 let tmp = (*location).thread.load(Ordering::Relaxed);
                 if tmp.is_null() {
-                    (*location)
-                        .thread
-                        .store(&mut (this_thread as *mut Thread), Ordering::Relaxed);
+                    (*location).thread.store(&mut (this_thread as *mut Thread), Ordering::Relaxed);
                     (*location).key.store(pos_key.0, Ordering::Relaxed);
                     owning = true;
-                } else if tmp != &mut (this_thread as *mut Thread)
-                    && (*location).key.load(Ordering::Relaxed) == pos_key.0
-                {
+                } else if tmp != &mut (this_thread as *mut Thread) && (*location).key.load(Ordering::Relaxed) == pos_key.0 {
                     other_thread = true;
                 }
             }
@@ -90,9 +86,7 @@ impl Drop for ThreadHolding {
     fn drop(&mut self) {
         if self.owning {
             unsafe {
-                (*self.location)
-                    .thread
-                    .store(std::ptr::null_mut(), Ordering::Relaxed);
+                (*self.location).thread.store(std::ptr::null_mut(), Ordering::Relaxed);
             }
         }
     }
@@ -219,10 +213,7 @@ impl Thread {
                 }
             }
         }
-        let multi_pv = std::cmp::min(
-            self.usi_options.get_i64(UsiOptions::MULTI_PV) as usize,
-            self.root_moves.len(),
-        );
+        let multi_pv = std::cmp::min(self.usi_options.get_i64(UsiOptions::MULTI_PV) as usize, self.root_moves.len());
         self.tt_hit_average = TT_HIT_AVERAGE_WINDOW * TT_HIT_AVERAGE_RESOLUTION / 2;
 
         let mut search_again_counter = 0;
@@ -235,13 +226,11 @@ impl Thread {
             && !self.stop.load(Ordering::Relaxed)
             && !(self.limits.depth.is_some()
                 && self.is_main()
-                && self.root_depth.0 / Depth::ONE_PLY.0
-                    > Depth(self.limits.depth.unwrap() as i32).0)
+                && self.root_depth.0 / Depth::ONE_PLY.0 > Depth(self.limits.depth.unwrap() as i32).0)
         {
             if self.idx > 0 {
                 let i = (self.idx - 1) % 20;
-                if ((self.root_depth.0 / Depth::ONE_PLY.0 + SKIP_PHASE[i]) / SKIP_SIZE[i]) % 2 != 0
-                {
+                if ((self.root_depth.0 / Depth::ONE_PLY.0 + SKIP_PHASE[i]) / SKIP_SIZE[i]) % 2 != 0 {
                     continue;
                 }
             }
@@ -272,8 +261,7 @@ impl Thread {
                 loop {
                     let adjusted_depth = std::cmp::max(
                         Depth::ONE_PLY,
-                        self.root_depth
-                            - Depth((failed_high_count + search_again_counter) * Depth::ONE_PLY.0),
+                        self.root_depth - Depth((failed_high_count + search_again_counter) * Depth::ONE_PLY.0),
                     );
                     best_value = self.search::<Pv>(&mut stack, alpha, beta, adjusted_depth, false);
                     self.root_moves[self.pv_idx..].sort_by(|x, y| y.cmp(x));
@@ -292,14 +280,7 @@ impl Thread {
                         if !self.hide_all_output.load(Ordering::Relaxed) {
                             println!(
                                 "{}",
-                                self.pv_info_to_usi_string(
-                                    self.nodes_searched(),
-                                    multi_pv,
-                                    self.root_depth,
-                                    alpha,
-                                    beta,
-                                    false,
-                                )
+                                self.pv_info_to_usi_string(self.nodes_searched(), multi_pv, self.root_depth, alpha, beta, false,)
                             );
                         }
                     }
@@ -337,14 +318,7 @@ impl Thread {
                     if !self.hide_all_output.load(Ordering::Relaxed) {
                         println!(
                             "{}",
-                            self.pv_info_to_usi_string(
-                                self.nodes_searched(),
-                                multi_pv,
-                                self.root_depth,
-                                alpha,
-                                beta,
-                                false,
-                            )
+                            self.pv_info_to_usi_string(self.nodes_searched(), multi_pv, self.root_depth, alpha, beta, false,)
                         );
                     }
                 }
@@ -356,17 +330,13 @@ impl Thread {
                 self.completed_depth = self.root_depth;
             }
 
-            if last_best_move.is_none()
-                || last_best_move.unwrap_unchecked() != self.root_moves[0].pv[0]
-            {
+            if last_best_move.is_none() || last_best_move.unwrap_unchecked() != self.root_moves[0].pv[0] {
                 last_best_move = Some(self.root_moves[0].pv[0]);
                 last_best_move_depth = self.root_depth;
             }
 
             if let Some(mate) = self.limits.mate {
-                if best_value >= Value::MATE_IN_MAX_PLY
-                    && Value::MATE - best_value <= Value(mate as i32)
-                {
+                if best_value >= Value::MATE_IN_MAX_PLY && Value::MATE - best_value <= Value(mate as i32) {
                     self.stop.store(true, Ordering::Relaxed);
                 }
             }
@@ -384,47 +354,34 @@ impl Thread {
                         + 6 * (self.iter_values.lock().unwrap()[iter_index].0 - best_value.0),
                 ) / 704.0;
                 let falling_eval = num::clamp(falling_eval, 0.5, 1.5);
-                time_reduction =
-                    if last_best_move_depth.0 + 10 * Depth::ONE_PLY.0 < self.completed_depth.0 {
-                        1.94
-                    } else {
-                        0.91
-                    };
+                time_reduction = if last_best_move_depth.0 + 10 * Depth::ONE_PLY.0 < self.completed_depth.0 {
+                    1.94
+                } else {
+                    0.91
+                };
                 let reduction = (1.41 + self.previous_time_reduction) / (2.27 * time_reduction);
                 for best_move_changes in self.best_move_changess.iter() {
                     total_best_move_changes += best_move_changes.load(Ordering::Relaxed) as f64;
                     best_move_changes.store(0, Ordering::Relaxed);
                 }
-                let best_move_instability =
-                    1.0 + total_best_move_changes / self.best_move_changess.len() as f64;
+                let best_move_instability = 1.0 + total_best_move_changes / self.best_move_changess.len() as f64;
                 if self.root_moves.len() == 1 || {
                     let timeman = self.timeman.lock().unwrap();
                     timeman.elapsed()
-                        > (timeman.optimum_millis() as f64
-                            * falling_eval
-                            * reduction
-                            * best_move_instability) as i64
+                        > (timeman.optimum_millis() as f64 * falling_eval * reduction * best_move_instability) as i64
                 } {
                     if self.ponder.load(Ordering::Relaxed) {
                         self.stop_on_ponderhit.store(true, Ordering::Relaxed);
                     } else {
                         self.stop.store(true, Ordering::Relaxed);
                     }
-                } else if self.increase_depth.load(Ordering::Relaxed)
-                    && self.ponder.load(Ordering::Relaxed)
-                    && {
-                        let (elapsed, optimum) = {
-                            let timeman = self.timeman.lock().unwrap();
-                            (timeman.elapsed(), timeman.optimum_millis())
-                        };
-                        elapsed as f64
-                            > optimum as f64
-                                * falling_eval
-                                * reduction
-                                * best_move_instability
-                                * 0.6
-                    }
-                {
+                } else if self.increase_depth.load(Ordering::Relaxed) && self.ponder.load(Ordering::Relaxed) && {
+                    let (elapsed, optimum) = {
+                        let timeman = self.timeman.lock().unwrap();
+                        (timeman.elapsed(), timeman.optimum_millis())
+                    };
+                    elapsed as f64 > optimum as f64 * falling_eval * reduction * best_move_instability * 0.6
+                } {
                     self.increase_depth.store(false, Ordering::Relaxed);
                 } else {
                     self.increase_depth.store(true, Ordering::Relaxed);
@@ -440,14 +397,7 @@ impl Thread {
 
         self.previous_time_reduction = time_reduction;
     }
-    fn search<IsPv: Bool>(
-        &mut self,
-        stack: &mut [Stack],
-        alpha: Value,
-        beta: Value,
-        depth: Depth,
-        cut_node: bool,
-    ) -> Value {
+    fn search<IsPv: Bool>(&mut self, stack: &mut [Stack], alpha: Value, beta: Value, depth: Depth, cut_node: bool) -> Value {
         let pv_node: bool = IsPv::BOOL;
         let root_node = pv_node && get_stack(stack, 0).ply == 0;
 
@@ -537,8 +487,7 @@ impl Thread {
 
         // Step 4
         let excluded_move = get_stack(stack, 0).excluded_move;
-        let key =
-            self.position.key().0 ^ (u64::from(excluded_move.unwrap_unchecked().0.get()) << 16);
+        let key = self.position.key().0 ^ (u64::from(excluded_move.unwrap_unchecked().0.get()) << 16);
         let key = Key(key);
         let (mut tte, mut tt_hit) = unsafe { (*self.tt).probe(key) };
         let mut tt_value = if tt_hit {
@@ -554,8 +503,7 @@ impl Thread {
             None
         };
         let tt_pv = pv_node || (tt_hit && tte.is_pv());
-        self.tt_hit_average = (TT_HIT_AVERAGE_WINDOW - 1) * self.tt_hit_average
-            / TT_HIT_AVERAGE_WINDOW
+        self.tt_hit_average = (TT_HIT_AVERAGE_WINDOW - 1) * self.tt_hit_average / TT_HIT_AVERAGE_WINDOW
             + TT_HIT_AVERAGE_RESOLUTION * u64::from(tt_hit);
 
         if !pv_node
@@ -598,12 +546,7 @@ impl Thread {
                 } else if !(tt_move.is_capture(&self.position)/*|| tt_move.is_pawn_promotion()*/) {
                     let penalty = -stat_bonus(depth);
                     self.main_history.update(us, tt_move, penalty);
-                    update_continuation_histories(
-                        &mut stack[1..],
-                        tt_move.piece_moved_after_move(),
-                        tt_move.to(),
-                        penalty,
-                    );
+                    update_continuation_histories(&mut stack[1..], tt_move.piece_moved_after_move(), tt_move.to(), penalty);
                 }
             }
             return tt_value;
@@ -692,16 +635,9 @@ impl Thread {
                     eval = -get_stack(stack, -1).static_eval + Value(2 * TEMPO.0);
                     get_stack_mut(stack, 0).static_eval = eval;
                 }
-                tte.save(
-                    key,
-                    Value::NONE,
-                    tt_pv,
-                    Bound::BOUND_NONE,
-                    Depth::NONE,
-                    None,
-                    eval,
-                    unsafe { (*self.tt).generation() },
-                );
+                tte.save(key, Value::NONE, tt_pv, Bound::BOUND_NONE, Depth::NONE, None, eval, unsafe {
+                    (*self.tt).generation()
+                });
             }
 
             // Step 7
@@ -716,11 +652,7 @@ impl Thread {
             };
 
             // Step 8
-            if !pv_node
-                && depth.0 < 6 * Depth::ONE_PLY.0
-                && eval - futility_margin(depth) >= beta
-                && eval < Value::KNOWN_WIN
-            {
+            if !pv_node && depth.0 < 6 * Depth::ONE_PLY.0 && eval - futility_margin(depth) >= beta && eval < Value::KNOWN_WIN {
                 return eval;
             }
 
@@ -731,22 +663,17 @@ impl Thread {
                 && eval >= beta
                 && eval >= get_stack(stack, 0).static_eval
                 && get_stack(stack, 0).static_eval.0
-                    >= beta.0 - 32 * depth.0 / Depth::ONE_PLY.0 - 30 * i32::from(improving)
-                        + 120 * i32::from(tt_pv)
-                        + 292
+                    >= beta.0 - 32 * depth.0 / Depth::ONE_PLY.0 - 30 * i32::from(improving) + 120 * i32::from(tt_pv) + 292
                 && excluded_move.is_none()
-                && (get_stack(stack, 0).ply >= self.null_move_pruning_min_ply
-                    || us != self.null_move_pruning_color)
+                && (get_stack(stack, 0).ply >= self.null_move_pruning_min_ply || us != self.null_move_pruning_color)
             {
                 debug_assert!(eval - beta >= Value(0));
                 let r = Depth(
-                    ((854 + 68 * depth.0 / Depth::ONE_PLY.0) / 258
-                        + std::cmp::min((eval.0 - beta.0) / 192, 3))
+                    ((854 + 68 * depth.0 / Depth::ONE_PLY.0) / 258 + std::cmp::min((eval.0 - beta.0) / 192, 3))
                         * Depth::ONE_PLY.0,
                 );
                 get_stack_mut(stack, 0).current_move = Some(Move::NULL);
-                get_stack_mut(stack, 0).continuation_history =
-                    self.continuation_history[0][0].sentinel();
+                get_stack_mut(stack, 0).continuation_history = self.continuation_history[0][0].sentinel();
 
                 self.position.do_null_move();
                 #[cfg(feature = "kppt")]
@@ -754,13 +681,7 @@ impl Thread {
                     // key is wrong. but it's no problem.
                     get_stack_mut(stack, 1).static_eval_raw = get_stack(stack, 0).static_eval_raw;
                 }
-                let mut null_value = -self.search::<NonPv>(
-                    &mut stack[1..],
-                    -beta,
-                    -beta + Value(1),
-                    depth - r,
-                    !cut_node,
-                );
+                let mut null_value = -self.search::<NonPv>(&mut stack[1..], -beta, -beta + Value(1), depth - r, !cut_node);
                 self.position.undo_null_move();
 
                 if null_value >= beta {
@@ -775,8 +696,7 @@ impl Thread {
                     }
 
                     debug_assert!(self.null_move_pruning_min_ply == 0);
-                    self.null_move_pruning_min_ply =
-                        get_stack(stack, 0).ply + 3 * (depth.0 - r.0) / (4 * Depth::ONE_PLY.0);
+                    self.null_move_pruning_min_ply = get_stack(stack, 0).ply + 3 * (depth.0 - r.0) / (4 * Depth::ONE_PLY.0);
                     self.null_move_pruning_color = us;
 
                     let v = self.search::<NonPv>(stack, beta - Value(1), beta, depth - r, false);
@@ -789,14 +709,8 @@ impl Thread {
             }
 
             // Step 10
-            if !pv_node
-                && depth.0 >= 5 * Depth::ONE_PLY.0
-                && beta.0.abs() < Value::MATE_IN_MAX_PLY.0
-            {
-                let raised_beta = std::cmp::min(
-                    Value(beta.0 + 189 - 45 * i32::from(improving)),
-                    Value::INFINITE,
-                );
+            if !pv_node && depth.0 >= 5 * Depth::ONE_PLY.0 && beta.0.abs() < Value::MATE_IN_MAX_PLY.0 {
+                let raised_beta = std::cmp::min(Value(beta.0 + 189 - 45 * i32::from(improving)), Value::INFINITE);
                 let mut mp = MovePickerForProbCut::new(
                     &self.position,
                     tt_move,
@@ -811,8 +725,7 @@ impl Thread {
                     if m != excluded_move.unwrap_unchecked() && self.position.legal(m) {
                         prob_cut_count += 1;
                         get_stack_mut(stack, 0).current_move = Some(m);
-                        get_stack_mut(stack, 0).continuation_history = self.continuation_history
-                            [usize::from(in_check)]
+                        get_stack_mut(stack, 0).continuation_history = self.continuation_history[usize::from(in_check)]
                             [(prior_capture != Piece::EMPTY) as usize]
                             .get_mut(m.piece_moved_after_move(), m.to());
                         debug_assert!(depth.0 >= 5 * Depth::ONE_PLY.0);
@@ -821,12 +734,8 @@ impl Thread {
                         self.position.do_move(m, gives_check);
                         #[cfg(feature = "kppt")]
                         get_stack_mut(stack, 1).static_eval_raw.set_not_evaluated();
-                        let mut value = -self.qsearch::<NonPv>(
-                            &mut stack[1..],
-                            -raised_beta,
-                            -raised_beta + Value(1),
-                            Depth::ZERO,
-                        );
+                        let mut value =
+                            -self.qsearch::<NonPv>(&mut stack[1..], -raised_beta, -raised_beta + Value(1), Depth::ZERO);
                         if value >= raised_beta {
                             value = -self.search::<NonPv>(
                                 &mut stack[1..],
@@ -847,13 +756,7 @@ impl Thread {
 
             // Step 11
             if depth.0 >= 7 * Depth::ONE_PLY.0 && tt_move.is_none() {
-                self.search::<IsPv>(
-                    stack,
-                    alpha,
-                    beta,
-                    Depth(depth.0 - 7 * Depth::ONE_PLY.0),
-                    cut_node,
-                );
+                self.search::<IsPv>(stack, alpha, beta, Depth(depth.0 - 7 * Depth::ONE_PLY.0), cut_node);
 
                 let (tte_new, tt_hit_new) = unsafe { (*self.tt).probe(key) };
                 tte = tte_new;
@@ -876,9 +779,7 @@ impl Thread {
             get_stack(stack, -6).continuation_history as *const PieceToHistory,
         ];
 
-        let counter_move = self
-            .counter_moves
-            .get(prev_sq, self.position.piece_on(prev_sq));
+        let counter_move = self.counter_moves.get(prev_sq, self.position.piece_on(prev_sq));
 
         let mut mp = MovePickerForMainSearch::new(
             &self.position,
@@ -899,10 +800,7 @@ impl Thread {
 
         let mut value = best_value;
         let mut move_count_pruning = false;
-        let tt_capture = tt_move.is_some()
-            && tt_move
-                .unwrap_unchecked()
-                .is_capture_or_pawn_promotion(&self.position);
+        let tt_capture = tt_move.is_some() && tt_move.unwrap_unchecked().is_capture_or_pawn_promotion(&self.position);
         let mut singular_lmr = false;
 
         let th = ThreadHolding::new(self, key, get_stack(stack, 0).ply);
@@ -920,14 +818,7 @@ impl Thread {
                 continue;
             }
 
-            if root_node
-                && self
-                    .root_moves
-                    .iter()
-                    .skip(self.pv_idx)
-                    .find(|x| x.pv[0] == m)
-                    .is_none()
-            {
+            if root_node && self.root_moves.iter().skip(self.pv_idx).find(|x| x.pv[0] == m).is_none() {
                 continue;
             }
 
@@ -944,23 +835,16 @@ impl Thread {
 
             // Step 13
             if !root_node && best_value > Value::MATED_IN_MAX_PLY {
-                move_count_pruning =
-                    move_count >= futility_move_count(improving, depth.0 / Depth::ONE_PLY.0);
+                move_count_pruning = move_count >= futility_move_count(improving, depth.0 / Depth::ONE_PLY.0);
                 if !is_capture_or_pawn_promotion && !gives_check {
                     let lmr_depth = std::cmp::max(
                         new_depth - unsafe { (*self.reductions).get(improving, depth, move_count) },
                         Depth::ZERO,
                     );
                     let lmr_depth = Depth(lmr_depth.0 / Depth::ONE_PLY.0);
-                    if lmr_depth.0
-                        < 3 + i32::from(
-                            get_stack(stack, -1).stat_score > 0
-                                || get_stack(stack, -1).move_count == 1,
-                        )
-                        && unsafe { (*cont_hists[0]).get(to, piece_moved_after_move) }
-                            < i32::from(COUNTER_MOVE_PRUNE_THRESHOLD)
-                        && unsafe { (*cont_hists[1]).get(to, piece_moved_after_move) }
-                            < i32::from(COUNTER_MOVE_PRUNE_THRESHOLD)
+                    if lmr_depth.0 < 3 + i32::from(get_stack(stack, -1).stat_score > 0 || get_stack(stack, -1).move_count == 1)
+                        && unsafe { (*cont_hists[0]).get(to, piece_moved_after_move) } < i32::from(COUNTER_MOVE_PRUNE_THRESHOLD)
+                        && unsafe { (*cont_hists[1]).get(to, piece_moved_after_move) } < i32::from(COUNTER_MOVE_PRUNE_THRESHOLD)
                     {
                         continue;
                     }
@@ -975,16 +859,14 @@ impl Thread {
                     {
                         continue;
                     }
-                    if !self.position.see_ge(
-                        m,
-                        Value(-(32 - std::cmp::min(lmr_depth.0, 18)) * lmr_depth.0 * lmr_depth.0),
-                    ) {
+                    if !self
+                        .position
+                        .see_ge(m, Value(-(32 - std::cmp::min(lmr_depth.0, 18)) * lmr_depth.0 * lmr_depth.0))
+                    {
                         continue;
                     }
                 } else if (!gives_check || extension == Depth::ZERO)
-                    && !self
-                        .position
-                        .see_ge(m, Value(-194 * (depth.0 / Depth::ONE_PLY.0)))
+                    && !self.position.see_ge(m, Value(-194 * (depth.0 / Depth::ONE_PLY.0)))
                 {
                     continue;
                 }
@@ -1005,13 +887,7 @@ impl Thread {
                 );
                 let half_depth = Depth(depth.0 / (2 * Depth::ONE_PLY.0) * Depth::ONE_PLY.0);
                 get_stack_mut(stack, 0).excluded_move = Some(m);
-                value = self.search::<NonPv>(
-                    stack,
-                    singular_beta - Value(1),
-                    singular_beta,
-                    half_depth,
-                    cut_node,
-                );
+                value = self.search::<NonPv>(stack, singular_beta - Value(1), singular_beta, half_depth, cut_node);
                 get_stack_mut(stack, 0).excluded_move = None;
                 if value < singular_beta {
                     extension = Depth::ONE_PLY;
@@ -1020,11 +896,7 @@ impl Thread {
                     return singular_beta;
                 }
             } else if gives_check
-                && ((!m.is_drop()
-                    && self
-                        .position
-                        .blockers_for_king(us.inverse())
-                        .is_set(m.from()))
+                && ((!m.is_drop() && self.position.blockers_for_king(us.inverse()).is_set(m.from()))
                     || self.position.see_ge(m, Value::ZERO))
             {
                 extension = Depth::ONE_PLY;
@@ -1039,8 +911,8 @@ impl Thread {
             }
 
             get_stack_mut(stack, 0).current_move = Some(m);
-            get_stack_mut(stack, 0).continuation_history = self.continuation_history
-                [usize::from(in_check)][(prior_capture != Piece::EMPTY) as usize]
+            get_stack_mut(stack, 0).continuation_history = self.continuation_history[usize::from(in_check)]
+                [(prior_capture != Piece::EMPTY) as usize]
                 .get_mut(piece_moved_after_move, to);
 
             // Step 15
@@ -1054,18 +926,13 @@ impl Thread {
                 && (!root_node || self.best_move_count(m) == 0)
                 && (!is_capture_or_pawn_promotion
                     || move_count_pruning
-                    || get_stack(stack, 0).static_eval
-                        + capture_piece_value(self.position.captured_piece())
-                        <= alpha
+                    || get_stack(stack, 0).static_eval + capture_piece_value(self.position.captured_piece()) <= alpha
                     || cut_node
-                    || self.tt_hit_average
-                        < 375 * TT_HIT_AVERAGE_RESOLUTION * TT_HIT_AVERAGE_WINDOW / 1024)
+                    || self.tt_hit_average < 375 * TT_HIT_AVERAGE_RESOLUTION * TT_HIT_AVERAGE_WINDOW / 1024)
             {
                 let mut r = unsafe { (*self.reductions).get(improving, depth, move_count) };
 
-                if self.tt_hit_average
-                    > 500 * TT_HIT_AVERAGE_RESOLUTION * TT_HIT_AVERAGE_WINDOW / 1024
-                {
+                if self.tt_hit_average > 500 * TT_HIT_AVERAGE_RESOLUTION * TT_HIT_AVERAGE_WINDOW / 1024 {
                     r -= Depth::ONE_PLY;
                 }
 
@@ -1101,13 +968,9 @@ impl Thread {
                         + unsafe { (*cont_hists[3]).get(to, piece_moved_after_move) }
                         - 4926;
 
-                    if get_stack(stack, 0).stat_score >= -102
-                        && get_stack(stack, -1).stat_score < -114
-                    {
+                    if get_stack(stack, 0).stat_score >= -102 && get_stack(stack, -1).stat_score < -114 {
                         r -= Depth::ONE_PLY;
-                    } else if get_stack(stack, -1).stat_score >= -116
-                        && get_stack(stack, 0).stat_score < -154
-                    {
+                    } else if get_stack(stack, -1).stat_score >= -116 && get_stack(stack, 0).stat_score < -154 {
                         r += Depth::ONE_PLY;
                     }
                     r -= Depth(get_stack(stack, 0).stat_score / 16384 * Depth::ONE_PLY.0);
@@ -1115,8 +978,7 @@ impl Thread {
                     r += Depth::ONE_PLY;
                 }
                 let d = std::cmp::max(new_depth - std::cmp::max(r, Depth::ZERO), Depth::ONE_PLY);
-                value =
-                    -self.search::<NonPv>(&mut stack[1..], -(alpha + Value(1)), -alpha, d, true);
+                value = -self.search::<NonPv>(&mut stack[1..], -(alpha + Value(1)), -alpha, d, true);
                 (value > alpha && d != new_depth, true)
             } else {
                 (!pv_node || move_count > 1, false)
@@ -1124,13 +986,7 @@ impl Thread {
 
             // Step 17
             if do_full_depth_search {
-                value = -self.search::<NonPv>(
-                    &mut stack[1..],
-                    -(alpha + Value(1)),
-                    -alpha,
-                    new_depth,
-                    !cut_node,
-                );
+                value = -self.search::<NonPv>(&mut stack[1..], -(alpha + Value(1)), -alpha, new_depth, !cut_node);
 
                 if did_lmr && !is_capture_or_pawn_promotion {
                     let mut bonus = if value > alpha {
@@ -1205,12 +1061,7 @@ impl Thread {
             mlist.generate::<LegalType>(pos, current_size);
             mlist.size
         }
-        debug_assert!(
-            move_count != 0
-                || !in_check
-                || excluded_move.is_some()
-                || legal_moves_size(&self.position) == 0
-        );
+        debug_assert!(move_count != 0 || !in_check || excluded_move.is_some() || legal_moves_size(&self.position) == 0);
 
         if move_count == 0 {
             best_value = if excluded_move.is_some() {
@@ -1230,12 +1081,7 @@ impl Thread {
                 depth,
             );
         } else if (pv_node || depth.0 >= 3 * Depth::ONE_PLY.0) && prior_capture == Piece::EMPTY {
-            update_continuation_histories(
-                stack,
-                self.position.piece_on(prev_sq),
-                prev_sq,
-                stat_bonus(depth),
-            );
+            update_continuation_histories(stack, self.position.piece_on(prev_sq), prev_sq, stat_bonus(depth));
         }
 
         if pv_node {
@@ -1265,13 +1111,7 @@ impl Thread {
 
         best_value
     }
-    fn qsearch<IsPv: Bool>(
-        &mut self,
-        stack: &mut [Stack],
-        alpha: Value,
-        beta: Value,
-        depth: Depth,
-    ) -> Value {
+    fn qsearch<IsPv: Bool>(&mut self, stack: &mut [Stack], alpha: Value, beta: Value, depth: Depth) -> Value {
         let pv_node: bool = IsPv::BOOL;
         let mut alpha = alpha;
 
@@ -1456,15 +1296,14 @@ impl Thread {
             }
 
             get_stack_mut(stack, 0).current_move = Some(m);
-            get_stack_mut(stack, 0).continuation_history = self.continuation_history
-                [usize::from(in_check)][(prior_capture != Piece::EMPTY) as usize]
+            get_stack_mut(stack, 0).continuation_history = self.continuation_history[usize::from(in_check)]
+                [(prior_capture != Piece::EMPTY) as usize]
                 .get_mut(m.piece_moved_after_move(), m.to());
 
             self.position.do_move(m, gives_check);
             #[cfg(feature = "kppt")]
             get_stack_mut(stack, 1).static_eval_raw.set_not_evaluated();
-            let value =
-                -self.qsearch::<IsPv>(&mut stack[1..], -beta, -alpha, depth - Depth::ONE_PLY);
+            let value = -self.qsearch::<IsPv>(&mut stack[1..], -beta, -alpha, depth - Depth::ONE_PLY);
             self.position.undo_move(m);
 
             debug_assert!(-Value::INFINITE < value && value < Value::INFINITE);
@@ -1513,11 +1352,7 @@ impl Thread {
         best_value
     }
     fn best_move_count(&self, m: Move) -> usize {
-        let rm = self
-            .root_moves
-            .iter()
-            .skip(self.pv_idx)
-            .find(|rm| rm.pv[0] == m);
+        let rm = self.root_moves.iter().skip(self.pv_idx).find(|rm| rm.pv[0] == m);
         match rm {
             Some(rm) => rm.best_move_count,
             None => 0,
@@ -1525,9 +1360,7 @@ impl Thread {
     }
     fn nodes_searched(&self) -> i64 {
         debug_assert!(self.is_main());
-        self.nodess
-            .iter()
-            .fold(0, |sum, nodes| sum + nodes.load(Ordering::Relaxed))
+        self.nodess.iter().fold(0, |sum, nodes| sum + nodes.load(Ordering::Relaxed))
     }
     fn check_time(&mut self) {
         self.calls_count -= 1;
@@ -1549,8 +1382,7 @@ impl Thread {
             && (elapsed.as_millis() as i64 > self.timeman.lock().unwrap().maximum_millis() - 10
                 || self.stop_on_ponderhit.load(Ordering::Relaxed)))
             || (self.limits.movetime.is_some() && elapsed >= self.limits.movetime.unwrap())
-            || (self.limits.nodes.is_some()
-                && self.nodes_searched() >= self.limits.nodes.unwrap() as i64)
+            || (self.limits.nodes.is_some() && self.nodes_searched() >= self.limits.nodes.unwrap() as i64)
         {
             self.stop.store(true, Ordering::Relaxed);
         }
@@ -1579,20 +1411,14 @@ impl Thread {
             self.update_quiet_stats(stack, best_move, bonus2, depth);
             for &quiet_move in quiets_searched {
                 self.main_history.update(us, quiet_move, -bonus2);
-                update_continuation_histories(
-                    &mut stack[1..],
-                    quiet_move.piece_moved_after_move(),
-                    quiet_move.to(),
-                    -bonus2,
-                );
+                update_continuation_histories(&mut stack[1..], quiet_move.piece_moved_after_move(), quiet_move.to(), -bonus2);
             }
         } else {
             let capture_history = &mut self.capture_history;
             capture_history.update(moved_piece, best_move.to(), captured, bonus1);
         }
 
-        if (get_stack(stack, -1).move_count == 1
-            || get_stack(stack, -1).current_move == get_stack(stack, -1).killers[0])
+        if (get_stack(stack, -1).move_count == 1 || get_stack(stack, -1).current_move == get_stack(stack, -1).killers[0])
             && self.position.captured_piece() == Piece::EMPTY
         {
             update_continuation_histories(stack, self.position.piece_on(prev_sq), prev_sq, -bonus1);
@@ -1601,8 +1427,7 @@ impl Thread {
         for &capture_move in captures_searched {
             let moved_piece = capture_move.piece_moved_after_move();
             let captured = PieceType::new(self.position.piece_on(capture_move.to()));
-            self.capture_history
-                .update(moved_piece, capture_move.to(), captured, -bonus1);
+            self.capture_history.update(moved_piece, capture_move.to(), captured, -bonus1);
         }
     }
     fn update_quiet_stats(&mut self, stack: &mut [Stack], m: Move, bonus: i32, depth: Depth) {
@@ -1622,8 +1447,7 @@ impl Thread {
         let prev_move = get_stack(stack, -1).current_move;
         if prev_move.is_normal_move() {
             let prev_sq = prev_move.unwrap_unchecked().to();
-            self.counter_moves
-                .set(prev_sq, self.position.piece_on(prev_sq), m);
+            self.counter_moves.set(prev_sq, self.position.piece_on(prev_sq), m);
         }
         if depth.0 > 12 && get_stack(stack, 0).ply < LowPlyHistory::MAX_LPH as i32 {
             self.low_ply_history
@@ -1728,12 +1552,8 @@ impl ThreadPool {
             self.nodess.clear();
         }
         self.thread_pool_base.lock().unwrap().threads.clear();
-        self.nodess = (0..requested)
-            .map(|_| Arc::new(AtomicI64::new(0)))
-            .collect();
-        self.best_move_changess = (0..requested)
-            .map(|_| Arc::new(AtomicU64::new(0)))
-            .collect();
+        self.nodess = (0..requested).map(|_| Arc::new(AtomicI64::new(0))).collect();
+        self.best_move_changess = (0..requested).map(|_| Arc::new(AtomicU64::new(0))).collect();
         *reductions = Reductions::new(requested);
         self.thread_pool_base.lock().unwrap().threads = (0..requested)
             .map(|i| {
@@ -1781,10 +1601,7 @@ impl ThreadPool {
             })
             .collect();
         // Main thread has other thread's nodes.
-        self.thread_pool_base.lock().unwrap().threads[0]
-            .lock()
-            .unwrap()
-            .nodess = self.nodess.clone();
+        self.thread_pool_base.lock().unwrap().threads[0].lock().unwrap().nodess = self.nodess.clone();
     }
     pub fn start_thinking(
         &mut self,
@@ -1804,8 +1621,7 @@ impl ThreadPool {
         self.stop.store(false, Ordering::Relaxed);
         self.stop_on_ponderhit.store(false, Ordering::Relaxed);
         self.ponder.store(ponder_mode, Ordering::Relaxed);
-        self.hide_all_output
-            .store(hide_all_output, Ordering::Relaxed);
+        self.hide_all_output.store(hide_all_output, Ordering::Relaxed);
         self.timeman
             .lock()
             .unwrap()
@@ -1858,12 +1674,10 @@ impl ThreadPool {
                             std::thread::sleep(std::time::Duration::from_millis(1));
                         }
                         let m = if root_moves.is_empty() {
-                            *last_best_root_move_cloned.lock().unwrap() =
-                                Some(RootMove::new(Move::RESIGN));
+                            *last_best_root_move_cloned.lock().unwrap() = Some(RootMove::new(Move::RESIGN));
                             "resign"
                         } else {
-                            *last_best_root_move_cloned.lock().unwrap() =
-                                Some(RootMove::new(Move::WIN));
+                            *last_best_root_move_cloned.lock().unwrap() = Some(RootMove::new(Move::WIN));
                             "win"
                         };
                         if !hide_all_output_cloned.load(Ordering::Relaxed) {
@@ -1925,62 +1739,48 @@ impl ThreadPool {
                         handle.join().unwrap();
                     }
 
-                    let multi_pv = std::cmp::min(
-                        usi_options_cloned.get_i64(UsiOptions::MULTI_PV) as usize,
-                        root_moves.len(),
-                    );
-                    let best_thread =
-                        if multi_pv == 1 && limits.depth.is_none() && !root_moves.is_empty() {
-                            let mut votes = std::collections::BTreeMap::new();
-                            let min_score: Value = thread_pool_base_cloned
-                                .lock()
-                                .unwrap()
-                                .threads
-                                .iter()
-                                .map(|x| x.lock().unwrap().root_moves[0].score)
-                                .min()
-                                .unwrap();
+                    let multi_pv = std::cmp::min(usi_options_cloned.get_i64(UsiOptions::MULTI_PV) as usize, root_moves.len());
+                    let best_thread = if multi_pv == 1 && limits.depth.is_none() && !root_moves.is_empty() {
+                        let mut votes = std::collections::BTreeMap::new();
+                        let min_score: Value = thread_pool_base_cloned
+                            .lock()
+                            .unwrap()
+                            .threads
+                            .iter()
+                            .map(|x| x.lock().unwrap().root_moves[0].score)
+                            .min()
+                            .unwrap();
 
-                            for th in thread_pool_base_cloned.lock().unwrap().threads.iter() {
-                                let th = th.lock().unwrap();
-                                *votes.entry(th.root_moves[0].pv[0].0.get()).or_insert(0) +=
-                                    i64::from(
-                                        (th.root_moves[0].score.0 - min_score.0 + 14)
-                                            * th.completed_depth.0,
-                                    );
-                            }
+                        for th in thread_pool_base_cloned.lock().unwrap().threads.iter() {
+                            let th = th.lock().unwrap();
+                            *votes.entry(th.root_moves[0].pv[0].0.get()).or_insert(0) +=
+                                i64::from((th.root_moves[0].score.0 - min_score.0 + 14) * th.completed_depth.0);
+                        }
 
-                            thread_pool_base_cloned
-                                .lock()
-                                .unwrap()
-                                .threads
-                                .iter()
-                                // get first "max" score.
-                                .min_by(|x, y| {
-                                    let x_score = x.lock().unwrap().root_moves[0].score;
-                                    let y_score = y.lock().unwrap().root_moves[0].score;
-                                    if x_score >= Value::MATE_IN_MAX_PLY
-                                        || y_score >= Value::MATE_IN_MAX_PLY
-                                    {
-                                        y_score.cmp(&x_score)
-                                    } else {
-                                        let x_vote_score = *votes
-                                            .get(&x.lock().unwrap().root_moves[0].pv[0].0.get())
-                                            .unwrap();
-                                        let y_vote_score = *votes
-                                            .get(&y.lock().unwrap().root_moves[0].pv[0].0.get())
-                                            .unwrap();
-                                        y_vote_score.cmp(&x_vote_score)
-                                    }
-                                })
-                                .unwrap()
-                                .clone()
-                        } else {
-                            thread_pool_base_cloned.lock().unwrap().threads[0].clone()
-                        };
+                        thread_pool_base_cloned
+                            .lock()
+                            .unwrap()
+                            .threads
+                            .iter()
+                            // get first "max" score.
+                            .min_by(|x, y| {
+                                let x_score = x.lock().unwrap().root_moves[0].score;
+                                let y_score = y.lock().unwrap().root_moves[0].score;
+                                if x_score >= Value::MATE_IN_MAX_PLY || y_score >= Value::MATE_IN_MAX_PLY {
+                                    y_score.cmp(&x_score)
+                                } else {
+                                    let x_vote_score = *votes.get(&x.lock().unwrap().root_moves[0].pv[0].0.get()).unwrap();
+                                    let y_vote_score = *votes.get(&y.lock().unwrap().root_moves[0].pv[0].0.get()).unwrap();
+                                    y_vote_score.cmp(&x_vote_score)
+                                }
+                            })
+                            .unwrap()
+                            .clone()
+                    } else {
+                        thread_pool_base_cloned.lock().unwrap().threads[0].clone()
+                    };
 
-                    *previous_score_cloned.lock().unwrap() =
-                        best_thread.lock().unwrap().root_moves[0].score;
+                    *previous_score_cloned.lock().unwrap() = best_thread.lock().unwrap().root_moves[0].score;
 
                     let nodes_searched = thread_pool_base_cloned.lock().unwrap().threads[0]
                         .lock()
@@ -2000,23 +1800,14 @@ impl ThreadPool {
                                     true,
                                 )
                             );
-                            let mut s = format!(
-                                "bestmove {}",
-                                best_thread.root_moves[0].pv[0].to_usi_string(),
-                            );
-                            if usi_options_cloned.get_bool(UsiOptions::USI_PONDER)
-                                && best_thread.root_moves[0].pv.len() >= 2
-                            {
-                                s += &format!(
-                                    " ponder {}",
-                                    best_thread.root_moves[0].pv[1].to_usi_string()
-                                );
+                            let mut s = format!("bestmove {}", best_thread.root_moves[0].pv[0].to_usi_string(),);
+                            if usi_options_cloned.get_bool(UsiOptions::USI_PONDER) && best_thread.root_moves[0].pv.len() >= 2 {
+                                s += &format!(" ponder {}", best_thread.root_moves[0].pv[1].to_usi_string());
                             }
                             println!("{}", s);
                         }
                     }
-                    *last_best_root_move_cloned.lock().unwrap() =
-                        Some(best_thread.lock().unwrap().root_moves[0].clone());
+                    *last_best_root_move_cloned.lock().unwrap() = Some(best_thread.lock().unwrap().root_moves[0].clone());
                 })
                 .unwrap(),
         );
@@ -2028,9 +1819,7 @@ impl ThreadPool {
     }
     #[allow(dead_code)]
     fn nodes_searched(&self) -> i64 {
-        self.nodess
-            .iter()
-            .fold(0, |sum, nodes| sum + nodes.load(Ordering::Relaxed))
+        self.nodess.iter().fold(0, |sum, nodes| sum + nodes.load(Ordering::Relaxed))
     }
 }
 
@@ -2075,14 +1864,7 @@ fn test_start_thinking() {
                     );
                     let ponder_mode = false;
                     let hide_all_output = false;
-                    thread_pool.start_thinking(
-                        &Position::new(),
-                        &mut tt,
-                        limits,
-                        &usi_options,
-                        ponder_mode,
-                        hide_all_output,
-                    );
+                    thread_pool.start_thinking(&Position::new(), &mut tt, limits, &usi_options, ponder_mode, hide_all_output);
                     thread_pool.wait_for_search_finished();
                 }
                 Err(_) => {

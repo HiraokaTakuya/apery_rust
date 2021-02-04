@@ -161,21 +161,14 @@ impl MoveList {
         // Rust's do-while
         while {
             checker_sq = copy_checkers.pop_lsb_unchecked();
-            not_target |= pos.effect_bb_of_checker_where_king_cannot_escape(
-                checker_sq,
-                pos.piece_on(checker_sq),
-                &pos.occupied_bb(),
-            );
+            not_target |=
+                pos.effect_bb_of_checker_where_king_cannot_escape(checker_sq, pos.piece_on(checker_sq), &pos.occupied_bb());
             checkers_num += 1;
             copy_checkers.to_bool() // loop condition
         } {}
         let to_bb = ATTACK_TABLE.king.attack(ksq_of_evasion) & !pos.pieces_c(us) & !not_target;
         for to in to_bb {
-            self.push(Move::new_unpromote(
-                ksq_of_evasion,
-                to,
-                pos.piece_on(ksq_of_evasion),
-            ));
+            self.push(Move::new_unpromote(ksq_of_evasion, to, pos.piece_on(ksq_of_evasion)));
         }
 
         if 1 < checkers_num {
@@ -273,8 +266,7 @@ impl MoveList {
             }
         }
         if hand.except_pawn_exist() {
-            let mut possessions: [Piece; 6] =
-                unsafe { std::mem::MaybeUninit::uninit().assume_init() };
+            let mut possessions: [Piece; 6] = unsafe { std::mem::MaybeUninit::uninit().assume_init() };
             let mut possessions_num: usize = 0;
             let sgbr_num;
             let sgbrl_num;
@@ -306,34 +298,22 @@ impl MoveList {
             self.generate_drop_for_possessions(&possessions[..possessions_num], to_bb);
         }
     }
-    fn generate_for_piece<PTT: PieceTypeTrait, AMT: AllowMovesTrait>(
-        &mut self,
-        pos: &Position,
-        target: &Bitboard,
-    ) {
+    fn generate_for_piece<PTT: PieceTypeTrait, AMT: AllowMovesTrait>(&mut self, pos: &Position, target: &Bitboard) {
         match PTT::PIECE_TYPE {
             PieceType::PAWN => self.generate_for_pawn::<AMT>(pos, target),
             PieceType::LANCE => self.generate_for_lance::<AMT>(pos, target),
             PieceType::KNIGHT => self.generate_for_knight::<AMT>(pos, target),
             PieceType::SILVER => self.generate_for_silver::<AMT>(pos, target),
-            PieceType::BISHOP => {
-                self.generate_for_bishop_or_rook::<AMT>(PieceType::BISHOP, pos, target)
-            }
-            PieceType::ROOK => {
-                self.generate_for_bishop_or_rook::<AMT>(PieceType::ROOK, pos, target)
-            }
+            PieceType::BISHOP => self.generate_for_bishop_or_rook::<AMT>(PieceType::BISHOP, pos, target),
+            PieceType::ROOK => self.generate_for_bishop_or_rook::<AMT>(PieceType::ROOK, pos, target),
             PieceType::KING => self.generate_for_king::<AMT>(pos, target),
             PieceType::GOLD => self.generate_for_gold::<AMT>(pos, target),
             PieceType::PRO_PAWN => unreachable!(),
             PieceType::PRO_LANCE => unreachable!(),
             PieceType::PRO_KNIGHT => unreachable!(),
             PieceType::PRO_SILVER => unreachable!(),
-            PieceType::HORSE => {
-                self.generate_for_horse_or_dragon::<AMT>(PieceType::HORSE, pos, target)
-            }
-            PieceType::DRAGON => {
-                self.generate_for_horse_or_dragon::<AMT>(PieceType::DRAGON, pos, target)
-            }
+            PieceType::HORSE => self.generate_for_horse_or_dragon::<AMT>(PieceType::HORSE, pos, target),
+            PieceType::DRAGON => self.generate_for_horse_or_dragon::<AMT>(PieceType::DRAGON, pos, target),
             _ => unreachable!(),
         }
     }
@@ -348,11 +328,7 @@ impl MoveList {
             from_bb << 1
         } & *target;
 
-        fn make_to_bb<AMT: AllowMovesTrait>(
-            pos: &Position,
-            from_bb: Bitboard,
-            us: Color,
-        ) -> Bitboard {
+        fn make_to_bb<AMT: AllowMovesTrait>(pos: &Position, from_bb: Bitboard, us: Color) -> Bitboard {
             let mut to_bb = if us == Color::BLACK {
                 debug_assert_eq!(Square::DELTA_N.0, -1);
                 from_bb >> 1
@@ -393,9 +369,7 @@ impl MoveList {
             let rank_to = Rank::new(to);
             if rank_to.is_opponent_field(us) {
                 self.push(Move::new_promote(from, to, pc));
-                if AMT::ALL
-                    && rank_to != Rank::new_from_color_and_rank_as_black(us, RankAsBlack::RANK1)
-                {
+                if AMT::ALL && rank_to != Rank::new_from_color_and_rank_as_black(us, RankAsBlack::RANK1) {
                     self.push(Move::new_unpromote(from, to, pc));
                 }
             } else {
@@ -410,20 +384,14 @@ impl MoveList {
         for from in from_bb {
             let to_bb = ATTACK_TABLE.lance.attack(us, from, &pos.occupied_bb()) & *target;
 
-            fn make_to_bb<AMT: AllowMovesTrait>(
-                pos: &Position,
-                from: Square,
-                us: Color,
-            ) -> Bitboard {
-                let mut to_bb =
-                    ATTACK_TABLE.lance.attack(us, from, &pos.occupied_bb()) & !pos.pieces_c(us);
+            fn make_to_bb<AMT: AllowMovesTrait>(pos: &Position, from: Square, us: Color) -> Bitboard {
+                let mut to_bb = ATTACK_TABLE.lance.attack(us, from, &pos.occupied_bb()) & !pos.pieces_c(us);
                 if AMT::EVASIONS {
                     let checkers = pos.checkers();
                     match checkers.count_ones() {
                         1 => {
                             let ksq = pos.king_square(us);
-                            to_bb &=
-                                checkers | Bitboard::between_mask(ksq, checkers.lsb_unchecked());
+                            to_bb &= checkers | Bitboard::between_mask(ksq, checkers.lsb_unchecked());
                         }
                         2 => to_bb = Bitboard::ZERO, // Only king can move.
                         _ => unreachable!(),
@@ -444,15 +412,13 @@ impl MoveList {
                 if rank_to.is_opponent_field(us) {
                     self.push(Move::new_promote(from, to, pc));
                     if AMT::ALL {
-                        if rank_to != Rank::new_from_color_and_rank_as_black(us, RankAsBlack::RANK1)
-                        {
+                        if rank_to != Rank::new_from_color_and_rank_as_black(us, RankAsBlack::RANK1) {
                             self.push(Move::new_unpromote(from, to, pc));
                         }
                     } else {
                         // avoid unpromote quiet move to rank3. because it is useless move.
                         if AMT::ALLOW_CAPTURES
-                            && rank_to
-                                == Rank::new_from_color_and_rank_as_black(us, RankAsBlack::RANK3)
+                            && rank_to == Rank::new_from_color_and_rank_as_black(us, RankAsBlack::RANK3)
                             && pos.piece_on(to) != Piece::EMPTY
                         {
                             self.push(Move::new_unpromote(from, to, pc));
@@ -471,19 +437,14 @@ impl MoveList {
         for from in from_bb {
             let to_bb = ATTACK_TABLE.knight.attack(us, from) & *target;
 
-            fn make_to_bb<AMT: AllowMovesTrait>(
-                pos: &Position,
-                from: Square,
-                us: Color,
-            ) -> Bitboard {
+            fn make_to_bb<AMT: AllowMovesTrait>(pos: &Position, from: Square, us: Color) -> Bitboard {
                 let mut to_bb = ATTACK_TABLE.knight.attack(us, from) & !pos.pieces_c(us);
                 if AMT::EVASIONS {
                     let checkers = pos.checkers();
                     match checkers.count_ones() {
                         1 => {
                             let ksq = pos.king_square(us);
-                            to_bb &=
-                                checkers | Bitboard::between_mask(ksq, checkers.lsb_unchecked());
+                            to_bb &= checkers | Bitboard::between_mask(ksq, checkers.lsb_unchecked());
                         }
                         2 => to_bb = Bitboard::ZERO, // Only king can move.
                         _ => unreachable!(),
@@ -517,19 +478,14 @@ impl MoveList {
         for from in from_bb {
             let to_bb = ATTACK_TABLE.silver.attack(us, from) & *target;
 
-            fn make_to_bb<AMT: AllowMovesTrait>(
-                pos: &Position,
-                from: Square,
-                us: Color,
-            ) -> Bitboard {
+            fn make_to_bb<AMT: AllowMovesTrait>(pos: &Position, from: Square, us: Color) -> Bitboard {
                 let mut to_bb = ATTACK_TABLE.silver.attack(us, from) & !pos.pieces_c(us);
                 if AMT::EVASIONS {
                     let checkers = pos.checkers();
                     match checkers.count_ones() {
                         1 => {
                             let ksq = pos.king_square(us);
-                            to_bb &=
-                                checkers | Bitboard::between_mask(ksq, checkers.lsb_unchecked());
+                            to_bb &= checkers | Bitboard::between_mask(ksq, checkers.lsb_unchecked());
                         }
                         2 => to_bb = Bitboard::ZERO, // Only king can move.
                         _ => unreachable!(),
@@ -561,19 +517,14 @@ impl MoveList {
         for from in from_bb {
             let to_bb = ATTACK_TABLE.gold.attack(us, from) & *target;
 
-            fn make_to_bb<AMT: AllowMovesTrait>(
-                pos: &Position,
-                from: Square,
-                us: Color,
-            ) -> Bitboard {
+            fn make_to_bb<AMT: AllowMovesTrait>(pos: &Position, from: Square, us: Color) -> Bitboard {
                 let mut to_bb = ATTACK_TABLE.gold.attack(us, from) & !pos.pieces_c(us);
                 if AMT::EVASIONS {
                     let checkers = pos.checkers();
                     match checkers.count_ones() {
                         1 => {
                             let ksq = pos.king_square(us);
-                            to_bb &=
-                                checkers | Bitboard::between_mask(ksq, checkers.lsb_unchecked());
+                            to_bb &= checkers | Bitboard::between_mask(ksq, checkers.lsb_unchecked());
                         }
                         2 => to_bb = Bitboard::ZERO, // Only king can move.
                         _ => unreachable!(),
@@ -632,32 +583,20 @@ impl MoveList {
             self.push(Move::new_unpromote(from, to, pos.piece_on(from)));
         }
     }
-    fn generate_for_bishop_or_rook<AMT: AllowMovesTrait>(
-        &mut self,
-        pt: PieceType,
-        pos: &Position,
-        target: &Bitboard,
-    ) {
+    fn generate_for_bishop_or_rook<AMT: AllowMovesTrait>(&mut self, pt: PieceType, pos: &Position, target: &Bitboard) {
         debug_assert!(pos.checkers().count_ones() != 2 || !target.to_bool()); // if double check (pos.checkers() == 2), target is all zero.
         let us = pos.side_to_move();
         let from_bb = pos.pieces_cp(us, pt);
         for from in from_bb {
             let to_bb = ATTACK_TABLE.attack(pt, us, from, &pos.occupied_bb()) & *target;
-            fn make_to_bb<AMT: AllowMovesTrait>(
-                pos: &Position,
-                pt: PieceType,
-                from: Square,
-                us: Color,
-            ) -> Bitboard {
-                let mut to_bb =
-                    ATTACK_TABLE.attack(pt, us, from, &pos.occupied_bb()) & !pos.pieces_c(us);
+            fn make_to_bb<AMT: AllowMovesTrait>(pos: &Position, pt: PieceType, from: Square, us: Color) -> Bitboard {
+                let mut to_bb = ATTACK_TABLE.attack(pt, us, from, &pos.occupied_bb()) & !pos.pieces_c(us);
                 if AMT::EVASIONS {
                     let checkers = pos.checkers();
                     match checkers.count_ones() {
                         1 => {
                             let ksq = pos.king_square(us);
-                            to_bb &=
-                                checkers | Bitboard::between_mask(ksq, checkers.lsb_unchecked());
+                            to_bb &= checkers | Bitboard::between_mask(ksq, checkers.lsb_unchecked());
                         }
                         2 => to_bb = Bitboard::ZERO, // Only king can move.
                         _ => unreachable!(),
@@ -686,32 +625,20 @@ impl MoveList {
             }
         }
     }
-    fn generate_for_horse_or_dragon<AMT: AllowMovesTrait>(
-        &mut self,
-        pt: PieceType,
-        pos: &Position,
-        target: &Bitboard,
-    ) {
+    fn generate_for_horse_or_dragon<AMT: AllowMovesTrait>(&mut self, pt: PieceType, pos: &Position, target: &Bitboard) {
         debug_assert!(pos.checkers().count_ones() != 2 || !target.to_bool()); // if double check (pos.checkers() == 2), target is all zero.
         let us = pos.side_to_move();
         let from_bb = pos.pieces_cp(us, pt);
         for from in from_bb {
             let to_bb = ATTACK_TABLE.attack(pt, us, from, &pos.occupied_bb()) & *target;
-            fn make_to_bb<AMT: AllowMovesTrait>(
-                pos: &Position,
-                pt: PieceType,
-                from: Square,
-                us: Color,
-            ) -> Bitboard {
-                let mut to_bb =
-                    ATTACK_TABLE.attack(pt, us, from, &pos.occupied_bb()) & !pos.pieces_c(us);
+            fn make_to_bb<AMT: AllowMovesTrait>(pos: &Position, pt: PieceType, from: Square, us: Color) -> Bitboard {
+                let mut to_bb = ATTACK_TABLE.attack(pt, us, from, &pos.occupied_bb()) & !pos.pieces_c(us);
                 if AMT::EVASIONS {
                     let checkers = pos.checkers();
                     match checkers.count_ones() {
                         1 => {
                             let ksq = pos.king_square(us);
-                            to_bb &=
-                                checkers | Bitboard::between_mask(ksq, checkers.lsb_unchecked());
+                            to_bb &= checkers | Bitboard::between_mask(ksq, checkers.lsb_unchecked());
                         }
                         2 => to_bb = Bitboard::ZERO, // Only king can move.
                         _ => unreachable!(),
@@ -745,13 +672,11 @@ impl MoveList {
                 | PieceType::SILVER
                 | PieceType::BISHOP
                 | PieceType::ROOK => {
-                    self.push(
-                        if to_is_opponent_field || Rank::new(from).is_opponent_field(us) {
-                            Move::new_promote(from, to, pc)
-                        } else {
-                            Move::new_unpromote(from, to, pc)
-                        },
-                    );
+                    self.push(if to_is_opponent_field || Rank::new(from).is_opponent_field(us) {
+                        Move::new_promote(from, to, pc)
+                    } else {
+                        Move::new_unpromote(from, to, pc)
+                    });
                 }
                 PieceType::GOLD
                 | PieceType::KING
@@ -844,22 +769,10 @@ fn test_move_piece_moved() {
         } else {
             (Square::SQ26, Square::SQ27)
         };
-        assert_eq!(
-            Move::new_promote(from, to, pc).piece_moved_before_move(),
-            pc
-        );
-        assert_eq!(
-            Move::new_promote(from, to, pc).piece_moved_after_move(),
-            pc.to_promote()
-        );
-        assert_eq!(
-            Move::new_unpromote(from, to, pc).piece_moved_before_move(),
-            pc
-        );
-        assert_eq!(
-            Move::new_unpromote(from, to, pc).piece_moved_after_move(),
-            pc
-        );
+        assert_eq!(Move::new_promote(from, to, pc).piece_moved_before_move(), pc);
+        assert_eq!(Move::new_promote(from, to, pc).piece_moved_after_move(), pc.to_promote());
+        assert_eq!(Move::new_unpromote(from, to, pc).piece_moved_before_move(), pc);
+        assert_eq!(Move::new_unpromote(from, to, pc).piece_moved_after_move(), pc);
         assert_eq!(Move::new_drop(pc, to).piece_moved_before_move(), pc);
         assert_eq!(Move::new_drop(pc, to).piece_moved_after_move(), pc);
     }
@@ -874,16 +787,8 @@ fn test_generate_for_piece() {
     let target = pos.pieces_c(us.inverse());
     mlist.generate_for_piece::<KingType, CaptureOrPawnPromotionsType>(&pos, &target);
     assert_eq!(mlist.size, 2);
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ59,
-        Square::SQ48,
-        Piece::B_KING
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ59,
-        Square::SQ58,
-        Piece::B_KING
-    ))); // illegal but make this.
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ59, Square::SQ48, Piece::B_KING)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ59, Square::SQ58, Piece::B_KING))); // illegal but make this.
 
     let sfen = "4k4/9/9/9/9/9/4l4/4bp3/4KP3 b - 1";
     let mut mlist = MoveList::new();
@@ -891,16 +796,8 @@ fn test_generate_for_piece() {
     let target = pos.empty_bb();
     mlist.generate_for_piece::<KingType, QuietsWithoutPawnPromotionsType>(&pos, &target);
     assert_eq!(mlist.size, 2);
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ59,
-        Square::SQ68,
-        Piece::B_KING
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ59,
-        Square::SQ69,
-        Piece::B_KING
-    ))); // illegal but make this.
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ59, Square::SQ68, Piece::B_KING)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ59, Square::SQ69, Piece::B_KING))); // illegal but make this.
 
     let sfen = "4k4/7p1/9/9/4BB3/5P3/9/9/s3K4 b - 1";
     let mut mlist = MoveList::new();
@@ -908,16 +805,8 @@ fn test_generate_for_piece() {
     let target = pos.pieces_c(us.inverse());
     mlist.generate_for_piece::<BishopType, CaptureOrPawnPromotionsType>(&pos, &target);
     assert_eq!(mlist.size, 2);
-    assert!(mlist.contains(Move::new_promote(
-        Square::SQ55,
-        Square::SQ22,
-        Piece::B_BISHOP
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ55,
-        Square::SQ99,
-        Piece::B_BISHOP
-    )));
+    assert!(mlist.contains(Move::new_promote(Square::SQ55, Square::SQ22, Piece::B_BISHOP)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ55, Square::SQ99, Piece::B_BISHOP)));
 
     let sfen = "4k4/7p1/9/9/4BB3/5P3/9/9/s3K4 b - 1";
     let mut mlist = MoveList::new();
@@ -925,139 +814,38 @@ fn test_generate_for_piece() {
     let pos = Position::new_from_sfen(sfen).unwrap();
     mlist.generate_for_piece::<BishopType, QuietsWithoutPawnPromotionsType>(&pos, &target);
     assert_eq!(mlist.size, 23);
-    assert!(mlist.contains(Move::new_promote(
-        Square::SQ55,
-        Square::SQ33,
-        Piece::B_BISHOP
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ55,
-        Square::SQ44,
-        Piece::B_BISHOP
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ55,
-        Square::SQ64,
-        Piece::B_BISHOP
-    )));
-    assert!(mlist.contains(Move::new_promote(
-        Square::SQ55,
-        Square::SQ73,
-        Piece::B_BISHOP
-    )));
-    assert!(mlist.contains(Move::new_promote(
-        Square::SQ55,
-        Square::SQ82,
-        Piece::B_BISHOP
-    )));
-    assert!(mlist.contains(Move::new_promote(
-        Square::SQ55,
-        Square::SQ91,
-        Piece::B_BISHOP
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ55,
-        Square::SQ66,
-        Piece::B_BISHOP
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ55,
-        Square::SQ77,
-        Piece::B_BISHOP
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ55,
-        Square::SQ88,
-        Piece::B_BISHOP
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ45,
-        Square::SQ34,
-        Piece::B_BISHOP
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ45,
-        Square::SQ36,
-        Piece::B_BISHOP
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ45,
-        Square::SQ27,
-        Piece::B_BISHOP
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ45,
-        Square::SQ18,
-        Piece::B_BISHOP
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ45,
-        Square::SQ54,
-        Piece::B_BISHOP
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ45,
-        Square::SQ56,
-        Piece::B_BISHOP
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ45,
-        Square::SQ67,
-        Piece::B_BISHOP
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ45,
-        Square::SQ78,
-        Piece::B_BISHOP
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ45,
-        Square::SQ89,
-        Piece::B_BISHOP
-    )));
-    assert!(mlist.contains(Move::new_promote(
-        Square::SQ45,
-        Square::SQ23,
-        Piece::B_BISHOP
-    )));
-    assert!(mlist.contains(Move::new_promote(
-        Square::SQ45,
-        Square::SQ12,
-        Piece::B_BISHOP
-    )));
-    assert!(mlist.contains(Move::new_promote(
-        Square::SQ45,
-        Square::SQ63,
-        Piece::B_BISHOP
-    )));
-    assert!(mlist.contains(Move::new_promote(
-        Square::SQ45,
-        Square::SQ72,
-        Piece::B_BISHOP
-    )));
-    assert!(mlist.contains(Move::new_promote(
-        Square::SQ45,
-        Square::SQ81,
-        Piece::B_BISHOP
-    )));
+    assert!(mlist.contains(Move::new_promote(Square::SQ55, Square::SQ33, Piece::B_BISHOP)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ55, Square::SQ44, Piece::B_BISHOP)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ55, Square::SQ64, Piece::B_BISHOP)));
+    assert!(mlist.contains(Move::new_promote(Square::SQ55, Square::SQ73, Piece::B_BISHOP)));
+    assert!(mlist.contains(Move::new_promote(Square::SQ55, Square::SQ82, Piece::B_BISHOP)));
+    assert!(mlist.contains(Move::new_promote(Square::SQ55, Square::SQ91, Piece::B_BISHOP)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ55, Square::SQ66, Piece::B_BISHOP)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ55, Square::SQ77, Piece::B_BISHOP)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ55, Square::SQ88, Piece::B_BISHOP)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ45, Square::SQ34, Piece::B_BISHOP)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ45, Square::SQ36, Piece::B_BISHOP)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ45, Square::SQ27, Piece::B_BISHOP)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ45, Square::SQ18, Piece::B_BISHOP)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ45, Square::SQ54, Piece::B_BISHOP)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ45, Square::SQ56, Piece::B_BISHOP)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ45, Square::SQ67, Piece::B_BISHOP)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ45, Square::SQ78, Piece::B_BISHOP)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ45, Square::SQ89, Piece::B_BISHOP)));
+    assert!(mlist.contains(Move::new_promote(Square::SQ45, Square::SQ23, Piece::B_BISHOP)));
+    assert!(mlist.contains(Move::new_promote(Square::SQ45, Square::SQ12, Piece::B_BISHOP)));
+    assert!(mlist.contains(Move::new_promote(Square::SQ45, Square::SQ63, Piece::B_BISHOP)));
+    assert!(mlist.contains(Move::new_promote(Square::SQ45, Square::SQ72, Piece::B_BISHOP)));
+    assert!(mlist.contains(Move::new_promote(Square::SQ45, Square::SQ81, Piece::B_BISHOP)));
 
     let sfen = "4k4/4l4/9/9/5B3/9/9/9/4K4 b - 1";
     let mut mlist = MoveList::new();
     let pos = Position::new_from_sfen(sfen).unwrap();
-    let target =
-        Bitboard::between_mask(Square::SQ52, Square::SQ59) | Bitboard::square_mask(Square::SQ52);
+    let target = Bitboard::between_mask(Square::SQ52, Square::SQ59) | Bitboard::square_mask(Square::SQ52);
     mlist.generate_for_piece::<BishopType, EvasionsType>(&pos, &target);
     assert_eq!(mlist.size, 2);
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ45,
-        Square::SQ54,
-        Piece::B_BISHOP
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ45,
-        Square::SQ56,
-        Piece::B_BISHOP
-    )));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ45, Square::SQ54, Piece::B_BISHOP)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ45, Square::SQ56, Piece::B_BISHOP)));
 
     let sfens = [
         ("8k/1pP6/1G7/5G3/9/9/9/9/8K b - 1", Piece::B_GOLD),
@@ -1108,16 +896,8 @@ fn test_generate_for_piece() {
     let target = pos.pieces_c(us.inverse());
     mlist.generate_for_piece::<SilverType, CaptureOrPawnPromotionsType>(&pos, &target);
     assert_eq!(mlist.size, 2);
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ83,
-        Square::SQ82,
-        Piece::B_SILVER
-    )));
-    assert!(mlist.contains(Move::new_promote(
-        Square::SQ83,
-        Square::SQ82,
-        Piece::B_SILVER
-    )));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ83, Square::SQ82, Piece::B_SILVER)));
+    assert!(mlist.contains(Move::new_promote(Square::SQ83, Square::SQ82, Piece::B_SILVER)));
 
     let sfen = "8k/1pP6/1S7/5S3/9/9/S8/9/8K b - 1";
     let mut mlist = MoveList::new();
@@ -1125,91 +905,23 @@ fn test_generate_for_piece() {
     let target = pos.empty_bb();
     mlist.generate_for_piece::<SilverType, QuietsWithoutPawnPromotionsType>(&pos, &target);
     assert_eq!(mlist.size, 17);
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ83,
-        Square::SQ74,
-        Piece::B_SILVER
-    )));
-    assert!(mlist.contains(Move::new_promote(
-        Square::SQ83,
-        Square::SQ74,
-        Piece::B_SILVER
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ83,
-        Square::SQ92,
-        Piece::B_SILVER
-    )));
-    assert!(mlist.contains(Move::new_promote(
-        Square::SQ83,
-        Square::SQ92,
-        Piece::B_SILVER
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ83,
-        Square::SQ94,
-        Piece::B_SILVER
-    )));
-    assert!(mlist.contains(Move::new_promote(
-        Square::SQ83,
-        Square::SQ94,
-        Piece::B_SILVER
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ44,
-        Square::SQ33,
-        Piece::B_SILVER
-    )));
-    assert!(mlist.contains(Move::new_promote(
-        Square::SQ44,
-        Square::SQ33,
-        Piece::B_SILVER
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ44,
-        Square::SQ43,
-        Piece::B_SILVER
-    )));
-    assert!(mlist.contains(Move::new_promote(
-        Square::SQ44,
-        Square::SQ43,
-        Piece::B_SILVER
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ44,
-        Square::SQ53,
-        Piece::B_SILVER
-    )));
-    assert!(mlist.contains(Move::new_promote(
-        Square::SQ44,
-        Square::SQ53,
-        Piece::B_SILVER
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ44,
-        Square::SQ35,
-        Piece::B_SILVER
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ44,
-        Square::SQ55,
-        Piece::B_SILVER
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ97,
-        Square::SQ86,
-        Piece::B_SILVER
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ97,
-        Square::SQ88,
-        Piece::B_SILVER
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ97,
-        Square::SQ96,
-        Piece::B_SILVER
-    )));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ83, Square::SQ74, Piece::B_SILVER)));
+    assert!(mlist.contains(Move::new_promote(Square::SQ83, Square::SQ74, Piece::B_SILVER)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ83, Square::SQ92, Piece::B_SILVER)));
+    assert!(mlist.contains(Move::new_promote(Square::SQ83, Square::SQ92, Piece::B_SILVER)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ83, Square::SQ94, Piece::B_SILVER)));
+    assert!(mlist.contains(Move::new_promote(Square::SQ83, Square::SQ94, Piece::B_SILVER)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ44, Square::SQ33, Piece::B_SILVER)));
+    assert!(mlist.contains(Move::new_promote(Square::SQ44, Square::SQ33, Piece::B_SILVER)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ44, Square::SQ43, Piece::B_SILVER)));
+    assert!(mlist.contains(Move::new_promote(Square::SQ44, Square::SQ43, Piece::B_SILVER)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ44, Square::SQ53, Piece::B_SILVER)));
+    assert!(mlist.contains(Move::new_promote(Square::SQ44, Square::SQ53, Piece::B_SILVER)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ44, Square::SQ35, Piece::B_SILVER)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ44, Square::SQ55, Piece::B_SILVER)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ97, Square::SQ86, Piece::B_SILVER)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ97, Square::SQ88, Piece::B_SILVER)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ97, Square::SQ96, Piece::B_SILVER)));
 
     let sfen = "p7k/1p7/1Np6/2N6/3N5/9/9/9/8K b - 1";
     let mut mlist = MoveList::new();
@@ -1218,26 +930,10 @@ fn test_generate_for_piece() {
     let target = pos.pieces_c(us.inverse());
     mlist.generate_for_piece::<KnightType, CaptureOrPawnPromotionsType>(&pos, &target);
     assert_eq!(mlist.size, 4);
-    assert!(mlist.contains(Move::new_promote(
-        Square::SQ83,
-        Square::SQ91,
-        Piece::B_KNIGHT
-    )));
-    assert!(mlist.contains(Move::new_promote(
-        Square::SQ74,
-        Square::SQ82,
-        Piece::B_KNIGHT
-    )));
-    assert!(mlist.contains(Move::new_promote(
-        Square::SQ65,
-        Square::SQ73,
-        Piece::B_KNIGHT
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ65,
-        Square::SQ73,
-        Piece::B_KNIGHT
-    )));
+    assert!(mlist.contains(Move::new_promote(Square::SQ83, Square::SQ91, Piece::B_KNIGHT)));
+    assert!(mlist.contains(Move::new_promote(Square::SQ74, Square::SQ82, Piece::B_KNIGHT)));
+    assert!(mlist.contains(Move::new_promote(Square::SQ65, Square::SQ73, Piece::B_KNIGHT)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ65, Square::SQ73, Piece::B_KNIGHT)));
 
     let sfen = "8k/9/9/9/3n5/2n6/1nP6/1P7/P7K w - 1";
     let mut mlist = MoveList::new();
@@ -1246,26 +942,10 @@ fn test_generate_for_piece() {
     let target = pos.pieces_c(us.inverse());
     mlist.generate_for_piece::<KnightType, CaptureOrPawnPromotionsType>(&pos, &target);
     assert_eq!(mlist.size, 4);
-    assert!(mlist.contains(Move::new_promote(
-        Square::SQ87,
-        Square::SQ99,
-        Piece::W_KNIGHT
-    )));
-    assert!(mlist.contains(Move::new_promote(
-        Square::SQ76,
-        Square::SQ88,
-        Piece::W_KNIGHT
-    )));
-    assert!(mlist.contains(Move::new_promote(
-        Square::SQ65,
-        Square::SQ77,
-        Piece::W_KNIGHT
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ65,
-        Square::SQ77,
-        Piece::W_KNIGHT
-    )));
+    assert!(mlist.contains(Move::new_promote(Square::SQ87, Square::SQ99, Piece::W_KNIGHT)));
+    assert!(mlist.contains(Move::new_promote(Square::SQ76, Square::SQ88, Piece::W_KNIGHT)));
+    assert!(mlist.contains(Move::new_promote(Square::SQ65, Square::SQ77, Piece::W_KNIGHT)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ65, Square::SQ77, Piece::W_KNIGHT)));
 
     let sfen = "p7k/1p7/1Np6/2N6/3N5/9/9/9/8K b - 1";
     let mut mlist = MoveList::new();
@@ -1273,26 +953,10 @@ fn test_generate_for_piece() {
     let target = pos.empty_bb();
     mlist.generate_for_piece::<KnightType, QuietsWithoutPawnPromotionsType>(&pos, &target);
     assert_eq!(mlist.size, 4);
-    assert!(mlist.contains(Move::new_promote(
-        Square::SQ83,
-        Square::SQ71,
-        Piece::B_KNIGHT
-    )));
-    assert!(mlist.contains(Move::new_promote(
-        Square::SQ74,
-        Square::SQ62,
-        Piece::B_KNIGHT
-    )));
-    assert!(mlist.contains(Move::new_promote(
-        Square::SQ65,
-        Square::SQ53,
-        Piece::B_KNIGHT
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ65,
-        Square::SQ53,
-        Piece::B_KNIGHT
-    )));
+    assert!(mlist.contains(Move::new_promote(Square::SQ83, Square::SQ71, Piece::B_KNIGHT)));
+    assert!(mlist.contains(Move::new_promote(Square::SQ74, Square::SQ62, Piece::B_KNIGHT)));
+    assert!(mlist.contains(Move::new_promote(Square::SQ65, Square::SQ53, Piece::B_KNIGHT)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ65, Square::SQ53, Piece::B_KNIGHT)));
 
     let sfen = "8k/9/9/9/3n5/2n6/1nP6/1P7/P7K w - 1";
     let mut mlist = MoveList::new();
@@ -1300,26 +964,10 @@ fn test_generate_for_piece() {
     let target = pos.empty_bb();
     mlist.generate_for_piece::<KnightType, QuietsWithoutPawnPromotionsType>(&pos, &target);
     assert_eq!(mlist.size, 4);
-    assert!(mlist.contains(Move::new_promote(
-        Square::SQ87,
-        Square::SQ79,
-        Piece::W_KNIGHT
-    )));
-    assert!(mlist.contains(Move::new_promote(
-        Square::SQ76,
-        Square::SQ68,
-        Piece::W_KNIGHT
-    )));
-    assert!(mlist.contains(Move::new_promote(
-        Square::SQ65,
-        Square::SQ57,
-        Piece::W_KNIGHT
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ65,
-        Square::SQ57,
-        Piece::W_KNIGHT
-    )));
+    assert!(mlist.contains(Move::new_promote(Square::SQ87, Square::SQ79, Piece::W_KNIGHT)));
+    assert!(mlist.contains(Move::new_promote(Square::SQ76, Square::SQ68, Piece::W_KNIGHT)));
+    assert!(mlist.contains(Move::new_promote(Square::SQ65, Square::SQ57, Piece::W_KNIGHT)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ65, Square::SQ57, Piece::W_KNIGHT)));
 
     let sfen = "p7k/1p7/2p6/9/LLLL5/9/9/9/8K b - 1";
     let mut mlist = MoveList::new();
@@ -1328,26 +976,10 @@ fn test_generate_for_piece() {
     let target = pos.pieces_c(us.inverse());
     mlist.generate_for_piece::<LanceType, CaptureOrPawnPromotionsType>(&pos, &target);
     assert_eq!(mlist.size, 4);
-    assert!(mlist.contains(Move::new_promote(
-        Square::SQ75,
-        Square::SQ73,
-        Piece::B_LANCE
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ75,
-        Square::SQ73,
-        Piece::B_LANCE
-    )));
-    assert!(mlist.contains(Move::new_promote(
-        Square::SQ85,
-        Square::SQ82,
-        Piece::B_LANCE
-    )));
-    assert!(mlist.contains(Move::new_promote(
-        Square::SQ95,
-        Square::SQ91,
-        Piece::B_LANCE
-    )));
+    assert!(mlist.contains(Move::new_promote(Square::SQ75, Square::SQ73, Piece::B_LANCE)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ75, Square::SQ73, Piece::B_LANCE)));
+    assert!(mlist.contains(Move::new_promote(Square::SQ85, Square::SQ82, Piece::B_LANCE)));
+    assert!(mlist.contains(Move::new_promote(Square::SQ95, Square::SQ91, Piece::B_LANCE)));
 
     let sfen = "p7k/1p7/2p6/9/LLLL5/9/9/9/8K b - 1";
     let mut mlist = MoveList::new();
@@ -1355,56 +987,16 @@ fn test_generate_for_piece() {
     let target = pos.empty_bb();
     mlist.generate_for_piece::<LanceType, QuietsWithoutPawnPromotionsType>(&pos, &target);
     assert_eq!(mlist.size, 10);
-    assert!(mlist.contains(Move::new_promote(
-        Square::SQ65,
-        Square::SQ61,
-        Piece::B_LANCE
-    )));
-    assert!(mlist.contains(Move::new_promote(
-        Square::SQ65,
-        Square::SQ62,
-        Piece::B_LANCE
-    )));
-    assert!(mlist.contains(Move::new_promote(
-        Square::SQ65,
-        Square::SQ63,
-        Piece::B_LANCE
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ65,
-        Square::SQ64,
-        Piece::B_LANCE
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ75,
-        Square::SQ74,
-        Piece::B_LANCE
-    )));
-    assert!(mlist.contains(Move::new_promote(
-        Square::SQ85,
-        Square::SQ83,
-        Piece::B_LANCE
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ85,
-        Square::SQ84,
-        Piece::B_LANCE
-    )));
-    assert!(mlist.contains(Move::new_promote(
-        Square::SQ95,
-        Square::SQ92,
-        Piece::B_LANCE
-    )));
-    assert!(mlist.contains(Move::new_promote(
-        Square::SQ95,
-        Square::SQ93,
-        Piece::B_LANCE
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ95,
-        Square::SQ94,
-        Piece::B_LANCE
-    )));
+    assert!(mlist.contains(Move::new_promote(Square::SQ65, Square::SQ61, Piece::B_LANCE)));
+    assert!(mlist.contains(Move::new_promote(Square::SQ65, Square::SQ62, Piece::B_LANCE)));
+    assert!(mlist.contains(Move::new_promote(Square::SQ65, Square::SQ63, Piece::B_LANCE)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ65, Square::SQ64, Piece::B_LANCE)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ75, Square::SQ74, Piece::B_LANCE)));
+    assert!(mlist.contains(Move::new_promote(Square::SQ85, Square::SQ83, Piece::B_LANCE)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ85, Square::SQ84, Piece::B_LANCE)));
+    assert!(mlist.contains(Move::new_promote(Square::SQ95, Square::SQ92, Piece::B_LANCE)));
+    assert!(mlist.contains(Move::new_promote(Square::SQ95, Square::SQ93, Piece::B_LANCE)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ95, Square::SQ94, Piece::B_LANCE)));
 
     let sfen = "p7k/PPp6/2PPp4/4PPp2/6PP1/9/9/9/8K b - 1";
     let mut mlist = MoveList::new();
@@ -1419,11 +1011,7 @@ fn test_generate_for_piece() {
     assert!(mlist.contains(Move::new_promote(Square::SQ63, Square::SQ62, Piece::B_PAWN)));
     assert!(mlist.contains(Move::new_promote(Square::SQ54, Square::SQ53, Piece::B_PAWN)));
     assert!(mlist.contains(Move::new_promote(Square::SQ44, Square::SQ43, Piece::B_PAWN)));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ35,
-        Square::SQ34,
-        Piece::B_PAWN
-    )));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ35, Square::SQ34, Piece::B_PAWN)));
 
     let sfen = "p7k/PPp6/2PPp4/4PPp2/6PP1/9/9/9/8K b - 1";
     let mut mlist = MoveList::new();
@@ -1432,11 +1020,7 @@ fn test_generate_for_piece() {
     let target = pos.empty_bb() & !Bitboard::opponent_field_mask(us);
     mlist.generate_for_piece::<PawnType, QuietsWithoutPawnPromotionsType>(&pos, &target);
     assert_eq!(mlist.size, 1);
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ25,
-        Square::SQ24,
-        Piece::B_PAWN
-    )));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ25, Square::SQ24, Piece::B_PAWN)));
 
     let sfen = "4k4/7p1/9/9/4+B+B3/5P3/9/9/s3K4 b - 1";
     let mut mlist = MoveList::new();
@@ -1445,16 +1029,8 @@ fn test_generate_for_piece() {
     let target = pos.pieces_c(us.inverse());
     mlist.generate_for_piece::<HorseType, CaptureOrPawnPromotionsType>(&pos, &target);
     assert_eq!(mlist.size, 2);
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ55,
-        Square::SQ22,
-        Piece::B_HORSE
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ55,
-        Square::SQ99,
-        Piece::B_HORSE
-    )));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ55, Square::SQ22, Piece::B_HORSE)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ55, Square::SQ99, Piece::B_HORSE)));
 
     let sfen = "4k4/7p1/9/9/4+B+B3/5P3/9/9/s3K4 b - 1";
     let mut mlist = MoveList::new();
@@ -1462,146 +1038,34 @@ fn test_generate_for_piece() {
     let target = pos.empty_bb();
     mlist.generate_for_piece::<HorseType, QuietsWithoutPawnPromotionsType>(&pos, &target);
     assert_eq!(mlist.size, 28);
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ55,
-        Square::SQ33,
-        Piece::B_HORSE
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ55,
-        Square::SQ44,
-        Piece::B_HORSE
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ55,
-        Square::SQ64,
-        Piece::B_HORSE
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ55,
-        Square::SQ73,
-        Piece::B_HORSE
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ55,
-        Square::SQ82,
-        Piece::B_HORSE
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ55,
-        Square::SQ91,
-        Piece::B_HORSE
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ55,
-        Square::SQ66,
-        Piece::B_HORSE
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ55,
-        Square::SQ77,
-        Piece::B_HORSE
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ55,
-        Square::SQ88,
-        Piece::B_HORSE
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ55,
-        Square::SQ54,
-        Piece::B_HORSE
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ55,
-        Square::SQ56,
-        Piece::B_HORSE
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ55,
-        Square::SQ65,
-        Piece::B_HORSE
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ45,
-        Square::SQ34,
-        Piece::B_HORSE
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ45,
-        Square::SQ36,
-        Piece::B_HORSE
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ45,
-        Square::SQ27,
-        Piece::B_HORSE
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ45,
-        Square::SQ18,
-        Piece::B_HORSE
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ45,
-        Square::SQ54,
-        Piece::B_HORSE
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ45,
-        Square::SQ56,
-        Piece::B_HORSE
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ45,
-        Square::SQ67,
-        Piece::B_HORSE
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ45,
-        Square::SQ78,
-        Piece::B_HORSE
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ45,
-        Square::SQ89,
-        Piece::B_HORSE
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ45,
-        Square::SQ23,
-        Piece::B_HORSE
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ45,
-        Square::SQ12,
-        Piece::B_HORSE
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ45,
-        Square::SQ63,
-        Piece::B_HORSE
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ45,
-        Square::SQ72,
-        Piece::B_HORSE
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ45,
-        Square::SQ81,
-        Piece::B_HORSE
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ45,
-        Square::SQ35,
-        Piece::B_HORSE
-    )));
-    assert!(mlist.contains(Move::new_unpromote(
-        Square::SQ45,
-        Square::SQ44,
-        Piece::B_HORSE
-    )));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ55, Square::SQ33, Piece::B_HORSE)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ55, Square::SQ44, Piece::B_HORSE)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ55, Square::SQ64, Piece::B_HORSE)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ55, Square::SQ73, Piece::B_HORSE)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ55, Square::SQ82, Piece::B_HORSE)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ55, Square::SQ91, Piece::B_HORSE)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ55, Square::SQ66, Piece::B_HORSE)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ55, Square::SQ77, Piece::B_HORSE)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ55, Square::SQ88, Piece::B_HORSE)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ55, Square::SQ54, Piece::B_HORSE)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ55, Square::SQ56, Piece::B_HORSE)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ55, Square::SQ65, Piece::B_HORSE)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ45, Square::SQ34, Piece::B_HORSE)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ45, Square::SQ36, Piece::B_HORSE)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ45, Square::SQ27, Piece::B_HORSE)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ45, Square::SQ18, Piece::B_HORSE)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ45, Square::SQ54, Piece::B_HORSE)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ45, Square::SQ56, Piece::B_HORSE)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ45, Square::SQ67, Piece::B_HORSE)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ45, Square::SQ78, Piece::B_HORSE)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ45, Square::SQ89, Piece::B_HORSE)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ45, Square::SQ23, Piece::B_HORSE)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ45, Square::SQ12, Piece::B_HORSE)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ45, Square::SQ63, Piece::B_HORSE)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ45, Square::SQ72, Piece::B_HORSE)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ45, Square::SQ81, Piece::B_HORSE)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ45, Square::SQ35, Piece::B_HORSE)));
+    assert!(mlist.contains(Move::new_unpromote(Square::SQ45, Square::SQ44, Piece::B_HORSE)));
 }
 #[test]
 fn test_generate_recaptures() {
@@ -1791,11 +1255,6 @@ fn test_is_normal_move() {
     assert!(!Some(Move::NULL).is_normal_move());
     assert!(!Some(Move::WIN).is_normal_move());
     assert!(!Some(Move::RESIGN).is_normal_move());
-    assert!(Some(Move::new_unpromote(
-        Square::SQ11,
-        Square::SQ12,
-        Piece::W_PAWN
-    ))
-    .is_normal_move());
+    assert!(Some(Move::new_unpromote(Square::SQ11, Square::SQ12, Piece::W_PAWN)).is_normal_move());
     assert!(Some(Move::new_drop(Piece::B_PAWN, Square::SQ12)).is_normal_move());
 }

@@ -111,14 +111,13 @@ pub fn generate_teachers(args: &[&str]) {
             return;
         }
     }));
-    let roots: std::sync::Arc<Vec<HuffmanCodedPosition>> =
-        std::sync::Arc::new(match file_to_vec(root_positions_file_path) {
-            Ok(v) => v,
-            Err(_) => {
-                eprintln!(r#"Cannot read file "{}"."#, root_positions_file_path);
-                return;
-            }
-        });
+    let roots: std::sync::Arc<Vec<HuffmanCodedPosition>> = std::sync::Arc::new(match file_to_vec(root_positions_file_path) {
+        Ok(v) => v,
+        Err(_) => {
+            eprintln!(r#"Cannot read file "{}"."#, root_positions_file_path);
+            return;
+        }
+    });
     let search_depth = match search_depth.parse::<u32>() {
         Ok(n) => n,
         Err(_) => {
@@ -199,9 +198,7 @@ pub fn generate_teachers(args: &[&str]) {
             let hide_all_output = true;
             const MAX_MOVES: i32 = 400;
             let mut hcpes: Vec<HuffmanCodedPositionAndEval> = vec![];
-            'game_start: while count_teachers.load(std::sync::atomic::Ordering::Relaxed)
-                < num_teachers
-            {
+            'game_start: while count_teachers.load(std::sync::atomic::Ordering::Relaxed) < num_teachers {
                 hcpes.clear();
                 let hcp = &roots[rng.gen_range(0..roots.len())];
                 let mut pos = Position::new_from_huffman_coded_position(hcp).unwrap();
@@ -233,14 +230,7 @@ pub fn generate_teachers(args: &[&str]) {
                         });
                         break;
                     }
-                    thread_pool.start_thinking(
-                        &pos,
-                        &mut tt,
-                        limits.clone(),
-                        &usi_options,
-                        ponder_mode,
-                        hide_all_output,
-                    );
+                    thread_pool.start_thinking(&pos, &mut tt, limits.clone(), &usi_options, ponder_mode, hide_all_output);
                     thread_pool.wait_for_search_finished();
                     let rm = thread_pool.last_best_root_move.lock().unwrap();
                     let rm = rm.as_ref().unwrap();

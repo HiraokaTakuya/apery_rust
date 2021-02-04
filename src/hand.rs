@@ -43,12 +43,8 @@ impl Hand {
     const ROOK_ONE: u32 = 1 << Hand::ROOK_SHIFT_BITS;
     const GOLD_ONE: u32 = 1 << Hand::GOLD_SHIFT_BITS;
 
-    const EXCEPT_PAWN_MASK: u32 = (Hand::LANCE_MASK
-        | Hand::KNIGHT_MASK
-        | Hand::SILVER_MASK
-        | Hand::BISHOP_MASK
-        | Hand::ROOK_MASK
-        | Hand::GOLD_MASK);
+    const EXCEPT_PAWN_MASK: u32 =
+        (Hand::LANCE_MASK | Hand::KNIGHT_MASK | Hand::SILVER_MASK | Hand::BISHOP_MASK | Hand::ROOK_MASK | Hand::GOLD_MASK);
     const BORROW_MASK: u32 = ((Hand::PAWN_MASK + Hand::PAWN_ONE)
         | (Hand::LANCE_MASK + Hand::LANCE_ONE)
         | (Hand::KNIGHT_MASK + Hand::KNIGHT_ONE)
@@ -111,11 +107,9 @@ impl Hand {
             PieceType::SILVER => Hand::SILVER_ONE,
             PieceType::BISHOP | PieceType::HORSE => Hand::BISHOP_ONE,
             PieceType::ROOK | PieceType::DRAGON => Hand::ROOK_ONE,
-            PieceType::GOLD
-            | PieceType::PRO_PAWN
-            | PieceType::PRO_LANCE
-            | PieceType::PRO_KNIGHT
-            | PieceType::PRO_SILVER => Hand::GOLD_ONE,
+            PieceType::GOLD | PieceType::PRO_PAWN | PieceType::PRO_LANCE | PieceType::PRO_KNIGHT | PieceType::PRO_SILVER => {
+                Hand::GOLD_ONE
+            }
             _ => unreachable!(),
         };
     }
@@ -128,11 +122,9 @@ impl Hand {
             PieceType::SILVER => Hand::SILVER_ONE,
             PieceType::BISHOP | PieceType::HORSE => Hand::BISHOP_ONE,
             PieceType::ROOK | PieceType::DRAGON => Hand::ROOK_ONE,
-            PieceType::GOLD
-            | PieceType::PRO_PAWN
-            | PieceType::PRO_LANCE
-            | PieceType::PRO_KNIGHT
-            | PieceType::PRO_SILVER => Hand::GOLD_ONE,
+            PieceType::GOLD | PieceType::PRO_PAWN | PieceType::PRO_LANCE | PieceType::PRO_KNIGHT | PieceType::PRO_SILVER => {
+                Hand::GOLD_ONE
+            }
             _ => unreachable!(),
         };
     }

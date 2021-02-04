@@ -130,97 +130,96 @@ impl EvalIndex {
     }
 }
 
-static INVERSE_EVAL_INDEX_TABLE: once_cell::sync::Lazy<[EvalIndex; EvalIndex::FE_END.0]> =
-    once_cell::sync::Lazy::new(|| {
-        let mut buf = [EvalIndex(0); EvalIndex::FE_END.0];
-        for (index, item) in buf.iter_mut().enumerate() {
-            let eval_index = EvalIndex(index);
-            if eval_index.0 < EvalIndex::E_HAND_PAWN.0 {
-                *item = EvalIndex(eval_index.0 + 19);
-            } else if eval_index.0 < EvalIndex::F_HAND_LANCE.0 {
-                *item = EvalIndex(eval_index.0 - 19);
-            } else if eval_index.0 < EvalIndex::E_HAND_LANCE.0 {
-                *item = EvalIndex(eval_index.0 + 5);
-            } else if eval_index.0 < EvalIndex::F_HAND_KNIGHT.0 {
-                *item = EvalIndex(eval_index.0 - 5);
-            } else if eval_index.0 < EvalIndex::E_HAND_KNIGHT.0 {
-                *item = EvalIndex(eval_index.0 + 5);
-            } else if eval_index.0 < EvalIndex::F_HAND_SILVER.0 {
-                *item = EvalIndex(eval_index.0 - 5);
-            } else if eval_index.0 < EvalIndex::E_HAND_SILVER.0 {
-                *item = EvalIndex(eval_index.0 + 5);
-            } else if eval_index.0 < EvalIndex::F_HAND_GOLD.0 {
-                *item = EvalIndex(eval_index.0 - 5);
-            } else if eval_index.0 < EvalIndex::E_HAND_GOLD.0 {
-                *item = EvalIndex(eval_index.0 + 5);
-            } else if eval_index.0 < EvalIndex::F_HAND_BISHOP.0 {
-                *item = EvalIndex(eval_index.0 - 5);
-            } else if eval_index.0 < EvalIndex::E_HAND_BISHOP.0 {
-                *item = EvalIndex(eval_index.0 + 3);
-            } else if eval_index.0 < EvalIndex::F_HAND_ROOK.0 {
-                *item = EvalIndex(eval_index.0 - 3);
-            } else if eval_index.0 < EvalIndex::E_HAND_ROOK.0 {
-                *item = EvalIndex(eval_index.0 + 3);
-            } else if eval_index.0 < EvalIndex::F_PAWN.0 {
-                *item = EvalIndex(eval_index.0 - 3);
-            } else if eval_index.0 < EvalIndex::E_PAWN.0 {
-                let sq = Square((eval_index.0 - EvalIndex::F_PAWN.0) as i32);
-                *item = EvalIndex(eval_index.0 - sq.0 as usize + 81 + sq.inverse().0 as usize);
-            } else if eval_index.0 < EvalIndex::F_LANCE.0 {
-                let sq = Square((eval_index.0 - EvalIndex::E_PAWN.0) as i32);
-                *item = EvalIndex(eval_index.0 - sq.0 as usize - 81 + sq.inverse().0 as usize);
-            } else if eval_index.0 < EvalIndex::E_LANCE.0 {
-                let sq = Square((eval_index.0 - EvalIndex::F_LANCE.0) as i32);
-                *item = EvalIndex(eval_index.0 - sq.0 as usize + 81 + sq.inverse().0 as usize);
-            } else if eval_index.0 < EvalIndex::F_KNIGHT.0 {
-                let sq = Square((eval_index.0 - EvalIndex::E_LANCE.0) as i32);
-                *item = EvalIndex(eval_index.0 - sq.0 as usize - 81 + sq.inverse().0 as usize);
-            } else if eval_index.0 < EvalIndex::E_KNIGHT.0 {
-                let sq = Square((eval_index.0 - EvalIndex::F_KNIGHT.0) as i32);
-                *item = EvalIndex(eval_index.0 - sq.0 as usize + 81 + sq.inverse().0 as usize);
-            } else if eval_index.0 < EvalIndex::F_SILVER.0 {
-                let sq = Square((eval_index.0 - EvalIndex::E_KNIGHT.0) as i32);
-                *item = EvalIndex(eval_index.0 - sq.0 as usize - 81 + sq.inverse().0 as usize);
-            } else if eval_index.0 < EvalIndex::E_SILVER.0 {
-                let sq = Square((eval_index.0 - EvalIndex::F_SILVER.0) as i32);
-                *item = EvalIndex(eval_index.0 - sq.0 as usize + 81 + sq.inverse().0 as usize);
-            } else if eval_index.0 < EvalIndex::F_GOLD.0 {
-                let sq = Square((eval_index.0 - EvalIndex::E_SILVER.0) as i32);
-                *item = EvalIndex(eval_index.0 - sq.0 as usize - 81 + sq.inverse().0 as usize);
-            } else if eval_index.0 < EvalIndex::E_GOLD.0 {
-                let sq = Square((eval_index.0 - EvalIndex::F_GOLD.0) as i32);
-                *item = EvalIndex(eval_index.0 - sq.0 as usize + 81 + sq.inverse().0 as usize);
-            } else if eval_index.0 < EvalIndex::F_BISHOP.0 {
-                let sq = Square((eval_index.0 - EvalIndex::E_GOLD.0) as i32);
-                *item = EvalIndex(eval_index.0 - sq.0 as usize - 81 + sq.inverse().0 as usize);
-            } else if eval_index.0 < EvalIndex::E_BISHOP.0 {
-                let sq = Square((eval_index.0 - EvalIndex::F_BISHOP.0) as i32);
-                *item = EvalIndex(eval_index.0 - sq.0 as usize + 81 + sq.inverse().0 as usize);
-            } else if eval_index.0 < EvalIndex::F_HORSE.0 {
-                let sq = Square((eval_index.0 - EvalIndex::E_BISHOP.0) as i32);
-                *item = EvalIndex(eval_index.0 - sq.0 as usize - 81 + sq.inverse().0 as usize);
-            } else if eval_index.0 < EvalIndex::E_HORSE.0 {
-                let sq = Square((eval_index.0 - EvalIndex::F_HORSE.0) as i32);
-                *item = EvalIndex(eval_index.0 - sq.0 as usize + 81 + sq.inverse().0 as usize);
-            } else if eval_index.0 < EvalIndex::F_ROOK.0 {
-                let sq = Square((eval_index.0 - EvalIndex::E_HORSE.0) as i32);
-                *item = EvalIndex(eval_index.0 - sq.0 as usize - 81 + sq.inverse().0 as usize);
-            } else if eval_index.0 < EvalIndex::E_ROOK.0 {
-                let sq = Square((eval_index.0 - EvalIndex::F_ROOK.0) as i32);
-                *item = EvalIndex(eval_index.0 - sq.0 as usize + 81 + sq.inverse().0 as usize);
-            } else if eval_index.0 < EvalIndex::F_DRAGON.0 {
-                let sq = Square((eval_index.0 - EvalIndex::E_ROOK.0) as i32);
-                *item = EvalIndex(eval_index.0 - sq.0 as usize - 81 + sq.inverse().0 as usize);
-            } else if eval_index.0 < EvalIndex::E_DRAGON.0 {
-                let sq = Square((eval_index.0 - EvalIndex::F_DRAGON.0) as i32);
-                *item = EvalIndex(eval_index.0 - sq.0 as usize + 81 + sq.inverse().0 as usize);
-            } else {
-                let sq = Square((eval_index.0 - EvalIndex::E_DRAGON.0) as i32);
-                *item = EvalIndex(eval_index.0 - sq.0 as usize - 81 + sq.inverse().0 as usize);
-            }
+static INVERSE_EVAL_INDEX_TABLE: once_cell::sync::Lazy<[EvalIndex; EvalIndex::FE_END.0]> = once_cell::sync::Lazy::new(|| {
+    let mut buf = [EvalIndex(0); EvalIndex::FE_END.0];
+    for (index, item) in buf.iter_mut().enumerate() {
+        let eval_index = EvalIndex(index);
+        if eval_index.0 < EvalIndex::E_HAND_PAWN.0 {
+            *item = EvalIndex(eval_index.0 + 19);
+        } else if eval_index.0 < EvalIndex::F_HAND_LANCE.0 {
+            *item = EvalIndex(eval_index.0 - 19);
+        } else if eval_index.0 < EvalIndex::E_HAND_LANCE.0 {
+            *item = EvalIndex(eval_index.0 + 5);
+        } else if eval_index.0 < EvalIndex::F_HAND_KNIGHT.0 {
+            *item = EvalIndex(eval_index.0 - 5);
+        } else if eval_index.0 < EvalIndex::E_HAND_KNIGHT.0 {
+            *item = EvalIndex(eval_index.0 + 5);
+        } else if eval_index.0 < EvalIndex::F_HAND_SILVER.0 {
+            *item = EvalIndex(eval_index.0 - 5);
+        } else if eval_index.0 < EvalIndex::E_HAND_SILVER.0 {
+            *item = EvalIndex(eval_index.0 + 5);
+        } else if eval_index.0 < EvalIndex::F_HAND_GOLD.0 {
+            *item = EvalIndex(eval_index.0 - 5);
+        } else if eval_index.0 < EvalIndex::E_HAND_GOLD.0 {
+            *item = EvalIndex(eval_index.0 + 5);
+        } else if eval_index.0 < EvalIndex::F_HAND_BISHOP.0 {
+            *item = EvalIndex(eval_index.0 - 5);
+        } else if eval_index.0 < EvalIndex::E_HAND_BISHOP.0 {
+            *item = EvalIndex(eval_index.0 + 3);
+        } else if eval_index.0 < EvalIndex::F_HAND_ROOK.0 {
+            *item = EvalIndex(eval_index.0 - 3);
+        } else if eval_index.0 < EvalIndex::E_HAND_ROOK.0 {
+            *item = EvalIndex(eval_index.0 + 3);
+        } else if eval_index.0 < EvalIndex::F_PAWN.0 {
+            *item = EvalIndex(eval_index.0 - 3);
+        } else if eval_index.0 < EvalIndex::E_PAWN.0 {
+            let sq = Square((eval_index.0 - EvalIndex::F_PAWN.0) as i32);
+            *item = EvalIndex(eval_index.0 - sq.0 as usize + 81 + sq.inverse().0 as usize);
+        } else if eval_index.0 < EvalIndex::F_LANCE.0 {
+            let sq = Square((eval_index.0 - EvalIndex::E_PAWN.0) as i32);
+            *item = EvalIndex(eval_index.0 - sq.0 as usize - 81 + sq.inverse().0 as usize);
+        } else if eval_index.0 < EvalIndex::E_LANCE.0 {
+            let sq = Square((eval_index.0 - EvalIndex::F_LANCE.0) as i32);
+            *item = EvalIndex(eval_index.0 - sq.0 as usize + 81 + sq.inverse().0 as usize);
+        } else if eval_index.0 < EvalIndex::F_KNIGHT.0 {
+            let sq = Square((eval_index.0 - EvalIndex::E_LANCE.0) as i32);
+            *item = EvalIndex(eval_index.0 - sq.0 as usize - 81 + sq.inverse().0 as usize);
+        } else if eval_index.0 < EvalIndex::E_KNIGHT.0 {
+            let sq = Square((eval_index.0 - EvalIndex::F_KNIGHT.0) as i32);
+            *item = EvalIndex(eval_index.0 - sq.0 as usize + 81 + sq.inverse().0 as usize);
+        } else if eval_index.0 < EvalIndex::F_SILVER.0 {
+            let sq = Square((eval_index.0 - EvalIndex::E_KNIGHT.0) as i32);
+            *item = EvalIndex(eval_index.0 - sq.0 as usize - 81 + sq.inverse().0 as usize);
+        } else if eval_index.0 < EvalIndex::E_SILVER.0 {
+            let sq = Square((eval_index.0 - EvalIndex::F_SILVER.0) as i32);
+            *item = EvalIndex(eval_index.0 - sq.0 as usize + 81 + sq.inverse().0 as usize);
+        } else if eval_index.0 < EvalIndex::F_GOLD.0 {
+            let sq = Square((eval_index.0 - EvalIndex::E_SILVER.0) as i32);
+            *item = EvalIndex(eval_index.0 - sq.0 as usize - 81 + sq.inverse().0 as usize);
+        } else if eval_index.0 < EvalIndex::E_GOLD.0 {
+            let sq = Square((eval_index.0 - EvalIndex::F_GOLD.0) as i32);
+            *item = EvalIndex(eval_index.0 - sq.0 as usize + 81 + sq.inverse().0 as usize);
+        } else if eval_index.0 < EvalIndex::F_BISHOP.0 {
+            let sq = Square((eval_index.0 - EvalIndex::E_GOLD.0) as i32);
+            *item = EvalIndex(eval_index.0 - sq.0 as usize - 81 + sq.inverse().0 as usize);
+        } else if eval_index.0 < EvalIndex::E_BISHOP.0 {
+            let sq = Square((eval_index.0 - EvalIndex::F_BISHOP.0) as i32);
+            *item = EvalIndex(eval_index.0 - sq.0 as usize + 81 + sq.inverse().0 as usize);
+        } else if eval_index.0 < EvalIndex::F_HORSE.0 {
+            let sq = Square((eval_index.0 - EvalIndex::E_BISHOP.0) as i32);
+            *item = EvalIndex(eval_index.0 - sq.0 as usize - 81 + sq.inverse().0 as usize);
+        } else if eval_index.0 < EvalIndex::E_HORSE.0 {
+            let sq = Square((eval_index.0 - EvalIndex::F_HORSE.0) as i32);
+            *item = EvalIndex(eval_index.0 - sq.0 as usize + 81 + sq.inverse().0 as usize);
+        } else if eval_index.0 < EvalIndex::F_ROOK.0 {
+            let sq = Square((eval_index.0 - EvalIndex::E_HORSE.0) as i32);
+            *item = EvalIndex(eval_index.0 - sq.0 as usize - 81 + sq.inverse().0 as usize);
+        } else if eval_index.0 < EvalIndex::E_ROOK.0 {
+            let sq = Square((eval_index.0 - EvalIndex::F_ROOK.0) as i32);
+            *item = EvalIndex(eval_index.0 - sq.0 as usize + 81 + sq.inverse().0 as usize);
+        } else if eval_index.0 < EvalIndex::F_DRAGON.0 {
+            let sq = Square((eval_index.0 - EvalIndex::E_ROOK.0) as i32);
+            *item = EvalIndex(eval_index.0 - sq.0 as usize - 81 + sq.inverse().0 as usize);
+        } else if eval_index.0 < EvalIndex::E_DRAGON.0 {
+            let sq = Square((eval_index.0 - EvalIndex::F_DRAGON.0) as i32);
+            *item = EvalIndex(eval_index.0 - sq.0 as usize + 81 + sq.inverse().0 as usize);
+        } else {
+            let sq = Square((eval_index.0 - EvalIndex::E_DRAGON.0) as i32);
+            *item = EvalIndex(eval_index.0 - sq.0 as usize - 81 + sq.inverse().0 as usize);
         }
-        buf
-    });
+    }
+    buf
+});
 
 pub struct Evaluator {
     pub kpp: *const [[[[i16; 2]; EvalIndex::FE_END.0]; EvalIndex::FE_END.0]; Square::NUM],
@@ -231,29 +230,19 @@ impl Evaluator {
     fn load_kpp(&mut self, path: &str) -> std::io::Result<()> {
         let mut file = std::fs::File::open(path)?;
         let ptr = BUFFER_KPP.lock().unwrap().as_mut_ptr() as *mut u8;
-        let slice = unsafe {
-            std::slice::from_raw_parts_mut(
-                ptr,
-                2 * 2 * EvalIndex::FE_END.0 * EvalIndex::FE_END.0 * Square::NUM,
-            )
-        };
+        let slice =
+            unsafe { std::slice::from_raw_parts_mut(ptr, 2 * 2 * EvalIndex::FE_END.0 * EvalIndex::FE_END.0 * Square::NUM) };
         file.read_exact(slice)?;
-        self.kpp = BUFFER_KPP.lock().unwrap().as_mut_ptr()
-            as *mut [[[[i16; 2]; EvalIndex::FE_END.0]; EvalIndex::FE_END.0]; Square::NUM];
+        self.kpp =
+            BUFFER_KPP.lock().unwrap().as_mut_ptr() as *mut [[[[i16; 2]; EvalIndex::FE_END.0]; EvalIndex::FE_END.0]; Square::NUM];
         Ok(())
     }
     fn load_kkp(&mut self, path: &str) -> std::io::Result<()> {
         let mut file = std::fs::File::open(path)?;
         let ptr = BUFFER_KKP.lock().unwrap().as_mut_ptr() as *mut u8;
-        let slice = unsafe {
-            std::slice::from_raw_parts_mut(
-                ptr,
-                2 * 2 * EvalIndex::FE_END.0 * Square::NUM * Square::NUM,
-            )
-        };
+        let slice = unsafe { std::slice::from_raw_parts_mut(ptr, 2 * 2 * EvalIndex::FE_END.0 * Square::NUM * Square::NUM) };
         file.read_exact(slice)?;
-        self.kkp = BUFFER_KKP.lock().unwrap().as_mut_ptr()
-            as *mut [[[[i16; 2]; EvalIndex::FE_END.0]; Square::NUM]; Square::NUM];
+        self.kkp = BUFFER_KKP.lock().unwrap().as_mut_ptr() as *mut [[[[i16; 2]; EvalIndex::FE_END.0]; Square::NUM]; Square::NUM];
         Ok(())
     }
     fn write_kpp(&mut self, path: &str) -> std::io::Result<()> {
@@ -269,23 +258,14 @@ impl Evaluator {
     }
     fn write_kkp(&mut self, path: &str) -> std::io::Result<()> {
         let mut file = std::fs::File::create(path)?;
-        let slice: &[u8] = unsafe {
-            std::slice::from_raw_parts(
-                self.kkp as *const u8,
-                2 * 2 * EvalIndex::FE_END.0 * Square::NUM * Square::NUM,
-            )
-        };
+        let slice: &[u8] =
+            unsafe { std::slice::from_raw_parts(self.kkp as *const u8, 2 * 2 * EvalIndex::FE_END.0 * Square::NUM * Square::NUM) };
         file.write_all(slice)?;
         Ok(())
     }
     #[inline]
     pub fn kpp(&self, sq: Square, i: EvalIndex, j: EvalIndex) -> [i16; 2] {
-        unsafe {
-            *(*self.kpp)
-                .get_unchecked(sq.0 as usize)
-                .get_unchecked(i.0)
-                .get_unchecked(j.0)
-        }
+        unsafe { *(*self.kpp).get_unchecked(sq.0 as usize).get_unchecked(i.0).get_unchecked(j.0) }
     }
     #[inline]
     pub fn kkp(&self, sq0: Square, sq1: Square, i: EvalIndex) -> [i16; 2] {
@@ -362,12 +342,7 @@ impl Evaluator {
         }
         sum
     }
-    fn evaluate_difference_calc(
-        &self,
-        pos: &mut Position,
-        stack: &mut [Stack],
-        ehash: *mut EvalHash,
-    ) -> Value {
+    fn evaluate_difference_calc(&self, pos: &mut Position, stack: &mut [Stack], ehash: *mut EvalHash) -> Value {
         if get_stack(stack, 0).static_eval_raw.is_not_evaluated() {
             debug_assert!(!get_stack(stack, -1).static_eval_raw.is_not_evaluated());
             debug_assert!(get_stack(stack, -1).current_move.unwrap_unchecked() != Move::NULL);
@@ -409,21 +384,14 @@ impl Evaluator {
                         let diff = self.doablack(pos, changed_eval_index_captured.new_index);
                         sum.val[0][0] += diff[0];
                         sum.val[0][1] += diff[1];
-                        let list_index_captured =
-                            pos.eval_list_index(changed_eval_index_captured.new_index);
-                        pos.eval_list_mut().set(
-                            list_index_captured,
-                            Color::BLACK,
-                            changed_eval_index_captured.old_index,
-                        );
+                        let list_index_captured = pos.eval_list_index(changed_eval_index_captured.new_index);
+                        pos.eval_list_mut()
+                            .set(list_index_captured, Color::BLACK, changed_eval_index_captured.old_index);
                         let diff = self.doablack(pos, changed_eval_index_captured.old_index);
                         sum.val[0][0] -= diff[0];
                         sum.val[0][1] -= diff[1];
-                        pos.eval_list_mut().set(
-                            list_index_captured,
-                            Color::BLACK,
-                            changed_eval_index_captured.new_index,
-                        );
+                        pos.eval_list_mut()
+                            .set(list_index_captured, Color::BLACK, changed_eval_index_captured.new_index);
                     }
                 } else {
                     sum.val[0][0] = 0;
@@ -442,19 +410,16 @@ impl Evaluator {
 
                     if pos.is_capture_after_move() {
                         let changed_eval_index_captured = pos.changed_eval_index_captured();
-                        let diff =
-                            self.doawhite(pos, changed_eval_index_captured.new_index.inverse());
+                        let diff = self.doawhite(pos, changed_eval_index_captured.new_index.inverse());
                         sum.val[1][0] += diff[0];
                         sum.val[1][1] += diff[1];
-                        let list_index_captured =
-                            pos.eval_list_index(changed_eval_index_captured.new_index);
+                        let list_index_captured = pos.eval_list_index(changed_eval_index_captured.new_index);
                         pos.eval_list_mut().set(
                             list_index_captured,
                             Color::WHITE,
                             changed_eval_index_captured.old_index.inverse(),
                         );
-                        let diff =
-                            self.doawhite(pos, changed_eval_index_captured.old_index.inverse());
+                        let diff = self.doawhite(pos, changed_eval_index_captured.old_index.inverse());
                         sum.val[1][0] -= diff[0];
                         sum.val[1][1] -= diff[1];
                         pos.eval_list_mut().set(
@@ -492,13 +457,9 @@ impl Evaluator {
                     diff.val[1][0] -= i32::from(board_and_turn[0]);
                     diff.val[1][1] -= i32::from(board_and_turn[1]);
                     let changed_eval_index_captured = pos.changed_eval_index_captured();
-                    let list_index_captured =
-                        pos.eval_list_index(changed_eval_index_captured.new_index);
-                    pos.eval_list_mut().set(
-                        list_index_captured,
-                        Color::BLACK,
-                        changed_eval_index_captured.old_index,
-                    );
+                    let list_index_captured = pos.eval_list_index(changed_eval_index_captured.new_index);
+                    pos.eval_list_mut()
+                        .set(list_index_captured, Color::BLACK, changed_eval_index_captured.old_index);
                     pos.eval_list_mut().set(
                         list_index_captured,
                         Color::WHITE,
@@ -508,11 +469,8 @@ impl Evaluator {
                     let changed_eval_index = pos.changed_eval_index();
                     pos.eval_list_mut()
                         .set(list_index, Color::BLACK, changed_eval_index.old_index);
-                    pos.eval_list_mut().set(
-                        list_index,
-                        Color::WHITE,
-                        changed_eval_index.old_index.inverse(),
-                    );
+                    pos.eval_list_mut()
+                        .set(list_index, Color::WHITE, changed_eval_index.old_index.inverse());
                     diff -= self.doapc(pos, pos.changed_eval_index().old_index);
                     diff -= self.doapc(pos, pos.changed_eval_index_captured().old_index);
 
@@ -532,11 +490,8 @@ impl Evaluator {
                     diff.val[1][1] += i32::from(board_and_turn[1]);
 
                     let changed_eval_index_captured = pos.changed_eval_index_captured();
-                    pos.eval_list_mut().set(
-                        list_index_captured,
-                        Color::BLACK,
-                        changed_eval_index_captured.new_index,
-                    );
+                    pos.eval_list_mut()
+                        .set(list_index_captured, Color::BLACK, changed_eval_index_captured.new_index);
                     pos.eval_list_mut().set(
                         list_index_captured,
                         Color::WHITE,
@@ -545,18 +500,14 @@ impl Evaluator {
                 } else {
                     let old_index = pos.changed_eval_index().old_index;
                     pos.eval_list_mut().set(list_index, Color::BLACK, old_index);
-                    pos.eval_list_mut()
-                        .set(list_index, Color::WHITE, old_index.inverse());
+                    pos.eval_list_mut().set(list_index, Color::WHITE, old_index.inverse());
                     diff -= self.doapc(pos, old_index);
                 }
                 let changed_eval_index = pos.changed_eval_index();
                 pos.eval_list_mut()
                     .set(list_index, Color::BLACK, changed_eval_index.new_index);
-                pos.eval_list_mut().set(
-                    list_index,
-                    Color::WHITE,
-                    changed_eval_index.new_index.inverse(),
-                );
+                pos.eval_list_mut()
+                    .set(list_index, Color::WHITE, changed_eval_index.new_index.inverse());
                 diff.val[2][0] += pos.material_diff().0 * FV_SCALE;
                 get_stack_mut(stack, 0).static_eval_raw = get_stack(stack, -1).static_eval_raw;
                 get_stack_mut(stack, 0).static_eval_raw += diff;
@@ -605,18 +556,14 @@ impl Evaluator {
     }
 }
 
-static BUFFER_KPP: once_cell::sync::Lazy<std::sync::Mutex<Vec<i16>>> =
-    once_cell::sync::Lazy::new(|| {
-        std::sync::Mutex::new(Vec::<i16>::with_capacity(
-            2 * EvalIndex::FE_END.0 * EvalIndex::FE_END.0 * Square::NUM,
-        ))
-    });
-static BUFFER_KKP: once_cell::sync::Lazy<std::sync::Mutex<Vec<i16>>> =
-    once_cell::sync::Lazy::new(|| {
-        std::sync::Mutex::new(Vec::<i16>::with_capacity(
-            2 * EvalIndex::FE_END.0 * Square::NUM * Square::NUM,
-        ))
-    });
+static BUFFER_KPP: once_cell::sync::Lazy<std::sync::Mutex<Vec<i16>>> = once_cell::sync::Lazy::new(|| {
+    std::sync::Mutex::new(Vec::<i16>::with_capacity(
+        2 * EvalIndex::FE_END.0 * EvalIndex::FE_END.0 * Square::NUM,
+    ))
+});
+static BUFFER_KKP: once_cell::sync::Lazy<std::sync::Mutex<Vec<i16>>> = once_cell::sync::Lazy::new(|| {
+    std::sync::Mutex::new(Vec::<i16>::with_capacity(2 * EvalIndex::FE_END.0 * Square::NUM * Square::NUM))
+});
 
 pub static mut EVALUATOR: Evaluator = Evaluator {
     kpp: std::ptr::null(),
@@ -815,34 +762,16 @@ fn test_eval_index_new() {
 
     assert_eq!(EvalIndex::F_HAND_PAWN, EvalIndex::new_hand(Piece::B_PAWN));
     assert_eq!(EvalIndex::F_HAND_LANCE, EvalIndex::new_hand(Piece::B_LANCE));
-    assert_eq!(
-        EvalIndex::F_HAND_KNIGHT,
-        EvalIndex::new_hand(Piece::B_KNIGHT)
-    );
-    assert_eq!(
-        EvalIndex::F_HAND_SILVER,
-        EvalIndex::new_hand(Piece::B_SILVER)
-    );
-    assert_eq!(
-        EvalIndex::F_HAND_BISHOP,
-        EvalIndex::new_hand(Piece::B_BISHOP)
-    );
+    assert_eq!(EvalIndex::F_HAND_KNIGHT, EvalIndex::new_hand(Piece::B_KNIGHT));
+    assert_eq!(EvalIndex::F_HAND_SILVER, EvalIndex::new_hand(Piece::B_SILVER));
+    assert_eq!(EvalIndex::F_HAND_BISHOP, EvalIndex::new_hand(Piece::B_BISHOP));
     assert_eq!(EvalIndex::F_HAND_ROOK, EvalIndex::new_hand(Piece::B_ROOK));
     assert_eq!(EvalIndex::F_HAND_GOLD, EvalIndex::new_hand(Piece::B_GOLD));
     assert_eq!(EvalIndex::E_HAND_PAWN, EvalIndex::new_hand(Piece::W_PAWN));
     assert_eq!(EvalIndex::E_HAND_LANCE, EvalIndex::new_hand(Piece::W_LANCE));
-    assert_eq!(
-        EvalIndex::E_HAND_KNIGHT,
-        EvalIndex::new_hand(Piece::W_KNIGHT)
-    );
-    assert_eq!(
-        EvalIndex::E_HAND_SILVER,
-        EvalIndex::new_hand(Piece::W_SILVER)
-    );
-    assert_eq!(
-        EvalIndex::E_HAND_BISHOP,
-        EvalIndex::new_hand(Piece::W_BISHOP)
-    );
+    assert_eq!(EvalIndex::E_HAND_KNIGHT, EvalIndex::new_hand(Piece::W_KNIGHT));
+    assert_eq!(EvalIndex::E_HAND_SILVER, EvalIndex::new_hand(Piece::W_SILVER));
+    assert_eq!(EvalIndex::E_HAND_BISHOP, EvalIndex::new_hand(Piece::W_BISHOP));
     assert_eq!(EvalIndex::E_HAND_ROOK, EvalIndex::new_hand(Piece::W_ROOK));
     assert_eq!(EvalIndex::E_HAND_GOLD, EvalIndex::new_hand(Piece::W_GOLD));
 }

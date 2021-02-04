@@ -237,10 +237,7 @@ fn select_next_refutation(
     for &mv in list {
         *current_index += 1;
         if let Some(m) = mv {
-            if m != tt_move.unwrap_unchecked()
-                && !m.is_capture(pos)
-                && pos.pseudo_legal::<SearchingType>(m)
-            {
+            if m != tt_move.unwrap_unchecked() && !m.is_capture(pos) && pos.pseudo_legal::<SearchingType>(m) {
                 return Some(m);
             }
         }
@@ -292,11 +289,7 @@ fn select_next_quiet(
     None
 }
 
-fn select_next_bad_capture(
-    list: &[ExtMove],
-    current_index: &mut usize,
-    tt_move: Option<Move>,
-) -> Option<Move> {
+fn select_next_bad_capture(list: &[ExtMove], current_index: &mut usize, tt_move: Option<Move>) -> Option<Move> {
     for ext_move in list {
         *current_index += 1;
         let m = ext_move.mv;
@@ -307,11 +300,7 @@ fn select_next_bad_capture(
     None
 }
 
-fn select_best_evasion(
-    list: &mut [ExtMove],
-    current_index: &mut usize,
-    tt_move: Option<Move>,
-) -> Option<Move> {
+fn select_best_evasion(list: &mut [ExtMove], current_index: &mut usize, tt_move: Option<Move>) -> Option<Move> {
     for i in 0..list.len() {
         let m = pick_best(&mut list[i..]);
         *current_index += 1;
@@ -322,11 +311,7 @@ fn select_best_evasion(
     None
 }
 
-fn select_best_qcapture(
-    list: &mut [ExtMove],
-    current_index: &mut usize,
-    tt_move: Option<Move>,
-) -> Option<Move> {
+fn select_best_qcapture(list: &mut [ExtMove], current_index: &mut usize, tt_move: Option<Move>) -> Option<Move> {
     for i in 0..list.len() {
         let m = pick_best(&mut list[i..]);
         *current_index += 1;
@@ -337,11 +322,7 @@ fn select_best_qcapture(
     None
 }
 
-fn select_best_qrecapture(
-    list: &mut [ExtMove],
-    current_index: &mut usize,
-    tt_move: Option<Move>,
-) -> Option<Move> {
+fn select_best_qrecapture(list: &mut [ExtMove], current_index: &mut usize, tt_move: Option<Move>) -> Option<Move> {
     for i in 0..list.len() {
         let m = pick_best(&mut list[i..]);
         *current_index += 1;
@@ -369,27 +350,21 @@ fn select_best_probcut(
     None
 }
 
-fn score_captures(
-    move_list: &mut [ExtMove],
-    pos: &Position,
-    capture_history: *const CapturePieceToHistory,
-) {
+fn score_captures(move_list: &mut [ExtMove], pos: &Position, capture_history: *const CapturePieceToHistory) {
     for ext_move in move_list {
         let m = ext_move.mv;
         let to = m.to();
         let pc_to = pos.piece_on(to);
         let pt_to = PieceType::new(pc_to);
-        ext_move.score = capture_piece_type_value(pt_to).0
-            + unsafe { (*capture_history).get(m.piece_moved_after_move(), to, pt_to) };
+        ext_move.score =
+            capture_piece_type_value(pt_to).0 + unsafe { (*capture_history).get(m.piece_moved_after_move(), to, pt_to) };
     }
 }
 
 fn score_recaptures(move_list: &mut [ExtMove], pos: &Position) {
     for ext_move in move_list {
         let m = ext_move.mv;
-        ext_move.score = (capture_piece_value(pos.piece_on(m.to()))
-            - lva_value(PieceType::new(m.piece_moved_before_move())))
-        .0;
+        ext_move.score = (capture_piece_value(pos.piece_on(m.to())) - lva_value(PieceType::new(m.piece_moved_before_move()))).0;
     }
 }
 
@@ -428,9 +403,8 @@ fn score_evasion(
     for ext_move in move_list {
         let m = ext_move.mv;
         if m.is_capture(pos) {
-            ext_move.score = (capture_piece_value(pos.piece_on(m.to()))
-                - lva_value(PieceType::new(m.piece_moved_before_move())))
-            .0;
+            ext_move.score =
+                (capture_piece_value(pos.piece_on(m.to())) - lva_value(PieceType::new(m.piece_moved_before_move()))).0;
         } else {
             let piece_moved = m.piece_moved_after_move();
             ext_move.score = unsafe { (*main_history).get(pos.side_to_move(), m) }
@@ -505,8 +479,7 @@ impl<'a> MovePickerForMainSearch<'a> {
                     return self.tt_move;
                 }
                 StagesForMainSearch::CaptureInit => {
-                    self.move_list
-                        .generate::<CaptureOrPawnPromotionsType>(pos, 0);
+                    self.move_list.generate::<CaptureOrPawnPromotionsType>(pos, 0);
                     score_captures(self.move_list.slice_mut(0), pos, self.capture_history);
                     self.stage = self.stage.next_variant().unwrap();
                 }
@@ -524,9 +497,7 @@ impl<'a> MovePickerForMainSearch<'a> {
                     self.cur = 0;
 
                     // if countermove == killer, skip it.
-                    if self.refutations[0] == self.refutations[2]
-                        || self.refutations[1] == self.refutations[2]
-                    {
+                    if self.refutations[0] == self.refutations[2] || self.refutations[1] == self.refutations[2] {
                         self.refutations_size = 2;
                     }
                     self.stage = self.stage.next_variant().unwrap();
@@ -545,8 +516,7 @@ impl<'a> MovePickerForMainSearch<'a> {
                 StagesForMainSearch::QuietInit => {
                     if !skip_quiets {
                         self.cur = self.end_bad_captures;
-                        self.move_list
-                            .generate::<QuietsWithoutPawnPromotionsType>(pos, self.cur);
+                        self.move_list.generate::<QuietsWithoutPawnPromotionsType>(pos, self.cur);
                         score_quiets(
                             self.move_list.slice_mut(self.cur),
                             pos,
@@ -555,21 +525,15 @@ impl<'a> MovePickerForMainSearch<'a> {
                             self.continuation_history,
                             self.ply,
                         );
-                        partial_insertion_sort(
-                            self.move_list.slice_mut(self.cur),
-                            -3000 * self.depth.0 / Depth::ONE_PLY.0,
-                        );
+                        partial_insertion_sort(self.move_list.slice_mut(self.cur), -3000 * self.depth.0 / Depth::ONE_PLY.0);
                     }
                     self.stage = self.stage.next_variant().unwrap();
                 }
                 StagesForMainSearch::Quiet => {
                     if !skip_quiets {
-                        if let Some(m) = select_next_quiet(
-                            self.move_list.slice(self.cur),
-                            &mut self.cur,
-                            &self.refutations,
-                            self.tt_move,
-                        ) {
+                        if let Some(m) =
+                            select_next_quiet(self.move_list.slice(self.cur), &mut self.cur, &self.refutations, self.tt_move)
+                        {
                             return Some(m);
                         }
                     }
@@ -578,29 +542,16 @@ impl<'a> MovePickerForMainSearch<'a> {
                     self.stage = self.stage.next_variant().unwrap();
                 }
                 StagesForMainSearch::BadCapture => {
-                    return select_next_bad_capture(
-                        self.move_list.slice(self.cur),
-                        &mut self.cur,
-                        self.tt_move,
-                    );
+                    return select_next_bad_capture(self.move_list.slice(self.cur), &mut self.cur, self.tt_move);
                 }
                 StagesForMainSearch::EvasionInit => {
                     self.cur = 0;
                     self.move_list.generate::<EvasionsType>(pos, 0);
-                    score_evasion(
-                        self.move_list.slice_mut(0),
-                        pos,
-                        self.main_history,
-                        self.continuation_history,
-                    );
+                    score_evasion(self.move_list.slice_mut(0), pos, self.main_history, self.continuation_history);
                     self.stage = self.stage.next_variant().unwrap();
                 }
                 StagesForMainSearch::Evasion => {
-                    return select_best_evasion(
-                        self.move_list.slice_mut(self.cur),
-                        &mut self.cur,
-                        self.tt_move,
-                    );
+                    return select_best_evasion(self.move_list.slice_mut(self.cur), &mut self.cur, self.tt_move);
                 }
             }
         }
@@ -662,30 +613,22 @@ impl<'a> MovePickerForQSearch<'a> {
     pub fn next_move(&mut self, pos: &Position) -> Option<Move> {
         loop {
             match self.stage {
-                StagesForQSearch::QSearchTT
-                | StagesForQSearch::EvasionTT
-                | StagesForQSearch::QRecaptureTT => {
+                StagesForQSearch::QSearchTT | StagesForQSearch::EvasionTT | StagesForQSearch::QRecaptureTT => {
                     self.stage = self.stage.next_variant().unwrap();
                     return self.tt_move;
                 }
                 StagesForQSearch::QCaptureInit => {
-                    self.move_list
-                        .generate::<CaptureOrPawnPromotionsType>(pos, 0);
+                    self.move_list.generate::<CaptureOrPawnPromotionsType>(pos, 0);
                     score_captures(self.move_list.slice_mut(0), pos, self.capture_history);
                     self.stage = self.stage.next_variant().unwrap();
                 }
                 StagesForQSearch::QRecaptureInit => {
-                    self.move_list
-                        .generate_recaptures(pos, self.recapture_square);
+                    self.move_list.generate_recaptures(pos, self.recapture_square);
                     score_recaptures(self.move_list.slice_mut(0), pos);
                     self.stage = self.stage.next_variant().unwrap();
                 }
                 StagesForQSearch::QCapture => {
-                    let m = select_best_qcapture(
-                        self.move_list.slice_mut(self.cur),
-                        &mut self.cur,
-                        self.tt_move,
-                    );
+                    let m = select_best_qcapture(self.move_list.slice_mut(self.cur), &mut self.cur, self.tt_move);
                     return m;
                     //if m != Move::NONE {
                     //    return m;
@@ -696,31 +639,18 @@ impl<'a> MovePickerForQSearch<'a> {
                     //self.stage = self.stage.next_variant().unwrap();
                 }
                 StagesForQSearch::QRecapture => {
-                    return select_best_qrecapture(
-                        self.move_list.slice_mut(self.cur),
-                        &mut self.cur,
-                        self.tt_move,
-                    );
+                    return select_best_qrecapture(self.move_list.slice_mut(self.cur), &mut self.cur, self.tt_move);
                 }
                 //StagesForQSearch::QCheckInit => {}
                 //StagesForQSearch::QCheck => {}
                 StagesForQSearch::EvasionInit => {
                     self.cur = 0;
                     self.move_list.generate::<EvasionsType>(pos, 0);
-                    score_evasion(
-                        self.move_list.slice_mut(0),
-                        pos,
-                        self.main_history,
-                        self.continuation_history,
-                    );
+                    score_evasion(self.move_list.slice_mut(0), pos, self.main_history, self.continuation_history);
                     self.stage = self.stage.next_variant().unwrap();
                 }
                 StagesForQSearch::Evasion => {
-                    return select_best_evasion(
-                        self.move_list.slice_mut(self.cur),
-                        &mut self.cur,
-                        self.tt_move,
-                    );
+                    return select_best_evasion(self.move_list.slice_mut(self.cur), &mut self.cur, self.tt_move);
                 }
             }
         }
@@ -737,19 +667,12 @@ pub struct MovePickerForProbCut {
 }
 
 impl MovePickerForProbCut {
-    pub fn new(
-        pos: &Position,
-        ttm: Option<Move>,
-        thresh: Value,
-        cph: &CapturePieceToHistory,
-    ) -> MovePickerForProbCut {
+    pub fn new(pos: &Position, ttm: Option<Move>, thresh: Value, cph: &CapturePieceToHistory) -> MovePickerForProbCut {
         debug_assert!(!pos.in_check());
         let mut stage = StagesForProbCut::TT;
         let tt_move = match ttm {
             Some(ttm_inner)
-                if ttm_inner.is_capture(pos)
-                    && pos.pseudo_legal::<SearchingType>(ttm_inner)
-                    && pos.see_ge(ttm_inner, thresh) =>
+                if ttm_inner.is_capture(pos) && pos.pseudo_legal::<SearchingType>(ttm_inner) && pos.see_ge(ttm_inner, thresh) =>
             {
                 ttm
             }
@@ -776,8 +699,7 @@ impl MovePickerForProbCut {
                     return self.tt_move;
                 }
                 StagesForProbCut::Init => {
-                    self.move_list
-                        .generate::<CaptureOrPawnPromotionsType>(pos, 0);
+                    self.move_list.generate::<CaptureOrPawnPromotionsType>(pos, 0);
                     score_captures(self.move_list.slice_mut(0), pos, self.capture_history);
                     self.stage = self.stage.next_variant().unwrap();
                 }
@@ -836,9 +758,7 @@ fn test_partial_insertion_sort() {
 fn test_butterfly_history() {
     unsafe {
         let mut vec: Vec<ButterflyHistory> = Vec::with_capacity(1);
-        vec.push(ButterflyHistory {
-            v: [[0; 0xffff]; 2],
-        });
+        vec.push(ButterflyHistory { v: [[0; 0xffff]; 2] });
         let history = vec.as_mut_ptr();
         let bonus = 3;
         let m = Move::new_unpromote(Square::SQ77, Square::SQ76, Piece::B_PAWN);
@@ -858,14 +778,7 @@ fn test_move_list_select_best() {
     score_captures(mlist.slice_mut(0), &pos, &capture_history);
     let mut cur = 0;
     let mut end_bad_captures = 0;
-    let m = select_best_good_capture(
-        &mut mlist.ext_moves,
-        mlist.size,
-        &mut cur,
-        &mut end_bad_captures,
-        &pos,
-        None,
-    );
+    let m = select_best_good_capture(&mut mlist.ext_moves, mlist.size, &mut cur, &mut end_bad_captures, &pos, None);
     assert_eq!(m.unwrap().to_csa_string(&pos), "4645FU");
 
     let sfen = "k8/lpppppp2/rbgsnlp2/+RPPPPPP2/9/9/9/9/K8 b - 1";
@@ -876,14 +789,7 @@ fn test_move_list_select_best() {
     score_captures(mlist.slice_mut(0), &pos, &capture_history);
     let mut cur = 0;
     let mut end_bad_captures = 0;
-    let m = select_best_good_capture(
-        &mut mlist.ext_moves,
-        mlist.size,
-        &mut cur,
-        &mut end_bad_captures,
-        &pos,
-        None,
-    );
+    let m = select_best_good_capture(&mut mlist.ext_moves, mlist.size, &mut cur, &mut end_bad_captures, &pos, None);
     assert_eq!(m.unwrap().to_csa_string(&pos), "8483TO");
 }
 
@@ -891,11 +797,7 @@ fn test_move_list_select_best() {
 fn test_move_picker_for_main_search_next_move() {
     let sfen = "k8/9/9/5b3/9/l8/p8/1B7/1K7 b - 1";
     let pos = Position::new_from_sfen(sfen).unwrap();
-    let tt_move = Some(Move::new_unpromote(
-        Square::SQ88,
-        Square::SQ66,
-        Piece::B_BISHOP,
-    ));
+    let tt_move = Some(Move::new_unpromote(Square::SQ88, Square::SQ66, Piece::B_BISHOP));
     let mh = ButterflyHistory::new();
     let lph = LowPlyHistory::new();
     let cph = CapturePieceToHistory::new();
@@ -907,40 +809,14 @@ fn test_move_picker_for_main_search_next_move() {
         PieceToHistory::new(),
         PieceToHistory::new(),
     ];
-    let ch = ch
-        .iter()
-        .map(|x| x as *const PieceToHistory)
-        .collect::<Vec<_>>();
+    let ch = ch.iter().map(|x| x as *const PieceToHistory).collect::<Vec<_>>();
     let killers = [
-        Some(Move::new_unpromote(
-            Square::SQ88,
-            Square::SQ99,
-            Piece::B_BISHOP,
-        )),
-        Some(Move::new_unpromote(
-            Square::SQ88,
-            Square::SQ79,
-            Piece::B_BISHOP,
-        )),
+        Some(Move::new_unpromote(Square::SQ88, Square::SQ99, Piece::B_BISHOP)),
+        Some(Move::new_unpromote(Square::SQ88, Square::SQ79, Piece::B_BISHOP)),
     ];
-    let cm = Some(Move::new_unpromote(
-        Square::SQ88,
-        Square::SQ77,
-        Piece::B_BISHOP,
-    ));
+    let cm = Some(Move::new_unpromote(Square::SQ88, Square::SQ77, Piece::B_BISHOP));
     let skip_quiets = false;
-    let mut mp = MovePickerForMainSearch::new(
-        &pos,
-        tt_move,
-        Depth(5),
-        &mh,
-        &lph,
-        &cph,
-        &ch,
-        cm,
-        &killers,
-        0,
-    );
+    let mut mp = MovePickerForMainSearch::new(&pos, tt_move, Depth(5), &mh, &lph, &cph, &ch, cm, &killers, 0);
     let moves_size;
     {
         let mut mlist = MoveList::new();
@@ -993,11 +869,7 @@ fn test_move_picker_for_main_search_next_move() {
 fn test_move_picker_for_main_search_next_move_evasion() {
     let sfen = "k8/9/9/5b3/6K2/l8/p8/1B7/9 b - 1";
     let pos = Position::new_from_sfen(sfen).unwrap();
-    let tt_move = Some(Move::new_unpromote(
-        Square::SQ35,
-        Square::SQ24,
-        Piece::B_KING,
-    ));
+    let tt_move = Some(Move::new_unpromote(Square::SQ35, Square::SQ24, Piece::B_KING));
     let mh = ButterflyHistory::new();
     let lph = LowPlyHistory::new();
     let cph = CapturePieceToHistory::new();
@@ -1007,40 +879,14 @@ fn test_move_picker_for_main_search_next_move_evasion() {
         PieceToHistory::new(),
         PieceToHistory::new(),
     ];
-    let ch = ch
-        .iter()
-        .map(|x| x as *const PieceToHistory)
-        .collect::<Vec<_>>();
+    let ch = ch.iter().map(|x| x as *const PieceToHistory).collect::<Vec<_>>();
     let killers = [
-        Some(Move::new_unpromote(
-            Square::SQ88,
-            Square::SQ99,
-            Piece::B_BISHOP,
-        )),
-        Some(Move::new_unpromote(
-            Square::SQ88,
-            Square::SQ79,
-            Piece::B_BISHOP,
-        )),
+        Some(Move::new_unpromote(Square::SQ88, Square::SQ99, Piece::B_BISHOP)),
+        Some(Move::new_unpromote(Square::SQ88, Square::SQ79, Piece::B_BISHOP)),
     ];
-    let cm = Some(Move::new_unpromote(
-        Square::SQ88,
-        Square::SQ77,
-        Piece::B_BISHOP,
-    ));
+    let cm = Some(Move::new_unpromote(Square::SQ88, Square::SQ77, Piece::B_BISHOP));
     let skip_quiets = false;
-    let mut mp = MovePickerForMainSearch::new(
-        &pos,
-        tt_move,
-        Depth(5),
-        &mh,
-        &lph,
-        &cph,
-        &ch,
-        cm,
-        &killers,
-        0,
-    );
+    let mut mp = MovePickerForMainSearch::new(&pos, tt_move, Depth(5), &mh, &lph, &cph, &ch, cm, &killers, 0);
     let moves_size;
     {
         let mut mlist = MoveList::new();
@@ -1089,11 +935,7 @@ fn test_move_picker_for_main_search_next_move_evasion() {
 fn test_move_picker_for_qsearch_next_move() {
     let sfen = "k8/9/9/5b3/9/l8/p8/1B7/1K7 b - 1";
     let pos = Position::new_from_sfen(sfen).unwrap();
-    let tt_move = Some(Move::new_unpromote(
-        Square::SQ88,
-        Square::SQ66,
-        Piece::B_BISHOP,
-    ));
+    let tt_move = Some(Move::new_unpromote(Square::SQ88, Square::SQ66, Piece::B_BISHOP));
     let mh = ButterflyHistory::new();
     let cph = CapturePieceToHistory::new();
     let ch = [
@@ -1102,25 +944,15 @@ fn test_move_picker_for_qsearch_next_move() {
         PieceToHistory::new(),
         PieceToHistory::new(),
     ];
-    let ch = ch
-        .iter()
-        .map(|x| x as *const PieceToHistory)
-        .collect::<Vec<_>>();
+    let ch = ch.iter().map(|x| x as *const PieceToHistory).collect::<Vec<_>>();
     let recapture_square = Square::SQ97;
-    let mut mp =
-        MovePickerForQSearch::new(&mh, &cph, &ch, &pos, recapture_square, tt_move, Depth(0));
+    let mut mp = MovePickerForQSearch::new(&mh, &cph, &ch, &pos, recapture_square, tt_move, Depth(0));
     let m = mp.next_move(&pos);
     assert_eq!(m.unwrap(), tt_move.unwrap()); // QSearchTT
     let m = mp.next_move(&pos);
-    assert_eq!(
-        m.unwrap(),
-        Move::new_unpromote(Square::SQ88, Square::SQ44, Piece::B_BISHOP)
-    ); // Capture
+    assert_eq!(m.unwrap(), Move::new_unpromote(Square::SQ88, Square::SQ44, Piece::B_BISHOP)); // Capture
     let m = mp.next_move(&pos);
-    assert_eq!(
-        m.unwrap(),
-        Move::new_unpromote(Square::SQ88, Square::SQ97, Piece::B_BISHOP)
-    ); // Capture
+    assert_eq!(m.unwrap(), Move::new_unpromote(Square::SQ88, Square::SQ97, Piece::B_BISHOP)); // Capture
     let m = mp.next_move(&pos);
     assert!(m.is_none());
 }
@@ -1129,11 +961,7 @@ fn test_move_picker_for_qsearch_next_move() {
 fn test_move_picker_for_qsearch_next_move_evasion() {
     let sfen = "k8/9/9/5b3/6K2/l8/p8/1B7/9 b - 1";
     let pos = Position::new_from_sfen(sfen).unwrap();
-    let tt_move = Some(Move::new_unpromote(
-        Square::SQ35,
-        Square::SQ24,
-        Piece::B_KING,
-    ));
+    let tt_move = Some(Move::new_unpromote(Square::SQ35, Square::SQ24, Piece::B_KING));
     let mh = ButterflyHistory::new();
     let cph = CapturePieceToHistory::new();
     let ch = [
@@ -1142,13 +970,9 @@ fn test_move_picker_for_qsearch_next_move_evasion() {
         PieceToHistory::new(),
         PieceToHistory::new(),
     ];
-    let ch = ch
-        .iter()
-        .map(|x| x as *const PieceToHistory)
-        .collect::<Vec<_>>();
+    let ch = ch.iter().map(|x| x as *const PieceToHistory).collect::<Vec<_>>();
     let recapture_square = Square::SQ97;
-    let mut mp =
-        MovePickerForQSearch::new(&mh, &cph, &ch, &pos, recapture_square, tt_move, Depth(0));
+    let mut mp = MovePickerForQSearch::new(&mh, &cph, &ch, &pos, recapture_square, tt_move, Depth(0));
     let moves_size;
     {
         let mut mlist = MoveList::new();
@@ -1197,11 +1021,7 @@ fn test_move_picker_for_qsearch_next_move_evasion() {
 fn test_move_picker_for_qsearch_next_move_recapture() {
     let sfen = "k8/9/9/5b3/9/l8/p8/1B7/1K7 b - 1";
     let pos = Position::new_from_sfen(sfen).unwrap();
-    let tt_move = Some(Move::new_unpromote(
-        Square::SQ88,
-        Square::SQ66,
-        Piece::B_BISHOP,
-    )); // to_square is not recapture_square. tt_move is not used.
+    let tt_move = Some(Move::new_unpromote(Square::SQ88, Square::SQ66, Piece::B_BISHOP)); // to_square is not recapture_square. tt_move is not used.
     let mh = ButterflyHistory::new();
     let cph = CapturePieceToHistory::new();
     let ch = [
@@ -1210,25 +1030,11 @@ fn test_move_picker_for_qsearch_next_move_recapture() {
         PieceToHistory::new(),
         PieceToHistory::new(),
     ];
-    let ch = ch
-        .iter()
-        .map(|x| x as *const PieceToHistory)
-        .collect::<Vec<_>>();
+    let ch = ch.iter().map(|x| x as *const PieceToHistory).collect::<Vec<_>>();
     let recapture_square = Square::SQ97;
-    let mut mp = MovePickerForQSearch::new(
-        &mh,
-        &cph,
-        &ch,
-        &pos,
-        recapture_square,
-        tt_move,
-        Depth::QS_RECAPTURES,
-    );
+    let mut mp = MovePickerForQSearch::new(&mh, &cph, &ch, &pos, recapture_square, tt_move, Depth::QS_RECAPTURES);
     let m = mp.next_move(&pos);
-    assert_eq!(
-        m.unwrap(),
-        Move::new_unpromote(Square::SQ88, Square::SQ97, Piece::B_BISHOP)
-    ); // QRecapture
+    assert_eq!(m.unwrap(), Move::new_unpromote(Square::SQ88, Square::SQ97, Piece::B_BISHOP)); // QRecapture
     let m = mp.next_move(&pos);
     assert!(m.is_none());
 }
@@ -1237,20 +1043,13 @@ fn test_move_picker_for_qsearch_next_move_recapture() {
 fn test_move_picker_for_prob_cut_next_move() {
     let sfen = "k8/9/9/5b3/9/l8/p8/1B7/1K7 b - 1";
     let pos = Position::new_from_sfen(sfen).unwrap();
-    let tt_move = Some(Move::new_unpromote(
-        Square::SQ88,
-        Square::SQ66,
-        Piece::B_BISHOP,
-    ));
+    let tt_move = Some(Move::new_unpromote(Square::SQ88, Square::SQ66, Piece::B_BISHOP));
     let cph = CapturePieceToHistory::new();
     let mut mp = MovePickerForProbCut::new(&pos, tt_move, Value(0), &cph);
     // ProbCut::TT uses tt_move if tt_move is good capture.
     // this tt_move is not used because it is capture move.
     let m = mp.next_move(&pos);
-    assert_eq!(
-        m.unwrap(),
-        Move::new_unpromote(Square::SQ88, Square::SQ44, Piece::B_BISHOP)
-    ); // ProbCut
+    assert_eq!(m.unwrap(), Move::new_unpromote(Square::SQ88, Square::SQ44, Piece::B_BISHOP)); // ProbCut
 
     // ProbCut uses only good capture moves.
     // A move from SQ88 to SQ97 is not good capture.
@@ -1287,33 +1086,15 @@ fn test_pick_best() {
         },
     ];
     let m = pick_best(&mut v);
-    assert_eq!(
-        m,
-        Move::new_unpromote(Square::SQ11, Square::SQ17, Piece::W_LANCE)
-    );
+    assert_eq!(m, Move::new_unpromote(Square::SQ11, Square::SQ17, Piece::W_LANCE));
     let m = pick_best(&mut v[1..]);
-    assert_eq!(
-        m,
-        Move::new_unpromote(Square::SQ11, Square::SQ14, Piece::W_LANCE)
-    );
+    assert_eq!(m, Move::new_unpromote(Square::SQ11, Square::SQ14, Piece::W_LANCE));
     let m = pick_best(&mut v[2..]);
-    assert_eq!(
-        m,
-        Move::new_unpromote(Square::SQ11, Square::SQ15, Piece::W_LANCE)
-    );
+    assert_eq!(m, Move::new_unpromote(Square::SQ11, Square::SQ15, Piece::W_LANCE));
     let m = pick_best(&mut v[3..]);
-    assert_eq!(
-        m,
-        Move::new_unpromote(Square::SQ11, Square::SQ12, Piece::W_LANCE)
-    );
+    assert_eq!(m, Move::new_unpromote(Square::SQ11, Square::SQ12, Piece::W_LANCE));
     let m = pick_best(&mut v[4..]);
-    assert_eq!(
-        m,
-        Move::new_unpromote(Square::SQ11, Square::SQ16, Piece::W_LANCE)
-    );
+    assert_eq!(m, Move::new_unpromote(Square::SQ11, Square::SQ16, Piece::W_LANCE));
     let m = pick_best(&mut v[5..]);
-    assert_eq!(
-        m,
-        Move::new_unpromote(Square::SQ11, Square::SQ13, Piece::W_LANCE)
-    );
+    assert_eq!(m, Move::new_unpromote(Square::SQ11, Square::SQ13, Piece::W_LANCE));
 }

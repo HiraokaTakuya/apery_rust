@@ -25,10 +25,7 @@ impl TimeManagement {
         const X_SCALE: f64 = 6.85;
         const X_SHIFT: f64 = 65.5;
         const SKEW: f64 = 0.171;
-        (1.0 + (f64::from(ply) - X_SHIFT) / X_SCALE)
-            .exp()
-            .powf(-SKEW)
-            + std::f64::MIN_POSITIVE
+        (1.0 + (f64::from(ply) - X_SHIFT) / X_SCALE).exp().powf(-SKEW) + std::f64::MIN_POSITIVE
     }
     fn remaining_base(
         max_ratio: f64,
@@ -39,28 +36,15 @@ impl TimeManagement {
         slow_mover: i64,
     ) -> std::time::Duration {
         let move_importance = (Self::move_importance(ply) * slow_mover as f64) / 100.0;
-        let other_moves_importance =
-            (1..moves_to_go).fold(0.0, |sum, i| sum + Self::move_importance(ply + i as i32));
-        let ratio1 =
-            (max_ratio * move_importance) / (max_ratio * move_importance + other_moves_importance);
-        let ratio2 = (move_importance + steal_ratio * other_moves_importance)
-            / (move_importance + other_moves_importance);
+        let other_moves_importance = (1..moves_to_go).fold(0.0, |sum, i| sum + Self::move_importance(ply + i as i32));
+        let ratio1 = (max_ratio * move_importance) / (max_ratio * move_importance + other_moves_importance);
+        let ratio2 = (move_importance + steal_ratio * other_moves_importance) / (move_importance + other_moves_importance);
         std::time::Duration::from_millis((my_time.as_millis() as f64 * ratio1.min(ratio2)) as u64)
     }
-    fn remaining_optimum(
-        my_time: std::time::Duration,
-        moves_to_go: u64,
-        ply: i32,
-        slow_mover: i64,
-    ) -> std::time::Duration {
+    fn remaining_optimum(my_time: std::time::Duration, moves_to_go: u64, ply: i32, slow_mover: i64) -> std::time::Duration {
         TimeManagement::remaining_base(1.0, 0.0, my_time, moves_to_go, ply, slow_mover)
     }
-    fn remaining_maximum(
-        my_time: std::time::Duration,
-        moves_to_go: u64,
-        ply: i32,
-        slow_mover: i64,
-    ) -> std::time::Duration {
+    fn remaining_maximum(my_time: std::time::Duration, moves_to_go: u64, ply: i32, slow_mover: i64) -> std::time::Duration {
         TimeManagement::remaining_base(
             TimeManagement::MAX_RATIO,
             TimeManagement::STEAL_RATIO,
@@ -84,26 +68,12 @@ impl TimeManagement {
         for hypothetical_moves_to_go in 1..max_moves_to_go {
             let hypothetical_my_time = limits.time[us.0 as usize]
                 + limits.inc[us.0 as usize] * (hypothetical_moves_to_go - 1) as u32
-                - move_overhead
-                    * std::time::Duration::from_millis(
-                        2 + std::cmp::min(hypothetical_moves_to_go, 40),
-                    );
-            let hypothetical_my_time =
-                std::cmp::max(hypothetical_my_time, std::time::Duration::from_millis(0));
+                - move_overhead * std::time::Duration::from_millis(2 + std::cmp::min(hypothetical_moves_to_go, 40));
+            let hypothetical_my_time = std::cmp::max(hypothetical_my_time, std::time::Duration::from_millis(0));
             let t1 = std::time::Duration::from_millis(min_thinking_time)
-                + TimeManagement::remaining_optimum(
-                    hypothetical_my_time,
-                    hypothetical_moves_to_go,
-                    ply,
-                    slow_mover,
-                );
+                + TimeManagement::remaining_optimum(hypothetical_my_time, hypothetical_moves_to_go, ply, slow_mover);
             let t2 = std::time::Duration::from_millis(min_thinking_time)
-                + TimeManagement::remaining_maximum(
-                    hypothetical_my_time,
-                    hypothetical_moves_to_go,
-                    ply,
-                    slow_mover,
-                );
+                + TimeManagement::remaining_maximum(hypothetical_my_time, hypothetical_moves_to_go, ply, slow_mover);
 
             self.optimum_time_milli = std::cmp::min(t1, self.optimum_time_milli);
             self.maximum_time_milli = std::cmp::min(t2, self.maximum_time_milli);

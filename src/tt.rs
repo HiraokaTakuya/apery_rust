@@ -21,9 +21,7 @@ impl TTEntry {
             m
         } else {
             Move(unsafe {
-                std::num::NonZeroU32::new_unchecked(
-                    m.0.get() | ((pos.piece_on(m.from()).0 as u32) << Move::MOVED_PIECE_SHIFT),
-                )
+                std::num::NonZeroU32::new_unchecked(m.0.get() | ((pos.piece_on(m.from()).0 as u32) << Move::MOVED_PIECE_SHIFT))
             })
         };
         if pos.pseudo_legal::<SearchingType>(m) {
@@ -149,10 +147,8 @@ impl TranspositionTable {
             .entry
             .iter_mut()
             .min_by(|x, y| {
-                let left = i32::from(x.depth8)
-                    - ((263 + i32::from(generation8) - i32::from(x.genbound8)) & 0xf8);
-                let right = i32::from(y.depth8)
-                    - ((263 + i32::from(generation8) - i32::from(y.genbound8)) & 0xf8);
+                let left = i32::from(x.depth8) - ((263 + i32::from(generation8) - i32::from(x.genbound8)) & 0xf8);
+                let right = i32::from(y.depth8) - ((263 + i32::from(generation8) - i32::from(y.genbound8)) & 0xf8);
                 left.cmp(&right)
             })
             .unwrap();

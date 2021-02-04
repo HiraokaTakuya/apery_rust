@@ -280,12 +280,8 @@ impl Rank {
     pub fn is_in_front_of(self, us: Color, rank_as_black: RankAsBlack) -> bool {
         debug_assert!(File::FILE1.0 < File::FILE9.0);
         match us {
-            Color::BLACK => {
-                self.0 < Rank::new_from_color_and_rank_as_black(Color::BLACK, rank_as_black).0
-            }
-            Color::WHITE => {
-                self.0 > Rank::new_from_color_and_rank_as_black(Color::WHITE, rank_as_black).0
-            }
+            Color::BLACK => self.0 < Rank::new_from_color_and_rank_as_black(Color::BLACK, rank_as_black).0,
+            Color::WHITE => self.0 > Rank::new_from_color_and_rank_as_black(Color::WHITE, rank_as_black).0,
             _ => unreachable!(),
         }
     }
@@ -578,12 +574,7 @@ impl Relation {
     pub fn new(from: Square, to: Square) -> Relation {
         debug_assert!(from.is_ok());
         debug_assert!(to.is_ok());
-        unsafe {
-            *RELATION_TABLE
-                .0
-                .get_unchecked(from.0 as usize)
-                .get_unchecked(to.0 as usize)
-        }
+        unsafe { *RELATION_TABLE.0.get_unchecked(from.0 as usize).get_unchecked(to.0 as usize) }
     }
     #[allow(dead_code)]
     pub fn is_file(self) -> bool {
@@ -614,8 +605,7 @@ struct RelationTable([[Relation; Square::NUM]; Square::NUM]);
 
 impl RelationTable {
     fn new() -> Self {
-        let mut value: [[Relation; Square::NUM]; Square::NUM] =
-            [[Relation::MISC; Square::NUM]; Square::NUM];
+        let mut value: [[Relation; Square::NUM]; Square::NUM] = [[Relation::MISC; Square::NUM]; Square::NUM];
         for &from in Square::ALL.iter() {
             let f_from = File::new(from);
             let r_from = Rank::new(from);
@@ -661,21 +651,12 @@ impl RelationTable {
     }
 }
 
-static RELATION_TABLE: once_cell::sync::Lazy<RelationTable> =
-    once_cell::sync::Lazy::new(|| RelationTable::new());
+static RELATION_TABLE: once_cell::sync::Lazy<RelationTable> = once_cell::sync::Lazy::new(|| RelationTable::new());
 
-pub fn is_aligned_and_sq2_is_not_between_sq0_and_sq1(
-    sq0: Square,
-    sq1: Square,
-    sq2: Square,
-) -> bool {
+pub fn is_aligned_and_sq2_is_not_between_sq0_and_sq1(sq0: Square, sq1: Square, sq2: Square) -> bool {
     let relation_sq0_sq2 = Relation::new(sq0, sq2);
     let result = relation_sq0_sq2 != Relation::MISC && relation_sq0_sq2 == Relation::new(sq1, sq2);
-    debug_assert!(
-        result
-            == (Bitboard::between_mask(sq0, sq2).is_set(sq1)
-                || Bitboard::between_mask(sq1, sq2).is_set(sq0))
-    );
+    debug_assert!(result == (Bitboard::between_mask(sq0, sq2).is_set(sq1) || Bitboard::between_mask(sq1, sq2).is_set(sq0)));
     result
 }
 
@@ -829,12 +810,7 @@ impl PieceType {
     pub fn is_promotable(self) -> bool {
         matches!(
             self,
-            PieceType::PAWN
-                | PieceType::LANCE
-                | PieceType::KNIGHT
-                | PieceType::SILVER
-                | PieceType::BISHOP
-                | PieceType::ROOK
+            PieceType::PAWN | PieceType::LANCE | PieceType::KNIGHT | PieceType::SILVER | PieceType::BISHOP | PieceType::ROOK
         )
     }
     pub fn to_promote(self) -> PieceType {
@@ -1186,9 +1162,7 @@ impl PieceTypeTrait for DragonType {
 }
 
 pub const MAX_PLY: i32 = 246;
-#[derive(
-    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Add, AddAssign, Sub, SubAssign, Mul, Div,
-)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Add, AddAssign, Sub, SubAssign, Mul, Div)]
 pub struct Depth(pub i32);
 
 impl Depth {
@@ -1374,23 +1348,11 @@ fn test_relation_new() {
     assert_eq!(Relation::new(Square::SQ15, Square::SQ11), Relation::FILE_SN);
     assert_eq!(Relation::new(Square::SQ11, Square::SQ71), Relation::RANK_EW);
     assert_eq!(Relation::new(Square::SQ71, Square::SQ11), Relation::RANK_WE);
-    assert_eq!(
-        Relation::new(Square::SQ11, Square::SQ33),
-        Relation::DIAG_NESW
-    );
-    assert_eq!(
-        Relation::new(Square::SQ33, Square::SQ11),
-        Relation::DIAG_SWNE
-    );
+    assert_eq!(Relation::new(Square::SQ11, Square::SQ33), Relation::DIAG_NESW);
+    assert_eq!(Relation::new(Square::SQ33, Square::SQ11), Relation::DIAG_SWNE);
     assert_eq!(Relation::new(Square::SQ11, Square::SQ23), Relation::MISC);
-    assert_eq!(
-        Relation::new(Square::SQ91, Square::SQ19),
-        Relation::DIAG_NWSE
-    );
-    assert_eq!(
-        Relation::new(Square::SQ19, Square::SQ91),
-        Relation::DIAG_SENW
-    );
+    assert_eq!(Relation::new(Square::SQ91, Square::SQ19), Relation::DIAG_NWSE);
+    assert_eq!(Relation::new(Square::SQ19, Square::SQ91), Relation::DIAG_SENW);
     for sq0 in Square::ALL.iter() {
         let f1 = File::new(*sq0);
         for r1 in Rank::ALL.iter() {

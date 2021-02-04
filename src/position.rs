@@ -57,16 +57,8 @@ impl CheckInfo {
         let gold_check_squares = ATTACK_TABLE.gold.attack(them, ksq);
         CheckInfo {
             blockers_and_pinners_for_king: [
-                pos.slider_blockers_and_pinners(
-                    &pos.pieces_c(Color::WHITE),
-                    Color::WHITE,
-                    pos.king_square(Color::BLACK),
-                ),
-                pos.slider_blockers_and_pinners(
-                    &pos.pieces_c(Color::BLACK),
-                    Color::BLACK,
-                    pos.king_square(Color::WHITE),
-                ),
+                pos.slider_blockers_and_pinners(&pos.pieces_c(Color::WHITE), Color::WHITE, pos.king_square(Color::BLACK)),
+                pos.slider_blockers_and_pinners(&pos.pieces_c(Color::BLACK), Color::BLACK, pos.king_square(Color::WHITE)),
             ],
             check_squares: [
                 Bitboard::ZERO,                                           // PieceType::OCCUPIED
@@ -89,19 +81,11 @@ impl CheckInfo {
     }
     fn blockers_for_king(&self, color_of_king: Color) -> Bitboard {
         debug_assert!((color_of_king.0 as usize) < Color::NUM);
-        unsafe {
-            self.blockers_and_pinners_for_king
-                .get_unchecked(color_of_king.0 as usize)
-                .0
-        }
+        unsafe { self.blockers_and_pinners_for_king.get_unchecked(color_of_king.0 as usize).0 }
     }
     fn pinners_for_king(&self, color_of_king: Color) -> Bitboard {
         debug_assert!((color_of_king.0 as usize) < Color::NUM);
-        unsafe {
-            self.blockers_and_pinners_for_king
-                .get_unchecked(color_of_king.0 as usize)
-                .1
-        }
+        unsafe { self.blockers_and_pinners_for_king.get_unchecked(color_of_king.0 as usize).1 }
     }
 }
 
@@ -115,9 +99,7 @@ impl Zobrist {
     fn get_field(pt: PieceType, sq: Square, c: Color) -> Key {
         debug_assert!(0 <= pt.0 && (pt.0 as usize) < ZOBRIST_TABLES.field.len());
         debug_assert!(0 <= sq.0 && (sq.0 as usize) < ZOBRIST_TABLES.field[pt.0 as usize].len());
-        debug_assert!(
-            0 <= c.0 && (c.0 as usize) < ZOBRIST_TABLES.field[pt.0 as usize][sq.0 as usize].len()
-        );
+        debug_assert!(0 <= c.0 && (c.0 as usize) < ZOBRIST_TABLES.field[pt.0 as usize][sq.0 as usize].len());
         unsafe {
             *ZOBRIST_TABLES
                 .field
@@ -129,9 +111,7 @@ impl Zobrist {
     fn get_hand(pt: PieceType, i: u32, c: Color) -> Key {
         debug_assert!(0 <= pt.0 && (pt.0 as usize) < ZOBRIST_TABLES.hand.len());
         debug_assert!(/*0 <= i &&*/ (i as usize) < ZOBRIST_TABLES.hand[pt.0 as usize].len());
-        debug_assert!(
-            0 <= c.0 && (c.0 as usize) < ZOBRIST_TABLES.hand[pt.0 as usize][i as usize].len()
-        );
+        debug_assert!(0 <= c.0 && (c.0 as usize) < ZOBRIST_TABLES.hand[pt.0 as usize][i as usize].len());
         unsafe {
             *ZOBRIST_TABLES
                 .hand
@@ -186,16 +166,8 @@ impl EvalList {
             let pt = PieceType::new(pc);
             let opp_pc = pc.inverse();
             for i in 1..=pos.hand(c).num(pt) {
-                list.set(
-                    *index,
-                    Color::BLACK,
-                    EvalIndex(EvalIndex::new_hand(pc).0 + i as usize),
-                );
-                list.set(
-                    *index,
-                    Color::WHITE,
-                    EvalIndex(EvalIndex::new_hand(opp_pc).0 + i as usize),
-                );
+                list.set(*index, Color::BLACK, EvalIndex(EvalIndex::new_hand(pc).0 + i as usize));
+                list.set(*index, Color::WHITE, EvalIndex(EvalIndex::new_hand(opp_pc).0 + i as usize));
                 *index += 1;
             }
         };
@@ -217,11 +189,7 @@ impl EvalList {
         for sq in bb {
             let pc = pos.piece_on(sq);
             let opp_pc = pc.inverse();
-            list.set(
-                index,
-                Color::BLACK,
-                EvalIndex(EvalIndex::new_board(pc).0 + sq.0 as usize),
-            );
+            list.set(index, Color::BLACK, EvalIndex(EvalIndex::new_board(pc).0 + sq.0 as usize));
             list.set(
                 index,
                 Color::WHITE,
@@ -234,21 +202,13 @@ impl EvalList {
     pub fn get(&self, list_index: usize, base_color: Color) -> EvalIndex {
         debug_assert!(list_index < self.0.len());
         debug_assert!((base_color.0 as usize) < self.0[0].len());
-        unsafe {
-            *self
-                .0
-                .get_unchecked(list_index)
-                .get_unchecked(base_color.0 as usize)
-        }
+        unsafe { *self.0.get_unchecked(list_index).get_unchecked(base_color.0 as usize) }
     }
     pub fn set(&mut self, list_index: usize, base_color: Color, eval_index: EvalIndex) {
         debug_assert!(list_index < self.0.len());
         debug_assert!((base_color.0 as usize) < self.0[0].len());
         unsafe {
-            *self
-                .0
-                .get_unchecked_mut(list_index)
-                .get_unchecked_mut(base_color.0 as usize) = eval_index;
+            *self.0.get_unchecked_mut(list_index).get_unchecked_mut(base_color.0 as usize) = eval_index;
         }
     }
 }
@@ -368,8 +328,7 @@ impl StateInfo {
         ]
         .iter()
         {
-            let num = pos.pieces_cp(Color::BLACK, pt).count_ones() as i32
-                - pos.pieces_cp(Color::WHITE, pt).count_ones() as i32;
+            let num = pos.pieces_cp(Color::BLACK, pt).count_ones() as i32 - pos.pieces_cp(Color::WHITE, pt).count_ones() as i32;
             val += Value(num * piece_type_value(pt).0);
         }
         for &pt in PieceType::ALL_HAND.iter() {
@@ -482,13 +441,8 @@ impl PositionBase {
                 }
                 let token: &str = &cap[0];
                 if let Ok(digit) = token.to_string().parse::<i64>() {
-                    if digit <= 0
-                        || (Rank::NUM as i64) < digit
-                        || (Rank::NUM as i64) < (file_idx as i64) + digit
-                    {
-                        return Err(SfenError::InvalidNumberOfEmptySquares {
-                            empty_squares: digit,
-                        });
+                    if digit <= 0 || (Rank::NUM as i64) < digit || (Rank::NUM as i64) < (file_idx as i64) + digit {
+                        return Err(SfenError::InvalidNumberOfEmptySquares { empty_squares: digit });
                     }
                     file_idx += digit as usize;
                 } else if let Some(pc) = Piece::new_from_str(token) {
@@ -574,9 +528,7 @@ impl PositionBase {
                 }
             }
             if hand_num != 1 {
-                return Err(SfenError::InvalidHandPieceCharactors {
-                    chars: "".to_string(),
-                });
+                return Err(SfenError::InvalidHandPieceCharactors { chars: "".to_string() });
             }
         }
         match game_ply_str.to_string().parse::<i32>() {
@@ -589,8 +541,7 @@ impl PositionBase {
         }
         fn check_pieces(pos: &PositionBase, pts: &[PieceType], max: i64) -> Result<(), SfenError> {
             let number = i64::from(
-                pts.iter()
-                    .fold(0, |sum, &pt| sum + pos.pieces_p(pt).count_ones())
+                pts.iter().fold(0, |sum, &pt| sum + pos.pieces_p(pt).count_ones())
                     + pos.hands.iter().fold(0, |sum, hand| sum + hand.num(pts[0])),
             );
             if number <= max {
@@ -617,9 +568,7 @@ impl PositionBase {
         check_pieces(&pos, &[PieceType::ROOK, PieceType::DRAGON], 2)?;
         Ok(pos)
     }
-    pub fn new_from_huffman_coded_position(
-        hcp: &HuffmanCodedPosition,
-    ) -> Result<PositionBase, u32> {
+    pub fn new_from_huffman_coded_position(hcp: &HuffmanCodedPosition) -> Result<PositionBase, u32> {
         let mut bs = BitStreamReader::new(&hcp.buf);
         let mut pos = PositionBase {
             board: [Piece::EMPTY; Square::NUM],
@@ -646,10 +595,7 @@ impl PositionBase {
             if sq == pos.king_square(Color::BLACK) || sq == pos.king_square(Color::WHITE) {
                 continue;
             }
-            let mut hc = HuffmanCode {
-                value: 0,
-                bit_length: 0,
-            };
+            let mut hc = HuffmanCode { value: 0, bit_length: 0 };
             loop {
                 hc.value |= bs.get_bit_from_lsb() << hc.bit_length;
                 hc.bit_length += 1;
@@ -668,10 +614,7 @@ impl PositionBase {
             }
         }
         while bs.slice.len() != bs.current_index {
-            let mut hc = HuffmanCode {
-                value: 0,
-                bit_length: 0,
-            };
+            let mut hc = HuffmanCode { value: 0, bit_length: 0 };
             loop {
                 hc.value |= bs.get_bit_from_lsb() << hc.bit_length;
                 hc.bit_length += 1;
@@ -714,33 +657,13 @@ impl PositionBase {
     fn pieces_cppp(&self, c: Color, pt0: PieceType, pt1: PieceType, pt2: PieceType) -> Bitboard {
         self.pieces_c(c) & self.pieces_ppp(pt0, pt1, pt2)
     }
-    fn pieces_pppp(
-        &self,
-        pt0: PieceType,
-        pt1: PieceType,
-        pt2: PieceType,
-        pt3: PieceType,
-    ) -> Bitboard {
+    fn pieces_pppp(&self, pt0: PieceType, pt1: PieceType, pt2: PieceType, pt3: PieceType) -> Bitboard {
         self.pieces_ppp(pt0, pt1, pt2) | self.pieces_p(pt3)
     }
-    fn pieces_cpppp(
-        &self,
-        c: Color,
-        pt0: PieceType,
-        pt1: PieceType,
-        pt2: PieceType,
-        pt3: PieceType,
-    ) -> Bitboard {
+    fn pieces_cpppp(&self, c: Color, pt0: PieceType, pt1: PieceType, pt2: PieceType, pt3: PieceType) -> Bitboard {
         self.pieces_c(c) & self.pieces_pppp(pt0, pt1, pt2, pt3)
     }
-    fn pieces_ppppp(
-        &self,
-        pt0: PieceType,
-        pt1: PieceType,
-        pt2: PieceType,
-        pt3: PieceType,
-        pt4: PieceType,
-    ) -> Bitboard {
+    fn pieces_ppppp(&self, pt0: PieceType, pt1: PieceType, pt2: PieceType, pt3: PieceType, pt4: PieceType) -> Bitboard {
         self.pieces_pppp(pt0, pt1, pt2, pt3) | self.pieces_p(pt4)
     }
     pub fn pieces_golds(&self) -> Bitboard {
@@ -770,11 +693,7 @@ impl PositionBase {
         unsafe { *self.board.get_unchecked(sq.0 as usize) }
     }
     pub fn occupied_bb(&self) -> Bitboard {
-        unsafe {
-            *self
-                .by_type_bb
-                .get_unchecked(PieceType::OCCUPIED.0 as usize)
-        }
+        unsafe { *self.by_type_bb.get_unchecked(PieceType::OCCUPIED.0 as usize) }
     }
     pub fn empty_bb(&self) -> Bitboard {
         Bitboard::ALL & !self.occupied_bb()
@@ -795,9 +714,7 @@ impl PositionBase {
         debug_assert!(0 <= pt.0 && (pt.0 as usize) < PieceType::NUM);
         debug_assert!(0 <= sq.0 && (sq.0 as usize) < Square::NUM);
         unsafe {
-            self.by_type_bb
-                .get_unchecked_mut(PieceType::OCCUPIED.0 as usize)
-                .xor(sq);
+            self.by_type_bb.get_unchecked_mut(PieceType::OCCUPIED.0 as usize).xor(sq);
             self.by_type_bb.get_unchecked_mut(pt.0 as usize).xor(sq);
             self.by_color_bb.get_unchecked_mut(c.0 as usize).xor(sq);
         }
@@ -833,118 +750,74 @@ impl PositionBase {
         unsafe {
             self.by_type_bb.get_unchecked_mut(pt_old.0 as usize).xor(sq);
             self.by_type_bb.get_unchecked_mut(pt_new.0 as usize).xor(sq);
-            self.by_color_bb
-                .get_unchecked_mut(color_old.0 as usize)
-                .xor(sq);
-            self.by_color_bb
-                .get_unchecked_mut(color_new.0 as usize)
-                .xor(sq);
+            self.by_color_bb.get_unchecked_mut(color_old.0 as usize).xor(sq);
+            self.by_color_bb.get_unchecked_mut(color_new.0 as usize).xor(sq);
             *self.board.get_unchecked_mut(sq.0 as usize) = pc_new;
         }
         debug_assert!(self.pieces_p(pt_new).is_set(sq));
         debug_assert!(self.pieces_c(color_new).is_set(sq));
     }
-    pub fn attackers_to(
-        &self,
-        color_of_attackers: Color,
-        to: Square,
-        occupied: &Bitboard,
-    ) -> Bitboard {
+    pub fn attackers_to(&self, color_of_attackers: Color, to: Square, occupied: &Bitboard) -> Bitboard {
         let opp = color_of_attackers.inverse();
         let golds = self.pieces_golds();
         ((ATTACK_TABLE.pawn.attack(opp, to) & self.pieces_p(PieceType::PAWN))
             | (ATTACK_TABLE.lance.attack(opp, to, occupied) & self.pieces_p(PieceType::LANCE))
             | (ATTACK_TABLE.knight.attack(opp, to) & self.pieces_p(PieceType::KNIGHT))
-            | (ATTACK_TABLE.silver.attack(opp, to)
-                & (self.pieces_ppp(PieceType::SILVER, PieceType::KING, PieceType::DRAGON)))
-            | (ATTACK_TABLE.gold.attack(opp, to)
-                & (golds | self.pieces_pp(PieceType::KING, PieceType::HORSE)))
-            | (ATTACK_TABLE.bishop.magic(to).attack(occupied)
-                & (self.pieces_pp(PieceType::BISHOP, PieceType::HORSE)))
-            | (ATTACK_TABLE.rook.magic(to).attack(occupied)
-                & (self.pieces_pp(PieceType::ROOK, PieceType::DRAGON))))
+            | (ATTACK_TABLE.silver.attack(opp, to) & (self.pieces_ppp(PieceType::SILVER, PieceType::KING, PieceType::DRAGON)))
+            | (ATTACK_TABLE.gold.attack(opp, to) & (golds | self.pieces_pp(PieceType::KING, PieceType::HORSE)))
+            | (ATTACK_TABLE.bishop.magic(to).attack(occupied) & (self.pieces_pp(PieceType::BISHOP, PieceType::HORSE)))
+            | (ATTACK_TABLE.rook.magic(to).attack(occupied) & (self.pieces_pp(PieceType::ROOK, PieceType::DRAGON))))
             & self.pieces_c(color_of_attackers)
     }
-    pub fn attackers_to_except_king(
-        &self,
-        color_of_attackers: Color,
-        to: Square,
-        occupied: &Bitboard,
-    ) -> Bitboard {
+    pub fn attackers_to_except_king(&self, color_of_attackers: Color, to: Square, occupied: &Bitboard) -> Bitboard {
         let opp = color_of_attackers.inverse();
         let golds = self.pieces_golds();
         ((ATTACK_TABLE.pawn.attack(opp, to) & self.pieces_p(PieceType::PAWN))
             | (ATTACK_TABLE.lance.attack(opp, to, occupied) & self.pieces_p(PieceType::LANCE))
             | (ATTACK_TABLE.knight.attack(opp, to) & self.pieces_p(PieceType::KNIGHT))
-            | (ATTACK_TABLE.silver.attack(opp, to)
-                & (self.pieces_pp(PieceType::SILVER, PieceType::DRAGON)))
+            | (ATTACK_TABLE.silver.attack(opp, to) & (self.pieces_pp(PieceType::SILVER, PieceType::DRAGON)))
             | (ATTACK_TABLE.gold.attack(opp, to) & (golds | self.pieces_p(PieceType::HORSE)))
-            | (ATTACK_TABLE.bishop.magic(to).attack(occupied)
-                & (self.pieces_pp(PieceType::BISHOP, PieceType::HORSE)))
-            | (ATTACK_TABLE.rook.magic(to).attack(occupied)
-                & (self.pieces_pp(PieceType::ROOK, PieceType::DRAGON))))
+            | (ATTACK_TABLE.bishop.magic(to).attack(occupied) & (self.pieces_pp(PieceType::BISHOP, PieceType::HORSE)))
+            | (ATTACK_TABLE.rook.magic(to).attack(occupied) & (self.pieces_pp(PieceType::ROOK, PieceType::DRAGON))))
             & self.pieces_c(color_of_attackers)
     }
-    pub fn attackers_to_except_king_lance_pawn(
-        &self,
-        color_of_attackers: Color,
-        to: Square,
-        occupied: &Bitboard,
-    ) -> Bitboard {
+    pub fn attackers_to_except_king_lance_pawn(&self, color_of_attackers: Color, to: Square, occupied: &Bitboard) -> Bitboard {
         let opp = color_of_attackers.inverse();
         let golds = self.pieces_golds();
         ((ATTACK_TABLE.knight.attack(opp, to) & self.pieces_p(PieceType::KNIGHT))
-            | (ATTACK_TABLE.silver.attack(opp, to)
-                & (self.pieces_pp(PieceType::SILVER, PieceType::DRAGON)))
+            | (ATTACK_TABLE.silver.attack(opp, to) & (self.pieces_pp(PieceType::SILVER, PieceType::DRAGON)))
             | (ATTACK_TABLE.gold.attack(opp, to) & (golds | self.pieces_p(PieceType::HORSE)))
-            | (ATTACK_TABLE.bishop.magic(to).attack(occupied)
-                & (self.pieces_pp(PieceType::BISHOP, PieceType::HORSE)))
-            | (ATTACK_TABLE.rook.magic(to).attack(occupied)
-                & (self.pieces_pp(PieceType::ROOK, PieceType::DRAGON))))
+            | (ATTACK_TABLE.bishop.magic(to).attack(occupied) & (self.pieces_pp(PieceType::BISHOP, PieceType::HORSE)))
+            | (ATTACK_TABLE.rook.magic(to).attack(occupied) & (self.pieces_pp(PieceType::ROOK, PieceType::DRAGON))))
             & self.pieces_c(color_of_attackers)
     }
     pub fn attackers_to_both_color(&self, to: Square, occupied: &Bitboard) -> Bitboard {
         let golds = self.pieces_golds();
         (((ATTACK_TABLE.pawn.attack(Color::BLACK, to) & self.pieces_p(PieceType::PAWN))
-            | (ATTACK_TABLE.lance.attack(Color::BLACK, to, occupied)
-                & self.pieces_p(PieceType::LANCE))
+            | (ATTACK_TABLE.lance.attack(Color::BLACK, to, occupied) & self.pieces_p(PieceType::LANCE))
             | (ATTACK_TABLE.knight.attack(Color::BLACK, to) & self.pieces_p(PieceType::KNIGHT))
             | (ATTACK_TABLE.silver.attack(Color::BLACK, to) & self.pieces_p(PieceType::SILVER))
             | (ATTACK_TABLE.gold.attack(Color::BLACK, to) & golds))
             & self.pieces_c(Color::WHITE))
             | (((ATTACK_TABLE.pawn.attack(Color::WHITE, to) & self.pieces_p(PieceType::PAWN))
-                | (ATTACK_TABLE.lance.attack(Color::WHITE, to, occupied)
-                    & self.pieces_p(PieceType::LANCE))
-                | (ATTACK_TABLE.knight.attack(Color::WHITE, to)
-                    & self.pieces_p(PieceType::KNIGHT))
-                | (ATTACK_TABLE.silver.attack(Color::WHITE, to)
-                    & self.pieces_p(PieceType::SILVER))
+                | (ATTACK_TABLE.lance.attack(Color::WHITE, to, occupied) & self.pieces_p(PieceType::LANCE))
+                | (ATTACK_TABLE.knight.attack(Color::WHITE, to) & self.pieces_p(PieceType::KNIGHT))
+                | (ATTACK_TABLE.silver.attack(Color::WHITE, to) & self.pieces_p(PieceType::SILVER))
                 | (ATTACK_TABLE.gold.attack(Color::WHITE, to) & golds))
                 & self.pieces_c(Color::BLACK))
-            | (ATTACK_TABLE.bishop.magic(to).attack(occupied)
-                & (self.pieces_pp(PieceType::BISHOP, PieceType::HORSE)))
-            | (ATTACK_TABLE.rook.magic(to).attack(occupied)
-                & (self.pieces_pp(PieceType::ROOK, PieceType::DRAGON)))
-            | (ATTACK_TABLE.king.attack(to)
-                & (self.pieces_ppp(PieceType::KING, PieceType::HORSE, PieceType::DRAGON)))
+            | (ATTACK_TABLE.bishop.magic(to).attack(occupied) & (self.pieces_pp(PieceType::BISHOP, PieceType::HORSE)))
+            | (ATTACK_TABLE.rook.magic(to).attack(occupied) & (self.pieces_pp(PieceType::ROOK, PieceType::DRAGON)))
+            | (ATTACK_TABLE.king.attack(to) & (self.pieces_ppp(PieceType::KING, PieceType::HORSE, PieceType::DRAGON)))
     }
     // sliders can be self.pieces_c(Color)
     // return (blockers of both colors, pinners)
-    pub fn slider_blockers_and_pinners(
-        &self,
-        sliders: &Bitboard,
-        color_of_sliders: Color,
-        sq: Square,
-    ) -> (Bitboard, Bitboard) {
+    pub fn slider_blockers_and_pinners(&self, sliders: &Bitboard, color_of_sliders: Color, sq: Square) -> (Bitboard, Bitboard) {
         let opp_of_sliders = color_of_sliders.inverse();
         let mut blockers = Bitboard::ZERO;
         let mut pinners = Bitboard::ZERO;
-        let snipers = ((ATTACK_TABLE.lance.pseudo_attack(opp_of_sliders, sq)
-            & self.pieces_p(PieceType::LANCE))
-            | (ATTACK_TABLE.bishop.magic(sq).pseudo_attack()
-                & self.pieces_pp(PieceType::BISHOP, PieceType::HORSE))
-            | (ATTACK_TABLE.rook.magic(sq).pseudo_attack()
-                & self.pieces_pp(PieceType::ROOK, PieceType::DRAGON)))
+        let snipers = ((ATTACK_TABLE.lance.pseudo_attack(opp_of_sliders, sq) & self.pieces_p(PieceType::LANCE))
+            | (ATTACK_TABLE.bishop.magic(sq).pseudo_attack() & self.pieces_pp(PieceType::BISHOP, PieceType::HORSE))
+            | (ATTACK_TABLE.rook.magic(sq).pseudo_attack() & self.pieces_pp(PieceType::ROOK, PieceType::DRAGON)))
             & *sliders;
 
         for sq_of_sniper in snipers {
@@ -993,11 +866,7 @@ impl PositionBase {
                 }
             }
         }
-        s += if self.side_to_move == Color::BLACK {
-            "+\n"
-        } else {
-            "-\n"
-        };
+        s += if self.side_to_move == Color::BLACK { "+\n" } else { "-\n" };
         s
     }
     pub fn print(&self) {
@@ -1159,47 +1028,21 @@ impl Position {
         self.base.pieces_ppp(pt0, pt1, pt2)
     }
     #[inline]
-    pub fn pieces_cppp(
-        &self,
-        c: Color,
-        pt0: PieceType,
-        pt1: PieceType,
-        pt2: PieceType,
-    ) -> Bitboard {
+    pub fn pieces_cppp(&self, c: Color, pt0: PieceType, pt1: PieceType, pt2: PieceType) -> Bitboard {
         self.base.pieces_cppp(c, pt0, pt1, pt2)
     }
     #[inline]
     #[allow(dead_code)]
-    pub fn pieces_pppp(
-        &self,
-        pt0: PieceType,
-        pt1: PieceType,
-        pt2: PieceType,
-        pt3: PieceType,
-    ) -> Bitboard {
+    pub fn pieces_pppp(&self, pt0: PieceType, pt1: PieceType, pt2: PieceType, pt3: PieceType) -> Bitboard {
         self.base.pieces_pppp(pt0, pt1, pt2, pt3)
     }
     #[inline]
     #[allow(dead_code)]
-    pub fn pieces_cpppp(
-        &self,
-        c: Color,
-        pt0: PieceType,
-        pt1: PieceType,
-        pt2: PieceType,
-        pt3: PieceType,
-    ) -> Bitboard {
+    pub fn pieces_cpppp(&self, c: Color, pt0: PieceType, pt1: PieceType, pt2: PieceType, pt3: PieceType) -> Bitboard {
         self.base.pieces_cpppp(c, pt0, pt1, pt2, pt3)
     }
     #[inline]
-    pub fn pieces_ppppp(
-        &self,
-        pt0: PieceType,
-        pt1: PieceType,
-        pt2: PieceType,
-        pt3: PieceType,
-        pt4: PieceType,
-    ) -> Bitboard {
+    pub fn pieces_ppppp(&self, pt0: PieceType, pt1: PieceType, pt2: PieceType, pt3: PieceType, pt4: PieceType) -> Bitboard {
         self.base.pieces_ppppp(pt0, pt1, pt2, pt3, pt4)
     }
     #[inline]
@@ -1231,31 +1074,15 @@ impl Position {
         self.base.king_square(c)
     }
     #[inline]
-    pub fn attackers_to(
-        &self,
-        color_of_attackers: Color,
-        to: Square,
-        occupied: &Bitboard,
-    ) -> Bitboard {
+    pub fn attackers_to(&self, color_of_attackers: Color, to: Square, occupied: &Bitboard) -> Bitboard {
         self.base.attackers_to(color_of_attackers, to, occupied)
     }
     #[inline]
-    pub fn attackers_to_except_king(
-        &self,
-        color_of_attackers: Color,
-        to: Square,
-        occupied: &Bitboard,
-    ) -> Bitboard {
-        self.base
-            .attackers_to_except_king(color_of_attackers, to, occupied)
+    pub fn attackers_to_except_king(&self, color_of_attackers: Color, to: Square, occupied: &Bitboard) -> Bitboard {
+        self.base.attackers_to_except_king(color_of_attackers, to, occupied)
     }
     #[inline]
-    pub fn attackers_to_except_king_lance_pawn(
-        &self,
-        color_of_attackers: Color,
-        to: Square,
-        occupied: &Bitboard,
-    ) -> Bitboard {
+    pub fn attackers_to_except_king_lance_pawn(&self, color_of_attackers: Color, to: Square, occupied: &Bitboard) -> Bitboard {
         self.base
             .attackers_to_except_king_lance_pawn(color_of_attackers, to, occupied)
     }
@@ -1289,14 +1116,8 @@ impl Position {
     }
     #[allow(dead_code)]
     #[inline]
-    pub fn slider_blockers_and_pinners(
-        &self,
-        sliders: &Bitboard,
-        color_of_sliders: Color,
-        sq: Square,
-    ) -> (Bitboard, Bitboard) {
-        self.base
-            .slider_blockers_and_pinners(sliders, color_of_sliders, sq)
+    pub fn slider_blockers_and_pinners(&self, sliders: &Bitboard, color_of_sliders: Color, sq: Square) -> (Bitboard, Bitboard) {
+        self.base.slider_blockers_and_pinners(sliders, color_of_sliders, sq)
     }
     pub fn blockers_for_king(&self, color_of_king: Color) -> Bitboard {
         self.st().check_info.blockers_for_king(color_of_king)
@@ -1334,9 +1155,7 @@ impl Position {
                 _ => unreachable!(),
             }
             if pt_dropped == PieceType::PAWN {
-                if (self.pieces_cp(us, PieceType::PAWN) & Bitboard::file_mask(File::new(to)))
-                    .to_bool()
-                {
+                if (self.pieces_cp(us, PieceType::PAWN) & Bitboard::file_mask(File::new(to))).to_bool() {
                     // two pawns
                     return false;
                 }
@@ -1346,9 +1165,7 @@ impl Position {
                     Square::DELTA_S
                 };
                 let them = us.inverse();
-                if to.add_unchecked(delta) == self.king_square(them)
-                    && self.is_drop_pawn_mate(us, to)
-                {
+                if to.add_unchecked(delta) == self.king_square(them) && self.is_drop_pawn_mate(us, to) {
                     // drop pawn mate
                     return false;
                 }
@@ -1356,10 +1173,7 @@ impl Position {
         } else {
             let from = m.from();
             let pc_from = self.piece_on(from);
-            if pc_from == Piece::EMPTY
-                || pc_from != m.piece_moved_before_move()
-                || Color::new(pc_from) != us
-            {
+            if pc_from == Piece::EMPTY || pc_from != m.piece_moved_before_move() || Color::new(pc_from) != us {
                 return false;
             }
             to = m.to();
@@ -1367,10 +1181,7 @@ impl Position {
                 return false;
             }
             let pt_from = PieceType::new(pc_from);
-            if !ATTACK_TABLE
-                .attack(pt_from, us, from, &self.occupied_bb())
-                .is_set(to)
-            {
+            if !ATTACK_TABLE.attack(pt_from, us, from, &self.occupied_bb()).is_set(to) {
                 return false;
             }
 
@@ -1379,13 +1190,8 @@ impl Position {
                     return false;
                 }
                 if T::IS_SEARCHING {
-                    debug_assert!(
-                        Rank::new(from).is_opponent_field(us)
-                            || Rank::new(to).is_opponent_field(us)
-                    );
-                } else if !Rank::new(from).is_opponent_field(us)
-                    && !Rank::new(to).is_opponent_field(us)
-                {
+                    debug_assert!(Rank::new(from).is_opponent_field(us) || Rank::new(to).is_opponent_field(us));
+                } else if !Rank::new(from).is_opponent_field(us) && !Rank::new(to).is_opponent_field(us) {
                     return false;
                 }
             } else {
@@ -1407,8 +1213,7 @@ impl Position {
                             // Rank3(Rank7): legal but avoid unpromoted and uncapture move.
                             let r = Rank::new(to);
                             if r.is_in_front_of(us, RankAsBlack::RANK3)
-                                || (r.is_in_front_of(us, RankAsBlack::RANK4)
-                                    && !m.is_capture(&self))
+                                || (r.is_in_front_of(us, RankAsBlack::RANK4) && !m.is_capture(&self))
                             {
                                 return false;
                             }
@@ -1422,10 +1227,7 @@ impl Position {
                         }
                     }
                     PieceType::BISHOP | PieceType::ROOK => {
-                        if T::IS_SEARCHING
-                            && (Rank::new(from).is_opponent_field(us)
-                                || Rank::new(to).is_opponent_field(us))
-                        {
+                        if T::IS_SEARCHING && (Rank::new(from).is_opponent_field(us) || Rank::new(to).is_opponent_field(us)) {
                             // legal but avoid unpromote move.
                             return false;
                         }
@@ -1437,11 +1239,7 @@ impl Position {
             if checkers.to_bool() {
                 if pt_from == PieceType::KING {
                     if self
-                        .attackers_to(
-                            us.inverse(),
-                            to,
-                            &(self.occupied_bb() ^ Bitboard::square_mask(from)),
-                        )
+                        .attackers_to(us.inverse(), to, &(self.occupied_bb() ^ Bitboard::square_mask(from)))
                         .to_bool()
                     {
                         // not evasion.
@@ -1453,8 +1251,7 @@ impl Position {
                         1 => {
                             // evasion.
                             let checker_sq = checkers.lsb_unchecked();
-                            let movables =
-                                Bitboard::between_mask(checker_sq, self.king_square(us)) | checkers;
+                            let movables = Bitboard::between_mask(checker_sq, self.king_square(us)) | checkers;
                             if !movables.is_set(to) {
                                 return false;
                             }
@@ -1478,11 +1275,7 @@ impl Position {
         if PieceType::new(self.piece_on(from)) == PieceType::KING {
             let them = us.inverse();
             return !self
-                .attackers_to(
-                    them,
-                    m.to(),
-                    &(self.occupied_bb() ^ Bitboard::square_mask(from)),
-                )
+                .attackers_to(them, m.to(), &(self.occupied_bb() ^ Bitboard::square_mask(from)))
                 .to_bool();
         }
         !self.blockers_for_king(us).is_set(from)
@@ -1617,32 +1410,19 @@ impl Position {
                 Relation::MISC => {}
                 Relation::FILE_NS => {
                     attackers |= ATTACK_TABLE.lance.attack(Color::BLACK, to, &occupied)
-                        & self.pieces_cppp(
-                            Color::WHITE,
-                            PieceType::ROOK,
-                            PieceType::DRAGON,
-                            PieceType::LANCE,
-                        );
+                        & self.pieces_cppp(Color::WHITE, PieceType::ROOK, PieceType::DRAGON, PieceType::LANCE);
                 }
                 Relation::FILE_SN => {
                     attackers |= ATTACK_TABLE.lance.attack(Color::WHITE, to, &occupied)
-                        & self.pieces_cppp(
-                            Color::BLACK,
-                            PieceType::ROOK,
-                            PieceType::DRAGON,
-                            PieceType::LANCE,
-                        );
+                        & self.pieces_cppp(Color::BLACK, PieceType::ROOK, PieceType::DRAGON, PieceType::LANCE);
                 }
                 Relation::RANK_EW | Relation::RANK_WE => {
-                    attackers |= ATTACK_TABLE.rook.magic(to).attack(&occupied)
-                        & (self.pieces_pp(PieceType::ROOK, PieceType::DRAGON));
+                    attackers |=
+                        ATTACK_TABLE.rook.magic(to).attack(&occupied) & (self.pieces_pp(PieceType::ROOK, PieceType::DRAGON));
                 }
-                Relation::DIAG_NESW
-                | Relation::DIAG_NWSE
-                | Relation::DIAG_SWNE
-                | Relation::DIAG_SENW => {
-                    attackers |= ATTACK_TABLE.bishop.magic(to).attack(&occupied)
-                        & self.pieces_pp(PieceType::BISHOP, PieceType::HORSE);
+                Relation::DIAG_NESW | Relation::DIAG_NWSE | Relation::DIAG_SWNE | Relation::DIAG_SENW => {
+                    attackers |=
+                        ATTACK_TABLE.bishop.magic(to).attack(&occupied) & self.pieces_pp(PieceType::BISHOP, PieceType::HORSE);
                 }
                 _ => unreachable!(),
             }
@@ -1652,25 +1432,13 @@ impl Position {
         res != Value::ZERO
     }
     pub fn is_drop_pawn_mate(&self, color_of_pawn: Color, sq_of_pawn: Square) -> bool {
+        debug_assert_eq!(ATTACK_TABLE.pawn.attack(color_of_pawn, sq_of_pawn).count_ones(), 1);
         debug_assert_eq!(
-            ATTACK_TABLE
-                .pawn
-                .attack(color_of_pawn, sq_of_pawn)
-                .count_ones(),
-            1
-        );
-        debug_assert_eq!(
-            ATTACK_TABLE
-                .pawn
-                .attack(color_of_pawn, sq_of_pawn)
-                .lsb_unchecked(),
+            ATTACK_TABLE.pawn.attack(color_of_pawn, sq_of_pawn).lsb_unchecked(),
             self.king_square(color_of_pawn.inverse())
         );
 
-        if !self
-            .attackers_to(color_of_pawn, sq_of_pawn, &self.occupied_bb())
-            .to_bool()
-        {
+        if !self.attackers_to(color_of_pawn, sq_of_pawn, &self.occupied_bb()).to_bool() {
             return false; // The pawn has no followers. king can capture the pawn.
         }
         let color_of_difence = color_of_pawn.inverse();
@@ -1678,11 +1446,7 @@ impl Position {
         // king: NG (recapture)
         // pawn: NG (can not capture)
         // lance: NG (can not capture)
-        let capture_candidates = self.attackers_to_except_king_lance_pawn(
-            color_of_difence,
-            sq_of_pawn,
-            &self.occupied_bb(),
-        );
+        let capture_candidates = self.attackers_to_except_king_lance_pawn(color_of_difence, sq_of_pawn, &self.occupied_bb());
         let pawn_file = File::new(sq_of_pawn);
         let pinned = self.blockers_for_king(color_of_difence);
         let not_pinned_for_pawn_capture = !pinned | Bitboard::file_mask(pawn_file);
@@ -1692,16 +1456,12 @@ impl Position {
         }
         // king escapes
         let ksq = self.king_square(color_of_difence);
-        let mut king_escape_candidates =
-            ATTACK_TABLE.king.attack(ksq) & !self.pieces_c(color_of_difence);
+        let mut king_escape_candidates = ATTACK_TABLE.king.attack(ksq) & !self.pieces_c(color_of_difence);
         debug_assert!(king_escape_candidates.is_set(sq_of_pawn));
         king_escape_candidates ^= Bitboard::square_mask(sq_of_pawn); // more faster than Bitboard::clear()
         let occupied_after_drop_pawn = self.occupied_bb() ^ Bitboard::square_mask(sq_of_pawn);
         for to in king_escape_candidates {
-            if !self
-                .attackers_to(color_of_pawn, to, &occupied_after_drop_pawn)
-                .to_bool()
-            {
+            if !self.attackers_to(color_of_pawn, to, &occupied_after_drop_pawn).to_bool() {
                 return false;
             }
         }
@@ -1730,17 +1490,10 @@ impl Position {
                 }
                 return Repetition::Draw;
             } else if self.st().board_key == st.board_key {
-                if self
-                    .st()
-                    .hand_of_side_to_move
-                    .is_equal_or_superior(st.hand_of_side_to_move)
-                {
+                if self.st().hand_of_side_to_move.is_equal_or_superior(st.hand_of_side_to_move) {
                     return Repetition::Superior;
                 }
-                if st
-                    .hand_of_side_to_move
-                    .is_equal_or_superior(self.st().hand_of_side_to_move)
-                {
+                if st.hand_of_side_to_move.is_equal_or_superior(self.st().hand_of_side_to_move) {
                     return Repetition::Inferior;
                 }
             }
@@ -1765,8 +1518,7 @@ impl Position {
         }
 
         // 四 宣言側の敵陣三段目以内の駒は、玉を除いて10枚以上存在する。
-        let own_pieces_count =
-            (self.pieces_c(us) & Bitboard::opponent_field_mask(us)).count_ones() - 1;
+        let own_pieces_count = (self.pieces_c(us) & Bitboard::opponent_field_mask(us)).count_ones() - 1;
         if own_pieces_count < 10 {
             return false;
         }
@@ -1775,14 +1527,10 @@ impl Position {
         //     先手の場合28点以上の持点がある。
         //     後手の場合27点以上の持点がある。
         //     点数の対象となるのは、宣言側の持駒と敵陣三段目以内に存在する玉を除く宣言側の駒のみである。
-        let own_big_pieces_count = (self.pieces_cpppp(
-            us,
-            PieceType::BISHOP,
-            PieceType::ROOK,
-            PieceType::HORSE,
-            PieceType::DRAGON,
-        ) & Bitboard::opponent_field_mask(us))
-        .count_ones();
+        let own_big_pieces_count =
+            (self.pieces_cpppp(us, PieceType::BISHOP, PieceType::ROOK, PieceType::HORSE, PieceType::DRAGON)
+                & Bitboard::opponent_field_mask(us))
+            .count_ones();
         let own_small_pieces_count = own_pieces_count - own_big_pieces_count;
         let hand = self.hand(us);
         let val = own_small_pieces_count
@@ -1858,11 +1606,7 @@ impl Position {
         } else {
             let from = m.from();
             let pc_from = self.piece_on(from);
-            let pc_to = if m.is_promotion() {
-                pc_from.to_promote()
-            } else {
-                pc_from
-            };
+            let pc_to = if m.is_promotion() { pc_from.to_promote() } else { pc_from };
             let pt_to = PieceType::new(pc_to);
             // direct check
             if self.st().check_info.check_squares[pt_to.0 as usize].is_set(to) {
@@ -1907,12 +1651,9 @@ impl Position {
                 self.st_mut().changed_eval_index.old_index = old_eval_index;
                 self.st_mut().changed_eval_index.new_index = new_eval_index;
                 let eval_list_index = self.eval_index_to_eval_list_index.get(old_eval_index);
-                self.eval_index_to_eval_list_index
-                    .set(new_eval_index, eval_list_index);
-                self.eval_list
-                    .set(eval_list_index, Color::BLACK, new_eval_index);
-                self.eval_list
-                    .set(eval_list_index, Color::WHITE, new_eval_index.inverse());
+                self.eval_index_to_eval_list_index.set(new_eval_index, eval_list_index);
+                self.eval_list.set(eval_list_index, Color::BLACK, new_eval_index);
+                self.eval_list.set(eval_list_index, Color::WHITE, new_eval_index.inverse());
             }
             hand_key ^= Zobrist::get_hand(pt_to, hand_num, us);
             board_key ^= Zobrist::get_field(pt_to, to, us);
@@ -1946,21 +1687,15 @@ impl Position {
 
                 #[cfg(feature = "kppt")]
                 {
-                    let old_eval_index =
-                        EvalIndex(EvalIndex::new_board(captured_piece).0 + to.0 as usize);
-                    let new_eval_index = EvalIndex(
-                        EvalIndex::new_hand(Piece::new(us, pt_captured_demoted)).0
-                            + hand_num as usize,
-                    );
+                    let old_eval_index = EvalIndex(EvalIndex::new_board(captured_piece).0 + to.0 as usize);
+                    let new_eval_index =
+                        EvalIndex(EvalIndex::new_hand(Piece::new(us, pt_captured_demoted)).0 + hand_num as usize);
                     self.st_mut().changed_eval_index_captured.old_index = old_eval_index;
                     self.st_mut().changed_eval_index_captured.new_index = new_eval_index;
                     let eval_list_index = self.eval_index_to_eval_list_index.get(old_eval_index);
-                    self.eval_index_to_eval_list_index
-                        .set(new_eval_index, eval_list_index);
-                    self.eval_list
-                        .set(eval_list_index, Color::BLACK, new_eval_index);
-                    self.eval_list
-                        .set(eval_list_index, Color::WHITE, new_eval_index.inverse());
+                    self.eval_index_to_eval_list_index.set(new_eval_index, eval_list_index);
+                    self.eval_list.set(eval_list_index, Color::BLACK, new_eval_index);
+                    self.eval_list.set(eval_list_index, Color::WHITE, new_eval_index.inverse());
                 }
 
                 board_key ^= Zobrist::get_field(pt_captured, to, them);
@@ -1989,23 +1724,18 @@ impl Position {
                 // If moved piece is King, changed_eval_index is not used.
                 //self.st_mut().changed_eval_index.old_index = EvalIndex(0);
                 //self.st_mut().changed_eval_index.new_index = EvalIndex(0);
-                self.base.king_squares[us.0 as usize] =
-                    self.pieces_cp(us, PieceType::KING).lsb_unchecked();
+                self.base.king_squares[us.0 as usize] = self.pieces_cp(us, PieceType::KING).lsb_unchecked();
             } else {
                 #[cfg(feature = "kppt")]
                 {
-                    let old_eval_index =
-                        EvalIndex(EvalIndex::new_board(pc_from).0 + from.0 as usize);
+                    let old_eval_index = EvalIndex(EvalIndex::new_board(pc_from).0 + from.0 as usize);
                     let new_eval_index = EvalIndex(EvalIndex::new_board(pc_to).0 + to.0 as usize);
                     self.st_mut().changed_eval_index.old_index = old_eval_index;
                     self.st_mut().changed_eval_index.new_index = new_eval_index;
                     let eval_list_index = self.eval_index_to_eval_list_index.get(old_eval_index);
-                    self.eval_index_to_eval_list_index
-                        .set(new_eval_index, eval_list_index);
-                    self.eval_list
-                        .set(eval_list_index, Color::BLACK, new_eval_index);
-                    self.eval_list
-                        .set(eval_list_index, Color::WHITE, new_eval_index.inverse());
+                    self.eval_index_to_eval_list_index.set(new_eval_index, eval_list_index);
+                    self.eval_list.set(eval_list_index, Color::BLACK, new_eval_index);
+                    self.eval_list.set(eval_list_index, Color::WHITE, new_eval_index.inverse());
                 }
             }
 
@@ -2017,8 +1747,7 @@ impl Position {
 
             if gives_check {
                 self.st_mut().checkers_bb =
-                    self.attackers_to_except_king(us, self.king_square(them), &self.occupied_bb())
-                        & self.pieces_c(us);
+                    self.attackers_to_except_king(us, self.king_square(them), &self.occupied_bb()) & self.pieces_c(us);
                 self.st_mut().continuous_checks[us.0 as usize] += 2;
             } else {
                 self.st_mut().checkers_bb = Bitboard::ZERO;
@@ -2048,15 +1777,11 @@ impl Position {
             {
                 let hand_num = self.hand(them).num(pt_dropped);
                 let old_eval_index = EvalIndex(EvalIndex::new_board(pc_dropped).0 + to.0 as usize);
-                let new_eval_index =
-                    EvalIndex(EvalIndex::new_hand(pc_dropped).0 + hand_num as usize);
+                let new_eval_index = EvalIndex(EvalIndex::new_hand(pc_dropped).0 + hand_num as usize);
                 let eval_list_index = self.eval_index_to_eval_list_index.get(old_eval_index);
-                self.eval_index_to_eval_list_index
-                    .set(new_eval_index, eval_list_index);
-                self.eval_list
-                    .set(eval_list_index, Color::BLACK, new_eval_index);
-                self.eval_list
-                    .set(eval_list_index, Color::WHITE, new_eval_index.inverse());
+                self.eval_index_to_eval_list_index.set(new_eval_index, eval_list_index);
+                self.eval_list.set(eval_list_index, Color::BLACK, new_eval_index);
+                self.eval_list.set(eval_list_index, Color::WHITE, new_eval_index.inverse());
             }
         } else {
             let pc_to = self.piece_on(to);
@@ -2068,19 +1793,13 @@ impl Position {
                 #[cfg(feature = "kppt")]
                 {
                     let hand_num = self.hand(them).num(pt_captured_demoted);
-                    let old_eval_index = EvalIndex(
-                        EvalIndex::new_hand(Piece::new(them, pt_captured_demoted)).0
-                            + hand_num as usize,
-                    );
-                    let new_eval_index =
-                        EvalIndex(EvalIndex::new_board(pc_captured).0 + to.0 as usize);
+                    let old_eval_index =
+                        EvalIndex(EvalIndex::new_hand(Piece::new(them, pt_captured_demoted)).0 + hand_num as usize);
+                    let new_eval_index = EvalIndex(EvalIndex::new_board(pc_captured).0 + to.0 as usize);
                     let eval_list_index = self.eval_index_to_eval_list_index.get(old_eval_index);
-                    self.eval_index_to_eval_list_index
-                        .set(new_eval_index, eval_list_index);
-                    self.eval_list
-                        .set(eval_list_index, Color::BLACK, new_eval_index);
-                    self.eval_list
-                        .set(eval_list_index, Color::WHITE, new_eval_index.inverse());
+                    self.eval_index_to_eval_list_index.set(new_eval_index, eval_list_index);
+                    self.eval_list.set(eval_list_index, Color::BLACK, new_eval_index);
+                    self.eval_list.set(eval_list_index, Color::WHITE, new_eval_index.inverse());
                 }
 
                 self.base.exchange_pieces(pc_captured, to);
@@ -2088,11 +1807,7 @@ impl Position {
             } else {
                 self.base.remove_piece(pc_to, to);
             }
-            let pc_from = if m.is_promotion() {
-                pc_to.to_demote()
-            } else {
-                pc_to
-            };
+            let pc_from = if m.is_promotion() { pc_to.to_demote() } else { pc_to };
             let from = m.from();
             self.base.put_piece(pc_from, from);
             if pc_to.is_king() {
@@ -2101,17 +1816,13 @@ impl Position {
                 #[cfg(feature = "kppt")]
                 {
                     let old_eval_index = EvalIndex(EvalIndex::new_board(pc_to).0 + to.0 as usize);
-                    let new_eval_index =
-                        EvalIndex(EvalIndex::new_board(pc_from).0 + from.0 as usize);
+                    let new_eval_index = EvalIndex(EvalIndex::new_board(pc_from).0 + from.0 as usize);
                     self.st_mut().changed_eval_index.old_index = old_eval_index;
                     self.st_mut().changed_eval_index.new_index = new_eval_index;
                     let eval_list_index = self.eval_index_to_eval_list_index.get(old_eval_index);
-                    self.eval_index_to_eval_list_index
-                        .set(new_eval_index, eval_list_index);
-                    self.eval_list
-                        .set(eval_list_index, Color::BLACK, new_eval_index);
-                    self.eval_list
-                        .set(eval_list_index, Color::WHITE, new_eval_index.inverse());
+                    self.eval_index_to_eval_list_index.set(new_eval_index, eval_list_index);
+                    self.eval_list.set(eval_list_index, Color::BLACK, new_eval_index);
+                    self.eval_list.set(eval_list_index, Color::WHITE, new_eval_index.inverse());
                 }
             }
         }
@@ -2143,8 +1854,7 @@ impl Position {
         self.base.side_to_move = self.side_to_move().inverse();
     }
     pub fn reserve_states(&mut self) {
-        self.states
-            .reserve(self.base.game_ply as usize + MAX_PLY as usize);
+        self.states.reserve(self.base.game_ply as usize + MAX_PLY as usize);
     }
     pub fn effect_bb_of_checker_where_king_cannot_escape(
         &self,
@@ -2158,26 +1868,19 @@ impl Position {
             PieceType::PAWN | PieceType::KNIGHT => Bitboard::ZERO,
             PieceType::LANCE => ATTACK_TABLE.lance.pseudo_attack(checker_color, checker_sq),
             PieceType::SILVER => ATTACK_TABLE.silver.attack(checker_color, checker_sq),
-            PieceType::GOLD
-            | PieceType::PRO_PAWN
-            | PieceType::PRO_LANCE
-            | PieceType::PRO_KNIGHT
-            | PieceType::PRO_SILVER => ATTACK_TABLE.gold.attack(checker_color, checker_sq),
-            PieceType::BISHOP => ATTACK_TABLE.bishop.magic(checker_sq).pseudo_attack(),
-            PieceType::HORSE => {
-                ATTACK_TABLE.bishop.magic(checker_sq).pseudo_attack()
-                    | ATTACK_TABLE.king.attack(checker_sq)
+            PieceType::GOLD | PieceType::PRO_PAWN | PieceType::PRO_LANCE | PieceType::PRO_KNIGHT | PieceType::PRO_SILVER => {
+                ATTACK_TABLE.gold.attack(checker_color, checker_sq)
             }
+            PieceType::BISHOP => ATTACK_TABLE.bishop.magic(checker_sq).pseudo_attack(),
+            PieceType::HORSE => ATTACK_TABLE.bishop.magic(checker_sq).pseudo_attack() | ATTACK_TABLE.king.attack(checker_sq),
             PieceType::ROOK => ATTACK_TABLE.rook.magic(checker_sq).pseudo_attack(),
             PieceType::DRAGON => {
                 let opp_king_color = checker_color.inverse();
                 let opp_king_sq = self.king_square(opp_king_color);
                 if Relation::new(opp_king_sq, checker_sq).is_diag() {
-                    ATTACK_TABLE.rook.magic(checker_sq).attack(occupied)
-                        | ATTACK_TABLE.king.attack(checker_sq)
+                    ATTACK_TABLE.rook.magic(checker_sq).attack(occupied) | ATTACK_TABLE.king.attack(checker_sq)
                 } else {
-                    ATTACK_TABLE.rook.magic(checker_sq).pseudo_attack()
-                        | ATTACK_TABLE.king.attack(checker_sq)
+                    ATTACK_TABLE.rook.magic(checker_sq).pseudo_attack() | ATTACK_TABLE.king.attack(checker_sq)
                 }
             }
             _ => unreachable!(),
@@ -2189,11 +1892,7 @@ impl Position {
         let target = self.empty_bb();
         // king neighbor
         let to_bb = target & ATTACK_TABLE.attack(PTT::PIECE_TYPE, them, ksq, &Bitboard::ALL);
-        fn bb_of_king_cannot_escape(
-            dropped_piece_type: PieceType,
-            dropped_color: Color,
-            dropped_sq: Square,
-        ) -> Bitboard {
+        fn bb_of_king_cannot_escape(dropped_piece_type: PieceType, dropped_color: Color, dropped_sq: Square) -> Bitboard {
             match dropped_piece_type {
                 PieceType::LANCE => ATTACK_TABLE.lance.pseudo_attack(dropped_color, dropped_sq),
                 PieceType::KNIGHT => Bitboard::ZERO,
@@ -2211,9 +1910,8 @@ impl Position {
                 // support not exist.
                 continue;
             }
-            let king_escape_candidates = ATTACK_TABLE.king.attack(ksq)
-                & !self.pieces_c(them)
-                & !bb_of_king_cannot_escape(PTT::PIECE_TYPE, us, to);
+            let king_escape_candidates =
+                ATTACK_TABLE.king.attack(ksq) & !self.pieces_c(them) & !bb_of_king_cannot_escape(PTT::PIECE_TYPE, us, to);
             for escape_sq in king_escape_candidates {
                 let tmp_occupied = self.occupied_bb() ^ Bitboard::square_mask(to);
                 if !self.attackers_to(us, escape_sq, &tmp_occupied).to_bool() {
@@ -2240,8 +1938,7 @@ impl Position {
         let ksq = self.king_square(them);
         if IsKnight::BOOL {
             let pc = Piece::new(us, PieceType::KNIGHT);
-            let from_bb =
-                self.pieces_cp(us, PieceType::KNIGHT) & Bitboard::proximity_check_mask(pc, ksq);
+            let from_bb = self.pieces_cp(us, PieceType::KNIGHT) & Bitboard::proximity_check_mask(pc, ksq);
             for from in from_bb {
                 if self.blockers_for_king(us).is_set(from) {
                     continue;
@@ -2259,34 +1956,23 @@ impl Position {
                         pos_base.exchange_pieces(pc, to);
                     }
                     pos_base.set_golds_bb();
-                    let (blockers, _pinners) =
-                        pos_base.slider_blockers_and_pinners(&pos_base.pieces_c(us), us, ksq);
-                    let king_escape_candidates =
-                        ATTACK_TABLE.king.attack(ksq) & !pos_base.pieces_c(them);
+                    let (blockers, _pinners) = pos_base.slider_blockers_and_pinners(&pos_base.pieces_c(us), us, ksq);
+                    let king_escape_candidates = ATTACK_TABLE.king.attack(ksq) & !pos_base.pieces_c(them);
                     for escape_sq in king_escape_candidates {
                         if !pos_base
-                            .attackers_to(
-                                us,
-                                escape_sq,
-                                &(pos_base.occupied_bb() ^ Bitboard::square_mask(ksq)),
-                            )
+                            .attackers_to(us, escape_sq, &(pos_base.occupied_bb() ^ Bitboard::square_mask(ksq)))
                             .to_bool()
                         {
                             continue 'to_loop;
                         }
                     }
-                    if self.blockers_for_king(them).is_set(from)
-                        && !is_aligned_and_sq2_is_not_between_sq0_and_sq1(from, to, ksq)
+                    if self.blockers_for_king(them).is_set(from) && !is_aligned_and_sq2_is_not_between_sq0_and_sq1(from, to, ksq)
                     {
                         // num of checkers is 2 => can't capture
                     } else {
-                        let capture_candidates =
-                            pos_base.attackers_to_except_king(them, to, &pos_base.occupied_bb());
+                        let capture_candidates = pos_base.attackers_to_except_king(them, to, &pos_base.occupied_bb());
                         for capture_sq in capture_candidates {
-                            if !blockers.is_set(capture_sq)
-                                || is_aligned_and_sq2_is_not_between_sq0_and_sq1(
-                                    capture_sq, to, ksq,
-                                )
+                            if !blockers.is_set(capture_sq) || is_aligned_and_sq2_is_not_between_sq0_and_sq1(capture_sq, to, ksq)
                             {
                                 continue 'to_loop;
                             }
@@ -2313,8 +1999,7 @@ impl Position {
                         pos_base.exchange_pieces(pc, to);
                     }
                     pos_base.set_golds_bb();
-                    let (blockers, _pinners) =
-                        pos_base.slider_blockers_and_pinners(&pos_base.pieces_c(us), us, ksq);
+                    let (blockers, _pinners) = pos_base.slider_blockers_and_pinners(&pos_base.pieces_c(us), us, ksq);
                     let pt = PieceType::new(pc);
                     let rank_from = Rank::new(from);
                     let rank_to = Rank::new(to);
@@ -2323,30 +2008,19 @@ impl Position {
                         // King can capture this.
                         continue;
                     }
-                    if pt.is_promotable()
-                        && (rank_from.is_opponent_field(us) || rank_to.is_opponent_field(us))
-                    {
+                    if pt.is_promotable() && (rank_from.is_opponent_field(us) || rank_to.is_opponent_field(us)) {
                         let attack = ATTACK_TABLE.attack(pt.to_promote(), us, to, &tmp_occupied);
                         if attack.is_set(ksq) {
                             pos_base.remove_piece(pc, to);
                             pos_base.put_piece(pc.to_promote(), to);
                             pos_base.set_golds_bb();
-                            let mut king_escape_candidates =
-                                ATTACK_TABLE.king.attack(ksq) & !pos_base.pieces_c(them);
-                            king_escape_candidates &= !self
-                                .effect_bb_of_checker_where_king_cannot_escape(
-                                    to,
-                                    pc.to_promote(),
-                                    &tmp_occupied,
-                                );
+                            let mut king_escape_candidates = ATTACK_TABLE.king.attack(ksq) & !pos_base.pieces_c(them);
+                            king_escape_candidates &=
+                                !self.effect_bb_of_checker_where_king_cannot_escape(to, pc.to_promote(), &tmp_occupied);
                             let mut can_escape = false;
                             for escape_sq in king_escape_candidates {
                                 if !pos_base
-                                    .attackers_to(
-                                        us,
-                                        escape_sq,
-                                        &(tmp_occupied ^ Bitboard::square_mask(ksq)),
-                                    )
+                                    .attackers_to(us, escape_sq, &(tmp_occupied ^ Bitboard::square_mask(ksq)))
                                     .to_bool()
                                 {
                                     can_escape = true;
@@ -2361,13 +2035,10 @@ impl Position {
                                     false
                                 } else {
                                     let mut can_capture = false;
-                                    let capture_candidates =
-                                        pos_base.attackers_to_except_king(them, to, &tmp_occupied);
+                                    let capture_candidates = pos_base.attackers_to_except_king(them, to, &tmp_occupied);
                                     for capture_sq in capture_candidates {
                                         if !blockers.is_set(capture_sq)
-                                            || is_aligned_and_sq2_is_not_between_sq0_and_sq1(
-                                                capture_sq, to, ksq,
-                                            )
+                                            || is_aligned_and_sq2_is_not_between_sq0_and_sq1(capture_sq, to, ksq)
                                         {
                                             can_capture = true;
                                             break;
@@ -2377,11 +2048,7 @@ impl Position {
                                 };
                                 if !can_capture
                                     && (!self.blockers_for_king(us).is_set(from)
-                                        || is_aligned_and_sq2_is_not_between_sq0_and_sq1(
-                                            from,
-                                            to,
-                                            self.king_square(us),
-                                        ))
+                                        || is_aligned_and_sq2_is_not_between_sq0_and_sq1(from, to, self.king_square(us)))
                                 {
                                     return Some(Move::new_promote(from, to, pc));
                                 }
@@ -2395,22 +2062,12 @@ impl Position {
                     {
                         let attack = ATTACK_TABLE.attack(pt, us, to, &tmp_occupied);
                         if attack.is_set(ksq) {
-                            let mut king_escape_candidates =
-                                ATTACK_TABLE.king.attack(ksq) & !pos_base.pieces_c(them);
-                            king_escape_candidates &= !self
-                                .effect_bb_of_checker_where_king_cannot_escape(
-                                    to,
-                                    pc,
-                                    &tmp_occupied,
-                                );
+                            let mut king_escape_candidates = ATTACK_TABLE.king.attack(ksq) & !pos_base.pieces_c(them);
+                            king_escape_candidates &= !self.effect_bb_of_checker_where_king_cannot_escape(to, pc, &tmp_occupied);
                             let mut can_escape = false;
                             for escape_sq in king_escape_candidates {
                                 if !pos_base
-                                    .attackers_to(
-                                        us,
-                                        escape_sq,
-                                        &(tmp_occupied ^ Bitboard::square_mask(ksq)),
-                                    )
+                                    .attackers_to(us, escape_sq, &(tmp_occupied ^ Bitboard::square_mask(ksq)))
                                     .to_bool()
                                 {
                                     can_escape = true;
@@ -2425,13 +2082,10 @@ impl Position {
                                     false
                                 } else {
                                     let mut can_capture = false;
-                                    let capture_candidates =
-                                        pos_base.attackers_to_except_king(them, to, &tmp_occupied);
+                                    let capture_candidates = pos_base.attackers_to_except_king(them, to, &tmp_occupied);
                                     for capture_sq in capture_candidates {
                                         if !blockers.is_set(capture_sq)
-                                            || is_aligned_and_sq2_is_not_between_sq0_and_sq1(
-                                                capture_sq, to, ksq,
-                                            )
+                                            || is_aligned_and_sq2_is_not_between_sq0_and_sq1(capture_sq, to, ksq)
                                         {
                                             can_capture = true;
                                             break;
@@ -2441,11 +2095,7 @@ impl Position {
                                 };
                                 if !can_capture
                                     && (!self.blockers_for_king(us).is_set(from)
-                                        || is_aligned_and_sq2_is_not_between_sq0_and_sq1(
-                                            from,
-                                            to,
-                                            self.king_square(us),
-                                        ))
+                                        || is_aligned_and_sq2_is_not_between_sq0_and_sq1(from, to, self.king_square(us)))
                                 {
                                     return Some(Move::new_unpromote(from, to, pc));
                                 }
@@ -2538,10 +2188,7 @@ impl Position {
                 if !self.empty_bb().is_set(sq) {
                     panic!("position is ng. line: {}", line!());
                 }
-            } else if !self
-                .pieces_cp(Color::new(pc), PieceType::new(pc))
-                .is_set(sq)
-            {
+            } else if !self.pieces_cp(Color::new(pc), PieceType::new(pc)).is_set(sq) {
                 panic!("position is ng. line: {}", line!());
             }
         }
@@ -2570,28 +2217,17 @@ impl Position {
         if self.pieces_cp(Color::WHITE, PieceType::KING).count_ones() != 1 {
             panic!("position is ng. line: {}", line!());
         }
-        if Square::ALL
-            .iter()
-            .filter(|&sq| self.piece_on(*sq) == Piece::B_KING)
-            .count()
-            != 1
-        {
+        if Square::ALL.iter().filter(|&sq| self.piece_on(*sq) == Piece::B_KING).count() != 1 {
             panic!("position is ng. line: {}", line!());
         }
-        if Square::ALL
-            .iter()
-            .filter(|&sq| self.piece_on(*sq) == Piece::W_KING)
-            .count()
-            != 1
-        {
+        if Square::ALL.iter().filter(|&sq| self.piece_on(*sq) == Piece::W_KING).count() != 1 {
             panic!("position is ng. line: {}", line!());
         }
 
         {
             let us = self.side_to_move();
             let them = us.inverse();
-            let attackers_to_king =
-                self.attackers_to(us, self.king_square(them), &self.occupied_bb());
+            let attackers_to_king = self.attackers_to(us, self.king_square(them), &self.occupied_bb());
             if attackers_to_king.to_bool() {
                 panic!("position is ng. line: {}", line!());
             }
@@ -2760,19 +2396,10 @@ fn test_position_slider_blockers() {
     match Position::new_from_sfen(sfen) {
         Ok(pos) => {
             assert_eq!(pos.to_sfen(), sfen.to_string());
-            let blockers_and_pinners_for_king = pos.slider_blockers_and_pinners(
-                &pos.pieces_c(Color::WHITE),
-                Color::WHITE,
-                pos.king_square(Color::BLACK),
-            );
-            assert_eq!(
-                blockers_and_pinners_for_king.0,
-                Bitboard::square_mask(Square::SQ53)
-            );
-            assert_eq!(
-                blockers_and_pinners_for_king.1,
-                Bitboard::square_mask(Square::SQ52)
-            );
+            let blockers_and_pinners_for_king =
+                pos.slider_blockers_and_pinners(&pos.pieces_c(Color::WHITE), Color::WHITE, pos.king_square(Color::BLACK));
+            assert_eq!(blockers_and_pinners_for_king.0, Bitboard::square_mask(Square::SQ53));
+            assert_eq!(blockers_and_pinners_for_king.1, Bitboard::square_mask(Square::SQ52));
         }
         Err(_) => assert_eq!("".to_string(), sfen.to_string()),
     }
@@ -2911,10 +2538,7 @@ fn test_position_gives_check() {
             "8k/9/9/9/9/9/9/9/K8 w Rr 1",
             vec![("R*9h", CHECK), ("R*9b", CHECK), ("R*8h", NOT_CHECK)],
         ),
-        (
-            "8k/9/9/9/9/9/9/8G/K7L b Rr 1",
-            vec![("1h2h", CHECK), ("1h1g", NOT_CHECK)],
-        ),
+        ("8k/9/9/9/9/9/9/8G/K7L b Rr 1", vec![("1h2h", CHECK), ("1h1g", NOT_CHECK)]),
     ];
     for (sfen, move_candidates) in array.iter() {
         let pos = Position::new_from_sfen(sfen).unwrap();
@@ -2933,12 +2557,10 @@ fn test_position_do_move() {
         (
             "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1",
             vec![
-                "7g7f", "3c3d", "2g2f", "5c5d", "5g5f", "2b8h+", "7i8h", "B*5g", "B*5c", "8b5b",
-                "5c8f+", "5a6b", "3i4h", "5g2d+", "8h7g", "5d5e", "2f2e", "2d3e", "5f5e", "5b5e",
-                "P*5g", "7a7b", "7g6f", "5e5a", "3g3f", "3e4d", "2e2d", "2c2d", "2h2d", "3a3b",
-                "5i6h", "6b7a", "4g4f", "P*5f", "5g5f", "5a5f", "4i5h", "P*2c", "2d2g", "5f5h+",
-                "6i5h", "G*8h", "8i7g", "8h9i", "7g6e", "L*5a", "P*5e", "5a5e", "5h4g", "P*5f",
-                "P*5h", "9i9h", "2g2h", "4a5b", "R*3a",
+                "7g7f", "3c3d", "2g2f", "5c5d", "5g5f", "2b8h+", "7i8h", "B*5g", "B*5c", "8b5b", "5c8f+", "5a6b", "3i4h",
+                "5g2d+", "8h7g", "5d5e", "2f2e", "2d3e", "5f5e", "5b5e", "P*5g", "7a7b", "7g6f", "5e5a", "3g3f", "3e4d", "2e2d",
+                "2c2d", "2h2d", "3a3b", "5i6h", "6b7a", "4g4f", "P*5f", "5g5f", "5a5f", "4i5h", "P*2c", "2d2g", "5f5h+", "6i5h",
+                "G*8h", "8i7g", "8h9i", "7g6e", "L*5a", "P*5e", "5a5e", "5h4g", "P*5f", "P*5h", "9i9h", "2g2h", "4a5b", "R*3a",
             ],
         ),
     ];
@@ -3025,8 +2647,7 @@ fn test_is_entering_king_win() {
             assert!(!pos.is_entering_king_win()); // less than 10 own pieces on the opponent field.
             let pos = Position::new_from_sfen("1p7/KRRBBPPPP/N8/N8/9/9/9/9/8k b 2P 1").unwrap();
             assert!(!pos.is_entering_king_win()); // less than 28 point.
-            let pos =
-                Position::new_from_sfen("1pGGGGS2/KRRB1PPPP/N8/N8/9/9/9/9/8k b 2P 1").unwrap();
+            let pos = Position::new_from_sfen("1pGGGGS2/KRRB1PPPP/N8/N8/9/9/9/9/8k b 2P 1").unwrap();
             assert!(!pos.is_entering_king_win()); // less than 28 point.
 
             let pos = Position::new_from_sfen("K8/9/9/9/9/9/nn7/krrbbpppp/1P7 w p 2").unwrap();
@@ -3057,8 +2678,7 @@ fn test_is_entering_king_win() {
             assert!(!pos.is_entering_king_win()); // not entering king
             let pos = Position::new_from_sfen("1p7/KRRBPPPPP/N8/9/9/9/9/9/8k b B2P 1").unwrap();
             assert!(!pos.is_entering_king_win()); // less than 10 own pieces on the opponent field.
-            let pos =
-                Position::new_from_sfen("1pGGGGS2/KR1BPPPPP/N8/N8/9/9/9/9/8k b BP 1").unwrap();
+            let pos = Position::new_from_sfen("1pGGGGS2/KR1BPPPPP/N8/N8/9/9/9/9/8k b BP 1").unwrap();
             assert!(!pos.is_entering_king_win()); // less than 28 point.
 
             let pos = Position::new_from_sfen("K8/9/9/9/9/9/nn7/krrbppppp/1P7 w b 2").unwrap();
@@ -3085,11 +2705,7 @@ fn test_is_entering_king_win() {
 fn test_pseudo_legal() {
     let sfen = "4k4/4l4/9/9/4K4/9/9/9/9 b - 1";
     let pos = Position::new_from_sfen(sfen).unwrap();
-    assert!(!pos.pseudo_legal::<SearchingType>(Move::new_unpromote(
-        Square::SQ55,
-        Square::SQ56,
-        Piece::B_KING
-    )));
+    assert!(!pos.pseudo_legal::<SearchingType>(Move::new_unpromote(Square::SQ55, Square::SQ56, Piece::B_KING)));
 }
 
 #[test]
@@ -3256,8 +2872,7 @@ fn test_mate_move_in_1ply() {
             assert!(m.is_some());
             assert_eq!(&m.unwrap().to_usi_string(), "2d2c+");
 
-            let sfen =
-                "+L7R/3pp4/1bSk5/+B2+n3n1/1K1L1s3/1PG6/2+ng1+n2P/2+p6/1+pL2+p1+p1 b R3P2g2sl7p 1";
+            let sfen = "+L7R/3pp4/1bSk5/+B2+n3n1/1K1L1s3/1PG6/2+ng1+n2P/2+p6/1+pL2+p1+p1 b R3P2g2sl7p 1";
             let pos = Position::new_from_sfen(sfen).unwrap();
             let m = pos.mate_move_in_1ply();
             assert!(m.is_none());
@@ -3295,11 +2910,8 @@ fn test_effect_bb_of_checker_where_king_cannot_escape() {
         .spawn(|| {
             let sfen = "4k4/4l4/9/9/4K4/9/9/9/9 b - 1";
             let pos = Position::new_from_sfen(sfen).unwrap();
-            let bb = pos.effect_bb_of_checker_where_king_cannot_escape(
-                Square::SQ52,
-                pos.piece_on(Square::SQ52),
-                &pos.occupied_bb(),
-            );
+            let bb =
+                pos.effect_bb_of_checker_where_king_cannot_escape(Square::SQ52, pos.piece_on(Square::SQ52), &pos.occupied_bb());
             assert!(bb.is_set(Square::SQ56));
             assert!(bb.is_set(Square::SQ54));
         })

@@ -18,10 +18,7 @@ impl BitOr for Bitboard {
 
     fn bitor(self, other: Bitboard) -> Bitboard {
         Bitboard {
-            v: [
-                self.value(0) | other.value(0),
-                self.value(1) | other.value(1),
-            ],
+            v: [self.value(0) | other.value(0), self.value(1) | other.value(1)],
         }
     }
 }
@@ -31,10 +28,7 @@ impl BitAnd for Bitboard {
 
     fn bitand(self, other: Bitboard) -> Bitboard {
         Bitboard {
-            v: [
-                self.value(0) & other.value(0),
-                self.value(1) & other.value(1),
-            ],
+            v: [self.value(0) & other.value(0), self.value(1) & other.value(1)],
         }
     }
 }
@@ -44,10 +38,7 @@ impl BitXor for Bitboard {
 
     fn bitxor(self, other: Bitboard) -> Bitboard {
         Bitboard {
-            v: [
-                self.value(0) ^ other.value(0),
-                self.value(1) ^ other.value(1),
-            ],
+            v: [self.value(0) ^ other.value(0), self.value(1) ^ other.value(1)],
         }
     }
 }
@@ -385,20 +376,12 @@ impl Bitboard {
     pub fn in_front_mask(c: Color, r: Rank) -> Bitboard {
         debug_assert!(0 <= c.0 && c.0 < Color::NUM as i32);
         debug_assert!(0 <= r.0 && r.0 < Rank::NUM as i32);
-        unsafe {
-            *IN_FRONT_MASKS
-                .get_unchecked(r.0 as usize)
-                .get_unchecked(c.0 as usize)
-        }
+        unsafe { *IN_FRONT_MASKS.get_unchecked(r.0 as usize).get_unchecked(c.0 as usize) }
     }
     pub fn between_mask(sq0: Square, sq1: Square) -> Bitboard {
         debug_assert!(0 <= sq0.0 && sq0.0 < Square::NUM as i32);
         debug_assert!(0 <= sq1.0 && sq1.0 < Square::NUM as i32);
-        unsafe {
-            *BETWEEN_MASK
-                .get_unchecked(sq0.0 as usize)
-                .get_unchecked(sq1.0 as usize)
-        }
+        unsafe { *BETWEEN_MASK.get_unchecked(sq0.0 as usize).get_unchecked(sq1.0 as usize) }
     }
     pub fn proximity_check_mask(pc_checking: Piece, ksq_checked: Square) -> Bitboard {
         debug_assert!(0 <= pc_checking.0 && pc_checking.0 < Piece::NUM as i32);
@@ -437,113 +420,104 @@ impl std::fmt::Display for Bitboard {
     }
 }
 
-static IN_FRONT_MASKS: once_cell::sync::Lazy<[[Bitboard; Color::NUM]; Rank::NUM]> =
-    once_cell::sync::Lazy::new(|| {
-        let mut bbss: [[Bitboard; Color::NUM]; Rank::NUM] =
-            [[Bitboard::ZERO; Color::NUM]; Rank::NUM];
-        for r in Rank::ALL.iter() {
-            for c in Color::ALL.iter() {
-                let rab = RankAsBlack::new(*c, *r);
-                for r_tmp in Rank::ALL.iter() {
-                    if r_tmp.is_in_front_of(*c, rab) {
-                        bbss[r.0 as usize][c.0 as usize] |= Bitboard::rank_mask(*r_tmp);
-                    }
+static IN_FRONT_MASKS: once_cell::sync::Lazy<[[Bitboard; Color::NUM]; Rank::NUM]> = once_cell::sync::Lazy::new(|| {
+    let mut bbss: [[Bitboard; Color::NUM]; Rank::NUM] = [[Bitboard::ZERO; Color::NUM]; Rank::NUM];
+    for r in Rank::ALL.iter() {
+        for c in Color::ALL.iter() {
+            let rab = RankAsBlack::new(*c, *r);
+            for r_tmp in Rank::ALL.iter() {
+                if r_tmp.is_in_front_of(*c, rab) {
+                    bbss[r.0 as usize][c.0 as usize] |= Bitboard::rank_mask(*r_tmp);
                 }
             }
         }
-        bbss
-    });
-static BETWEEN_MASK: once_cell::sync::Lazy<[[Bitboard; Square::NUM]; Square::NUM]> =
-    once_cell::sync::Lazy::new(|| {
-        let mut bbss: [[Bitboard; Square::NUM]; Square::NUM] =
-            [[Bitboard::ZERO; Square::NUM]; Square::NUM];
-        for sq0 in Square::ALL.iter() {
-            for sq1 in Square::ALL.iter() {
-                let occupied = Bitboard::square_mask(*sq0) | Bitboard::square_mask(*sq1);
-                let deltas: Vec<Square> = match Relation::new(*sq0, *sq1) {
-                    Relation::MISC => vec![],
-                    Relation::FILE_NS | Relation::FILE_SN => vec![Square::DELTA_N, Square::DELTA_S],
-                    Relation::RANK_EW | Relation::RANK_WE => vec![Square::DELTA_E, Square::DELTA_W],
-                    Relation::DIAG_NESW | Relation::DIAG_SWNE => {
-                        vec![Square::DELTA_NE, Square::DELTA_SW]
-                    }
-                    Relation::DIAG_NWSE | Relation::DIAG_SENW => {
-                        vec![Square::DELTA_NW, Square::DELTA_SE]
-                    }
-                    _ => unreachable!(),
-                };
-                bbss[sq0.0 as usize][sq1.0 as usize] = sliding_attacks(&deltas, *sq0, &occupied)
-                    & sliding_attacks(&deltas, *sq1, &occupied);
-            }
+    }
+    bbss
+});
+static BETWEEN_MASK: once_cell::sync::Lazy<[[Bitboard; Square::NUM]; Square::NUM]> = once_cell::sync::Lazy::new(|| {
+    let mut bbss: [[Bitboard; Square::NUM]; Square::NUM] = [[Bitboard::ZERO; Square::NUM]; Square::NUM];
+    for sq0 in Square::ALL.iter() {
+        for sq1 in Square::ALL.iter() {
+            let occupied = Bitboard::square_mask(*sq0) | Bitboard::square_mask(*sq1);
+            let deltas: Vec<Square> = match Relation::new(*sq0, *sq1) {
+                Relation::MISC => vec![],
+                Relation::FILE_NS | Relation::FILE_SN => vec![Square::DELTA_N, Square::DELTA_S],
+                Relation::RANK_EW | Relation::RANK_WE => vec![Square::DELTA_E, Square::DELTA_W],
+                Relation::DIAG_NESW | Relation::DIAG_SWNE => {
+                    vec![Square::DELTA_NE, Square::DELTA_SW]
+                }
+                Relation::DIAG_NWSE | Relation::DIAG_SENW => {
+                    vec![Square::DELTA_NW, Square::DELTA_SE]
+                }
+                _ => unreachable!(),
+            };
+            bbss[sq0.0 as usize][sq1.0 as usize] =
+                sliding_attacks(&deltas, *sq0, &occupied) & sliding_attacks(&deltas, *sq1, &occupied);
         }
-        bbss
-    });
-static PROXIMITY_CHECK_MASK: once_cell::sync::Lazy<[[Bitboard; Square::NUM]; Piece::NUM]> =
-    once_cell::sync::Lazy::new(|| {
-        let mut bbss: [[Bitboard; Square::NUM]; Piece::NUM] =
-            [[Bitboard::ZERO; Square::NUM]; Piece::NUM];
-        for &ksq in Square::ALL.iter() {
-            for &pc in &[
-                Piece::B_PAWN,
-                Piece::W_PAWN,
-                Piece::B_LANCE,
-                Piece::W_LANCE,
-                Piece::B_KNIGHT,
-                Piece::W_KNIGHT,
-                Piece::B_SILVER,
-                Piece::W_SILVER,
-                Piece::B_GOLD,
-                Piece::W_GOLD,
-                Piece::B_BISHOP,
-                Piece::W_BISHOP,
-                Piece::B_ROOK,
-                Piece::W_ROOK,
-                Piece::B_PRO_PAWN,
-                Piece::W_PRO_PAWN,
-                Piece::B_PRO_LANCE,
-                Piece::W_PRO_LANCE,
-                Piece::B_PRO_KNIGHT,
-                Piece::W_PRO_KNIGHT,
-                Piece::B_PRO_SILVER,
-                Piece::W_PRO_SILVER,
-                Piece::B_HORSE,
-                Piece::W_HORSE,
-                Piece::B_DRAGON,
-                Piece::W_DRAGON,
-            ] {
-                let pt = PieceType::new(pc);
-                let us = Color::new(pc);
-                for &from in Square::ALL.iter() {
-                    if from == ksq {
-                        continue;
+    }
+    bbss
+});
+static PROXIMITY_CHECK_MASK: once_cell::sync::Lazy<[[Bitboard; Square::NUM]; Piece::NUM]> = once_cell::sync::Lazy::new(|| {
+    let mut bbss: [[Bitboard; Square::NUM]; Piece::NUM] = [[Bitboard::ZERO; Square::NUM]; Piece::NUM];
+    for &ksq in Square::ALL.iter() {
+        for &pc in &[
+            Piece::B_PAWN,
+            Piece::W_PAWN,
+            Piece::B_LANCE,
+            Piece::W_LANCE,
+            Piece::B_KNIGHT,
+            Piece::W_KNIGHT,
+            Piece::B_SILVER,
+            Piece::W_SILVER,
+            Piece::B_GOLD,
+            Piece::W_GOLD,
+            Piece::B_BISHOP,
+            Piece::W_BISHOP,
+            Piece::B_ROOK,
+            Piece::W_ROOK,
+            Piece::B_PRO_PAWN,
+            Piece::W_PRO_PAWN,
+            Piece::B_PRO_LANCE,
+            Piece::W_PRO_LANCE,
+            Piece::B_PRO_KNIGHT,
+            Piece::W_PRO_KNIGHT,
+            Piece::B_PRO_SILVER,
+            Piece::W_PRO_SILVER,
+            Piece::B_HORSE,
+            Piece::W_HORSE,
+            Piece::B_DRAGON,
+            Piece::W_DRAGON,
+        ] {
+            let pt = PieceType::new(pc);
+            let us = Color::new(pc);
+            for &from in Square::ALL.iter() {
+                if from == ksq {
+                    continue;
+                }
+                let to_bb = ATTACK_TABLE.attack(pt, us, from, &Bitboard::square_mask(ksq));
+                for to in to_bb {
+                    // use Bitboard::ALL as occupied bitboard. We allow only proximity check.
+                    let check_attack_bb = ATTACK_TABLE.attack(pt, us, to, &Bitboard::ALL);
+                    if check_attack_bb.is_set(ksq) {
+                        bbss[pc.0 as usize][ksq.0 as usize].set(from);
+                        break;
                     }
-                    let to_bb = ATTACK_TABLE.attack(pt, us, from, &Bitboard::square_mask(ksq));
-                    for to in to_bb {
+                    let rank_from = Rank::new(from);
+                    let rank_to = Rank::new(to);
+                    if pt.is_promotable() && (rank_from.is_opponent_field(us) || rank_to.is_opponent_field(us)) {
                         // use Bitboard::ALL as occupied bitboard. We allow only proximity check.
-                        let check_attack_bb = ATTACK_TABLE.attack(pt, us, to, &Bitboard::ALL);
+                        let check_attack_bb = ATTACK_TABLE.attack(pt.to_promote(), us, to, &Bitboard::ALL);
                         if check_attack_bb.is_set(ksq) {
                             bbss[pc.0 as usize][ksq.0 as usize].set(from);
                             break;
                         }
-                        let rank_from = Rank::new(from);
-                        let rank_to = Rank::new(to);
-                        if pt.is_promotable()
-                            && (rank_from.is_opponent_field(us) || rank_to.is_opponent_field(us))
-                        {
-                            // use Bitboard::ALL as occupied bitboard. We allow only proximity check.
-                            let check_attack_bb =
-                                ATTACK_TABLE.attack(pt.to_promote(), us, to, &Bitboard::ALL);
-                            if check_attack_bb.is_set(ksq) {
-                                bbss[pc.0 as usize][ksq.0 as usize].set(from);
-                                break;
-                            }
-                        }
                     }
                 }
             }
         }
-        bbss
-    });
+    }
+    bbss
+});
 
 fn sliding_attacks(deltas: &[Square], sq: Square, occupied: &Bitboard) -> Bitboard {
     let mut bb = Bitboard::ZERO;
@@ -551,8 +525,7 @@ fn sliding_attacks(deltas: &[Square], sq: Square, occupied: &Bitboard) -> Bitboa
         let mut sq_prev = sq;
         let mut sq_opt = sq.checked_add(*delta);
         while let Some(sq_tmp) = sq_opt {
-            if (File::new(sq_prev).0 - File::new(sq_tmp).0).abs() <= 1
-                && (Rank::new(sq_prev).0 - Rank::new(sq_tmp).0).abs() <= 1
+            if (File::new(sq_prev).0 - File::new(sq_tmp).0).abs() <= 1 && (Rank::new(sq_prev).0 - Rank::new(sq_tmp).0).abs() <= 1
             {
                 bb.set(sq_tmp);
                 if occupied.is_set(sq_tmp) {
@@ -614,9 +587,9 @@ impl<'a> Magic<'a> {
 
     pub fn attack(&self, occupied: &Bitboard) -> Bitboard {
         unsafe {
-            *self.attacks.get_unchecked(
-                ((self.mask & *occupied).merge().wrapping_mul(self.magic) >> self.shift) as usize,
-            )
+            *self
+                .attacks
+                .get_unchecked(((self.mask & *occupied).merge().wrapping_mul(self.magic) >> self.shift) as usize)
         }
     }
 
@@ -626,9 +599,7 @@ impl<'a> Magic<'a> {
     }
 }
 
-pub struct LanceAttackTable(
-    [[[Bitboard; LanceAttackTable::MASK_TABLE_NUM as usize]; Color::NUM]; Square::NUM],
-);
+pub struct LanceAttackTable([[[Bitboard; LanceAttackTable::MASK_TABLE_NUM as usize]; Color::NUM]; Square::NUM]);
 
 impl LanceAttackTable {
     const MASK_BITS: u32 = (File::NUM - 2) as u32;
@@ -660,8 +631,7 @@ impl LanceAttackTable {
         ret
     }
     fn new() -> LanceAttackTable {
-        let mut ret =
-            LanceAttackTable([[[Bitboard::ZERO; Self::MASK_TABLE_NUM]; Color::NUM]; Square::NUM]);
+        let mut ret = LanceAttackTable([[[Bitboard::ZERO; Self::MASK_TABLE_NUM]; Color::NUM]; Square::NUM]);
         for sq in Square::ALL.iter() {
             for c in Color::ALL.iter() {
                 let mask = Self::attack_mask(*sq);
@@ -672,8 +642,7 @@ impl LanceAttackTable {
                 };
                 for i in 0..(Self::MASK_TABLE_NUM) {
                     let occupied = Self::index_to_occupied(i, Self::MASK_BITS, &mask);
-                    ret.0[sq.0 as usize][c.0 as usize][i as usize] =
-                        sliding_attacks(&deltas, *sq, &occupied);
+                    ret.0[sq.0 as usize][c.0 as usize][i as usize] = sliding_attacks(&deltas, *sq, &occupied);
                 }
             }
         }
@@ -682,9 +651,8 @@ impl LanceAttackTable {
     pub fn attack(&self, c: Color, sq: Square, occupied: &Bitboard) -> Bitboard {
         let part = Bitboard::part(sq);
         debug_assert!(0 <= sq.0 && (sq.0 as usize) < Self::SLIDE.len());
-        let index = ((occupied.value(part) >> unsafe { Self::SLIDE.get_unchecked(sq.0 as usize) })
-            as usize)
-            & (Self::MASK_TABLE_NUM - 1);
+        let index =
+            ((occupied.value(part) >> unsafe { Self::SLIDE.get_unchecked(sq.0 as usize) }) as usize) & (Self::MASK_TABLE_NUM - 1);
         debug_assert!(0 <= c.0 && (c.0 as usize) < self.0[0].len());
         debug_assert!(index < self.0[0][0].len());
         unsafe {
@@ -714,15 +682,9 @@ pub struct MagicTable<'a> {
 }
 
 impl<'a> MagicTable<'a> {
-    fn new(
-        table_num: usize,
-        shifts: &[i8; Square::NUM],
-        magic_nums: &[u64; Square::NUM],
-        deltas: &[Square],
-    ) -> MagicTable<'a> {
+    fn new(table_num: usize, shifts: &[i8; Square::NUM], magic_nums: &[u64; Square::NUM], deltas: &[Square]) -> MagicTable<'a> {
         let mut attacks = vec![Bitboard::ZERO; table_num];
-        let mut magics: [Magic<'a>; Square::NUM] =
-            unsafe { std::mem::MaybeUninit::uninit().assume_init() };
+        let mut magics: [Magic<'a>; Square::NUM] = unsafe { std::mem::MaybeUninit::uninit().assume_init() };
         let mut count = 0;
         for sq in Square::ALL.iter() {
             let mask = Magic::attack_mask(deltas, *sq);
@@ -732,11 +694,8 @@ impl<'a> MagicTable<'a> {
             };
             for index in 0..(1 << mask.count_ones()) {
                 let occupied = Magic::index_to_occupied(index, mask.count_ones(), &mask);
-                slice_attacks[Magic::occupied_to_index(
-                    &occupied,
-                    magic_nums[sq.0 as usize],
-                    shifts[sq.0 as usize] as u32,
-                )] = sliding_attacks(deltas, *sq, &occupied);
+                slice_attacks[Magic::occupied_to_index(&occupied, magic_nums[sq.0 as usize], shifts[sq.0 as usize] as u32)] =
+                    sliding_attacks(deltas, *sq, &occupied);
             }
             count += slice_attacks.len();
             let tmp_magic: Magic = Magic {
@@ -778,8 +737,7 @@ impl KingAttackTable {
         for sq in Square::ALL.iter() {
             for delta in deltas.iter() {
                 if let Some(sq_tmp) = sq.checked_add(*delta) {
-                    if (File::new(*sq).0 - File::new(sq_tmp).0).abs() <= 1
-                        && (Rank::new(*sq).0 - Rank::new(sq_tmp).0).abs() <= 1
+                    if (File::new(*sq).0 - File::new(sq_tmp).0).abs() <= 1 && (Rank::new(*sq).0 - Rank::new(sq_tmp).0).abs() <= 1
                     {
                         ret.0[sq.0 as usize].set(sq_tmp);
                     }
@@ -853,12 +811,7 @@ impl PieceAttackTable {
     pub fn attack(&self, c: Color, sq: Square) -> Bitboard {
         debug_assert!(0 <= sq.0 && (sq.0 as usize) < self.0.len());
         debug_assert!(0 <= c.0 && (c.0 as usize) < self.0[0].len());
-        unsafe {
-            *self
-                .0
-                .get_unchecked(sq.0 as usize)
-                .get_unchecked(c.0 as usize)
-        }
+        unsafe { *self.0.get_unchecked(sq.0 as usize).get_unchecked(c.0 as usize) }
     }
 }
 
@@ -874,18 +827,8 @@ pub struct AttackTable<'a> {
 }
 
 impl<'a> AttackTable<'a> {
-    const BISHOP_DELTAS: [Square; 4] = [
-        Square::DELTA_NE,
-        Square::DELTA_SE,
-        Square::DELTA_SW,
-        Square::DELTA_NW,
-    ];
-    const ROOK_DELTAS: [Square; 4] = [
-        Square::DELTA_N,
-        Square::DELTA_E,
-        Square::DELTA_S,
-        Square::DELTA_W,
-    ];
+    const BISHOP_DELTAS: [Square; 4] = [Square::DELTA_NE, Square::DELTA_SE, Square::DELTA_SW, Square::DELTA_NW];
+    const ROOK_DELTAS: [Square; 4] = [Square::DELTA_N, Square::DELTA_E, Square::DELTA_S, Square::DELTA_W];
 
     const BISHOP_ATTACK_TABLE_NUM: usize = 20224;
     const ROOK_ATTACK_TABLE_NUM: usize = 512_000; // if using pext, 512000 -> 4951616
@@ -982,11 +925,9 @@ impl<'a> AttackTable<'a> {
             PieceType::SILVER => self.silver.attack(c, sq),
             PieceType::BISHOP => self.bishop.magic(sq).attack(occupied),
             PieceType::ROOK => self.rook.magic(sq).attack(occupied),
-            PieceType::GOLD
-            | PieceType::PRO_PAWN
-            | PieceType::PRO_LANCE
-            | PieceType::PRO_KNIGHT
-            | PieceType::PRO_SILVER => self.gold.attack(c, sq),
+            PieceType::GOLD | PieceType::PRO_PAWN | PieceType::PRO_LANCE | PieceType::PRO_KNIGHT | PieceType::PRO_SILVER => {
+                self.gold.attack(c, sq)
+            }
             PieceType::KING => self.king.attack(sq),
             PieceType::HORSE => self.bishop.magic(sq).attack(occupied) | self.king.attack(sq),
             PieceType::DRAGON => self.rook.magic(sq).attack(occupied) | self.king.attack(sq),
@@ -995,39 +936,26 @@ impl<'a> AttackTable<'a> {
     }
 }
 
-pub static ATTACK_TABLE: once_cell::sync::Lazy<AttackTable<'static>> =
-    once_cell::sync::Lazy::new(|| AttackTable {
-        pawn: PieceAttackTable::new(&[
-            &PieceAttackTable::BLACK_PAWN_DELTAS,
-            &PieceAttackTable::WHITE_PAWN_DELTAS,
-        ]),
-        lance: LanceAttackTable::new(),
-        knight: PieceAttackTable::new(&[
-            &PieceAttackTable::BLACK_KNIGHT_DELTAS,
-            &PieceAttackTable::WHITE_KNIGHT_DELTAS,
-        ]),
-        silver: PieceAttackTable::new(&[
-            &PieceAttackTable::BLACK_SILVER_DELTAS,
-            &PieceAttackTable::WHITE_SILVER_DELTAS,
-        ]),
-        gold: PieceAttackTable::new(&[
-            &PieceAttackTable::BLACK_GOLD_DELTAS,
-            &PieceAttackTable::WHITE_GOLD_DELTAS,
-        ]),
-        king: KingAttackTable::new(),
-        bishop: MagicTable::new(
-            AttackTable::BISHOP_ATTACK_TABLE_NUM,
-            &AttackTable::BISHOP_SHIFT_BITS,
-            &AttackTable::BISHOP_MAGICS,
-            &AttackTable::BISHOP_DELTAS,
-        ),
-        rook: MagicTable::new(
-            AttackTable::ROOK_ATTACK_TABLE_NUM,
-            &AttackTable::ROOK_SHIFT_BITS,
-            &AttackTable::ROOK_MAGICS,
-            &AttackTable::ROOK_DELTAS,
-        ),
-    });
+pub static ATTACK_TABLE: once_cell::sync::Lazy<AttackTable<'static>> = once_cell::sync::Lazy::new(|| AttackTable {
+    pawn: PieceAttackTable::new(&[&PieceAttackTable::BLACK_PAWN_DELTAS, &PieceAttackTable::WHITE_PAWN_DELTAS]),
+    lance: LanceAttackTable::new(),
+    knight: PieceAttackTable::new(&[&PieceAttackTable::BLACK_KNIGHT_DELTAS, &PieceAttackTable::WHITE_KNIGHT_DELTAS]),
+    silver: PieceAttackTable::new(&[&PieceAttackTable::BLACK_SILVER_DELTAS, &PieceAttackTable::WHITE_SILVER_DELTAS]),
+    gold: PieceAttackTable::new(&[&PieceAttackTable::BLACK_GOLD_DELTAS, &PieceAttackTable::WHITE_GOLD_DELTAS]),
+    king: KingAttackTable::new(),
+    bishop: MagicTable::new(
+        AttackTable::BISHOP_ATTACK_TABLE_NUM,
+        &AttackTable::BISHOP_SHIFT_BITS,
+        &AttackTable::BISHOP_MAGICS,
+        &AttackTable::BISHOP_DELTAS,
+    ),
+    rook: MagicTable::new(
+        AttackTable::ROOK_ATTACK_TABLE_NUM,
+        &AttackTable::ROOK_SHIFT_BITS,
+        &AttackTable::ROOK_MAGICS,
+        &AttackTable::ROOK_DELTAS,
+    ),
+});
 
 //#[test]
 //fn test_bitboard_union() {
@@ -1063,12 +991,7 @@ fn test_bitboard_part() {
 
 #[test]
 fn test_sliding_attacks() {
-    let v = vec![
-        Square::DELTA_N,
-        Square::DELTA_E,
-        Square::DELTA_S,
-        Square::DELTA_W,
-    ];
+    let v = vec![Square::DELTA_N, Square::DELTA_E, Square::DELTA_S, Square::DELTA_W];
     let mut occupied = Bitboard::ZERO;
     occupied.set(Square::SQ46);
     let bb = sliding_attacks(&v, Square::SQ44, &occupied);
@@ -1082,12 +1005,7 @@ fn test_sliding_attacks() {
     assert_eq!(bb.is_set(Square::SQ71), false);
     assert_eq!(bb.is_set(Square::SQ17), false);
 
-    let v = vec![
-        Square::DELTA_NE,
-        Square::DELTA_SE,
-        Square::DELTA_SW,
-        Square::DELTA_NW,
-    ];
+    let v = vec![Square::DELTA_NE, Square::DELTA_SE, Square::DELTA_SW, Square::DELTA_NW];
     let mut occupied = Bitboard::ZERO;
     occupied.set(Square::SQ66);
     let bb = sliding_attacks(&v, Square::SQ44, &occupied);
@@ -1114,22 +1032,14 @@ fn test_opponent_field_mask() {
     for us in Color::ALL.iter() {
         for sq in Square::ALL.iter() {
             let rank = Rank::new(*sq);
-            assert_eq!(
-                rank.is_opponent_field(*us),
-                Bitboard::opponent_field_mask(*us).is_set(*sq)
-            );
+            assert_eq!(rank.is_opponent_field(*us), Bitboard::opponent_field_mask(*us).is_set(*sq));
         }
     }
 }
 
 #[test]
 fn test_block_bits() {
-    let v = vec![
-        Square::DELTA_N,
-        Square::DELTA_E,
-        Square::DELTA_S,
-        Square::DELTA_W,
-    ];
+    let v = vec![Square::DELTA_N, Square::DELTA_E, Square::DELTA_S, Square::DELTA_W];
     let mut occupied = Bitboard::ZERO;
     occupied.set(Square::SQ46);
     let bb = sliding_attacks(&v, Square::SQ11, &occupied);
@@ -1179,9 +1089,7 @@ fn test_lance_attack() {
         .spawn(|| {
             let mut occupied = Bitboard::ZERO;
             occupied.set(Square::SQ52);
-            let attack = ATTACK_TABLE
-                .lance
-                .attack(Color::BLACK, Square::SQ55, &occupied);
+            let attack = ATTACK_TABLE.lance.attack(Color::BLACK, Square::SQ55, &occupied);
             assert_eq!(attack.is_set(Square::SQ55), false);
             assert_eq!(attack.is_set(Square::SQ54), true);
             assert_eq!(attack.is_set(Square::SQ52), true);
@@ -1189,9 +1097,7 @@ fn test_lance_attack() {
 
             let mut occupied = Bitboard::ZERO;
             occupied.set(Square::SQ58);
-            let attack = ATTACK_TABLE
-                .lance
-                .attack(Color::WHITE, Square::SQ55, &occupied);
+            let attack = ATTACK_TABLE.lance.attack(Color::WHITE, Square::SQ55, &occupied);
             assert_eq!(attack.is_set(Square::SQ55), false);
             assert_eq!(attack.is_set(Square::SQ56), true);
             assert_eq!(attack.is_set(Square::SQ58), true);
@@ -1324,8 +1230,8 @@ fn test_between_mask() {
                         let occupied = Bitboard::square_mask(*sq0) | Bitboard::square_mask(*sq1);
                         let attack;
                         if relation.is_cross() {
-                            attack = ATTACK_TABLE.rook.magic(*sq0).attack(&occupied)
-                                & ATTACK_TABLE.rook.magic(*sq1).attack(&occupied);
+                            attack =
+                                ATTACK_TABLE.rook.magic(*sq0).attack(&occupied) & ATTACK_TABLE.rook.magic(*sq1).attack(&occupied);
                         } else if relation.is_diag() {
                             attack = ATTACK_TABLE.bishop.magic(*sq0).attack(&occupied)
                                 & ATTACK_TABLE.bishop.magic(*sq1).attack(&occupied);

@@ -86,29 +86,17 @@ impl UsiOptions {
 
         // The following are all options.
         options.insert(Self::BOOK_ENABLE, UsiOptionValue::check(false));
-        options.insert(
-            Self::BOOK_FILE,
-            UsiOptionValue::filename("book/20191216/book.json"),
-        );
-        options.insert(
-            Self::BYOYOMI_MARGIN,
-            UsiOptionValue::spin(500, 0, i64::max_value()),
-        );
+        options.insert(Self::BOOK_FILE, UsiOptionValue::filename("book/20191216/book.json"));
+        options.insert(Self::BYOYOMI_MARGIN, UsiOptionValue::spin(500, 0, i64::max_value()));
         options.insert(Self::CLEAR_HASH, UsiOptionValue::Button);
         options.insert(Self::EVAL_DIR, UsiOptionValue::string("eval/20190617"));
         #[cfg(feature = "kppt")]
         options.insert(Self::EVAL_HASH, UsiOptionValue::spin(256, 1, 1024 * 1024));
-        options.insert(
-            Self::MINIMUM_THINKING_TIME,
-            UsiOptionValue::spin(20, 0, 5000),
-        );
+        options.insert(Self::MINIMUM_THINKING_TIME, UsiOptionValue::spin(20, 0, 5000));
         options.insert(Self::MULTI_PV, UsiOptionValue::spin(1, 1, 500));
         options.insert(Self::SLOW_MOVER, UsiOptionValue::spin(84, 10, 1000));
         options.insert(Self::THREADS, UsiOptionValue::spin(1, 1, 8192));
-        options.insert(
-            Self::TIME_MARGIN,
-            UsiOptionValue::spin(500, 0, i64::max_value()),
-        );
+        options.insert(Self::TIME_MARGIN, UsiOptionValue::spin(500, 0, i64::max_value()));
         options.insert(Self::USI_HASH, UsiOptionValue::spin(256, 1, 1024 * 1024));
         options.insert(Self::USI_PONDER, UsiOptionValue::check(true));
 
@@ -157,9 +145,7 @@ impl UsiOptions {
                     *is_ready = false;
                 }
             }
-            Some(UsiOptionValue::Spin {
-                current, min, max, ..
-            }) => match value.parse::<i64>() {
+            Some(UsiOptionValue::Spin { current, min, max, .. }) => match value.parse::<i64>() {
                 Ok(n) => {
                     let n = std::cmp::min(n, *max);
                     let n = std::cmp::max(n, *min);
@@ -188,10 +174,7 @@ impl UsiOptions {
                 "false" => *current = false,
                 _ => println!("Error: illegal option value: {}", value),
             },
-            Some(UsiOptionValue::Button) => println!(
-                r#"Error: The option "{}" is button type. You can't set value to it."#,
-                key
-            ),
+            Some(UsiOptionValue::Button) => println!(r#"Error: The option "{}" is button type. You can't set value to it."#, key),
         }
     }
     pub fn to_usi_string(&self) -> String {
@@ -205,12 +188,9 @@ impl UsiOptions {
                 UsiOptionValue::Filename { default, .. } => {
                     format!("option name {} type filename default {}", key, default)
                 }
-                UsiOptionValue::Spin {
-                    default, min, max, ..
-                } => format!(
-                    "option name {} type spin default {} min {} max {}",
-                    key, default, min, max
-                ),
+                UsiOptionValue::Spin { default, min, max, .. } => {
+                    format!("option name {} type spin default {} min {} max {}", key, default, min, max)
+                }
                 UsiOptionValue::Check { default, .. } => {
                     format!("option name {} type check default {}", key, default)
                 }

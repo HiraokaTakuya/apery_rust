@@ -1,10 +1,6 @@
 #![cfg_attr(
     feature = "cargo-clippy",
-    allow(
-        clippy::cognitive_complexity,
-        clippy::too_many_arguments,
-        clippy::new_without_default
-    )
+    allow(clippy::cognitive_complexity, clippy::too_many_arguments, clippy::new_without_default)
 )]
 #[macro_use]
 extern crate custom_derive;

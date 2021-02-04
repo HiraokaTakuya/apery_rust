@@ -27,27 +27,16 @@ fn go(
     let mut limits = LimitsType::new();
     limits.start_time = Some(std::time::Instant::now());
     let mut iter = args.iter();
-    fn next_num<T: std::str::FromStr>(
-        limit_type: &str,
-        iter: &mut std::slice::Iter<'_, &str>,
-    ) -> Result<T, String> {
-        let item = iter
-            .next()
-            .ok_or_else(|| format!("Error: No token after {}.", limit_type))?;
-        let n = item
-            .parse()
-            .map_err(|_| "Error: Parse error.".to_string())?;
+    fn next_num<T: std::str::FromStr>(limit_type: &str, iter: &mut std::slice::Iter<'_, &str>) -> Result<T, String> {
+        let item = iter.next().ok_or_else(|| format!("Error: No token after {}.", limit_type))?;
+        let n = item.parse().map_err(|_| "Error: Parse error.".to_string())?;
         Ok(n)
     };
     let mut ponder_mode = false;
     while let Some(&limit_type) = iter.next() {
         match limit_type {
             "btime" | "wtime" => {
-                let color = if limit_type == "btime" {
-                    Color::BLACK
-                } else {
-                    Color::WHITE
-                };
+                let color = if limit_type == "btime" { Color::BLACK } else { Color::WHITE };
                 let n = next_num(limit_type, &mut iter)?;
                 let time_margin = usi_options.get_i64(UsiOptions::TIME_MARGIN) as u64;
                 limits.time[color.0 as usize] = if time_margin <= n {
@@ -57,11 +46,7 @@ fn go(
                 };
             }
             "binc" | "winc" => {
-                let color = if limit_type == "binc" {
-                    Color::BLACK
-                } else {
-                    Color::WHITE
-                };
+                let color = if limit_type == "binc" { Color::BLACK } else { Color::WHITE };
                 let n = next_num(limit_type, &mut iter)?;
                 limits.inc[color.0 as usize] = std::time::Duration::from_millis(n);
             }
@@ -105,12 +90,7 @@ fn usi_new_game(thread_pool: &mut ThreadPool, _tt: &mut TranspositionTable) {
     //_tt.clear();
 }
 
-fn self_move(
-    thread_pool: &mut ThreadPool,
-    tt: &mut TranspositionTable,
-    usi_options: &UsiOptions,
-    pos: &Position,
-) {
+fn self_move(thread_pool: &mut ThreadPool, tt: &mut TranspositionTable, usi_options: &UsiOptions, pos: &Position) {
     let start_sfen = &pos.to_sfen();
     loop {
         let mut pos = Position::new_from_sfen(start_sfen).unwrap();
@@ -128,22 +108,9 @@ fn self_move(
             limits.movetime = Some(std::time::Duration::from_millis(4000));
             let ponder_mode = false;
             let hide_all_output = false;
-            thread_pool.start_thinking(
-                &pos,
-                tt,
-                limits,
-                &usi_options,
-                ponder_mode,
-                hide_all_output,
-            );
+            thread_pool.start_thinking(&pos, tt, limits, &usi_options, ponder_mode, hide_all_output);
             thread_pool.wait_for_search_finished();
-            let m = thread_pool
-                .last_best_root_move
-                .lock()
-                .unwrap()
-                .as_ref()
-                .unwrap()
-                .pv[0];
+            let m = thread_pool.last_best_root_move.lock().unwrap().as_ref().unwrap().pv[0];
             if m == Move::RESIGN {
                 break;
             } else {
@@ -190,10 +157,7 @@ fn position(pos: &mut Position, args: &[&str]) {
         return;
     }
     if args[0] != "moves" {
-        eprintln!(
-            r#"Invalid position command. expected: "moves". found: "{}""#,
-            args[0]
-        );
+        eprintln!(r#"Invalid position command. expected: "moves". found: "{}""#, args[0]);
         return;
     }
     for arg in &args[1..] {
@@ -250,10 +214,7 @@ pub fn setoption(
         _ => {
             let mut s = "Error: invalid number of sections.".to_string();
             s += "\nExpected: name <option name> value <option value>";
-            s += &format!(
-                "\nfound:{}",
-                args.iter().fold("".to_string(), |sum, x| sum + " " + x)
-            );
+            s += &format!("\nfound:{}", args.iter().fold("".to_string(), |sum, x| sum + " " + x));
             eprintln!("{}", s);
         }
     }
@@ -290,23 +251,13 @@ fn bench_movegen(pos: &Position) {
     let end = start.elapsed();
     let elapsed = (end.as_secs() * 1000) as i64 + i64::from(end.subsec_millis());
     println!("elapsed: {} [msec]", elapsed);
-    println!(
-        "times/s: {} [times/sec]",
-        if elapsed == 0 {
-            0
-        } else {
-            max * 1000 / elapsed
-        }
-    );
+    println!("times/s: {} [times/sec]", if elapsed == 0 { 0 } else { max * 1000 / elapsed });
     println!("num of moves: {}", mlist.size);
 }
 
 fn read_sfen_and_output_hcp(args: &[&str]) {
     if args.len() != 2 {
-        eprintln!(
-            "requires 2 arguments, but received {} arguments.",
-            args.len()
-        );
+        eprintln!("requires 2 arguments, but received {} arguments.", args.len());
         return;
     }
     let input_path = args[0];
@@ -350,10 +301,7 @@ fn read_sfen_and_output_hcp(args: &[&str]) {
             continue;
         }
         if args[0] != "moves" {
-            println!(
-                r#"Invalid position command. expected: "moves". found: "{}""#,
-                args[0]
-            );
+            println!(r#"Invalid position command. expected: "moves". found: "{}""#, args[0]);
             continue;
         }
 
@@ -541,14 +489,11 @@ pub fn cmd_loop() {
         match token {
             // Required commands as USI protocol.
             "gameover" | "quit" | "stop" => {
-                thread_pool
-                    .stop
-                    .store(true, std::sync::atomic::Ordering::Relaxed);
+                thread_pool.stop.store(true, std::sync::atomic::Ordering::Relaxed);
             }
             "go" => {
                 if is_ready {
-                    if let Err(err) = go(&mut thread_pool, &mut tt, &usi_options, &pos, &args[1..])
-                    {
+                    if let Err(err) = go(&mut thread_pool, &mut tt, &usi_options, &pos, &args[1..]) {
                         eprintln!("{}", err);
                     }
                 } else {
@@ -579,15 +524,9 @@ pub fn cmd_loop() {
                         }
                     }
                     if all_ok {
-                        tt.resize(
-                            usi_options.get_i64(UsiOptions::USI_HASH) as usize,
-                            &mut thread_pool,
-                        );
+                        tt.resize(usi_options.get_i64(UsiOptions::USI_HASH) as usize, &mut thread_pool);
                         #[cfg(feature = "kppt")]
-                        ehash.resize(
-                            usi_options.get_i64(UsiOptions::EVAL_HASH) as usize,
-                            &mut thread_pool,
-                        );
+                        ehash.resize(usi_options.get_i64(UsiOptions::EVAL_HASH) as usize, &mut thread_pool);
 
                         is_ready = true;
                     }
@@ -597,9 +536,7 @@ pub fn cmd_loop() {
                 }
             }
             "ponderhit" => {
-                thread_pool
-                    .ponder
-                    .store(false, std::sync::atomic::Ordering::Relaxed);
+                thread_pool.ponder.store(false, std::sync::atomic::Ordering::Relaxed);
             }
             "position" => position(&mut pos, &args[1..]),
             "setoption" => setoption(
