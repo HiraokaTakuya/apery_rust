@@ -265,11 +265,11 @@ impl UnwrapUnchecked for Option<Move> {
 }
 
 pub trait IsNormalMove {
-    fn is_normal_move(self) -> bool;
+    fn is_normal_move(&self) -> bool;
 }
 
 impl IsNormalMove for Option<Move> {
-    fn is_normal_move(self) -> bool {
+    fn is_normal_move(&self) -> bool {
         let val = self.unwrap_unchecked().0.get();
         let ret = (val & 0x1ff) != (val >> 9);
         debug_assert_eq!(
