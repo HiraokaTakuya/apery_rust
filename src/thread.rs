@@ -330,7 +330,7 @@ impl Thread {
                 self.completed_depth = self.root_depth;
             }
 
-            if last_best_move.is_none() || last_best_move.unwrap_unchecked() != self.root_moves[0].pv[0] {
+            if last_best_move.is_none() || last_best_move.non_zero_unwrap_unchecked() != self.root_moves[0].pv[0] {
                 last_best_move = Some(self.root_moves[0].pv[0]);
                 last_best_move_depth = self.root_depth;
             }
@@ -477,7 +477,7 @@ impl Thread {
         get_stack_mut(stack, 2).killers[1] = None;
 
         // get_stack(stack, -1).current_move can be None. None => prev_sq: Square(0)
-        let prev_sq = get_stack(stack, -1).current_move.unwrap_unchecked().to(); // todo: Move::NULL
+        let prev_sq = get_stack(stack, -1).current_move.non_zero_unwrap_unchecked().to(); // todo: Move::NULL
 
         if root_node {
             get_stack_mut(stack, 4).stat_score = 0;
@@ -487,7 +487,7 @@ impl Thread {
 
         // Step 4
         let excluded_move = get_stack(stack, 0).excluded_move;
-        let key = self.position.key().0 ^ (u64::from(excluded_move.unwrap_unchecked().0.get()) << 16);
+        let key = self.position.key().0 ^ (u64::from(excluded_move.non_zero_unwrap_unchecked().0.get()) << 16);
         let key = Key(key);
         let (mut tte, mut tt_hit) = unsafe { (*self.tt).probe(key) };
         let mut tt_value = if tt_hit {
@@ -533,7 +533,7 @@ impl Thread {
                         && !(prior_capture == Piece::EMPTY // prev is capture
                              || get_stack(stack, -1)
                                 .current_move
-                                .unwrap_unchecked()
+                                .non_zero_unwrap_unchecked()
                                 .is_pawn_promotion())
                     {
                         update_continuation_histories(
@@ -555,7 +555,7 @@ impl Thread {
         // Step 5
         if self.position.is_entering_king_win() {
             best_value = Value::mate_in(get_stack(stack, 0).ply);
-            if tt_move.is_none() || tt_move.unwrap_unchecked() != Move::WIN {
+            if tt_move.is_none() || tt_move.non_zero_unwrap_unchecked() != Move::WIN {
                 get_stack_mut(stack, 0).static_eval = best_value; // is this necessary?
                 tte.save(
                     key,
@@ -722,7 +722,7 @@ impl Thread {
                     if prob_cut_count >= 2 + 2 * i32::from(cut_node) {
                         break;
                     }
-                    if m != excluded_move.unwrap_unchecked() && self.position.legal(m) {
+                    if m != excluded_move.non_zero_unwrap_unchecked() && self.position.legal(m) {
                         prob_cut_count += 1;
                         get_stack_mut(stack, 0).current_move = Some(m);
                         get_stack_mut(stack, 0).continuation_history = self.continuation_history[usize::from(in_check)]
@@ -800,7 +800,10 @@ impl Thread {
 
         let mut value = best_value;
         let mut move_count_pruning = false;
-        let tt_capture = tt_move.is_some() && tt_move.unwrap_unchecked().is_capture_or_pawn_promotion(&self.position);
+        let tt_capture = tt_move.is_some()
+            && tt_move
+                .non_zero_unwrap_unchecked()
+                .is_capture_or_pawn_promotion(&self.position);
         let mut singular_lmr = false;
 
         let th = ThreadHolding::new(self, key, get_stack(stack, 0).ply);
@@ -814,7 +817,7 @@ impl Thread {
         while let Some(m) = mp.next_move(&self.position, move_count_pruning) {
             debug_assert!(Some(m).is_normal_move());
 
-            if m == excluded_move.unwrap_unchecked() {
+            if m == excluded_move.non_zero_unwrap_unchecked() {
                 continue;
             }
 
@@ -874,7 +877,7 @@ impl Thread {
 
             // Step 14
             if depth.0 >= 6 * Depth::ONE_PLY.0
-                && m == tt_move.unwrap_unchecked()
+                && m == tt_move.non_zero_unwrap_unchecked()
                 && !root_node
                 && excluded_move.is_none()
                 && tt_value.0.abs() < Value::KNOWN_WIN.0
@@ -1046,7 +1049,7 @@ impl Thread {
                 }
             }
 
-            if m != best_move.unwrap_unchecked() {
+            if m != best_move.non_zero_unwrap_unchecked() {
                 if is_capture_or_pawn_promotion {
                     let _ = captures_searched.try_push(m);
                 } else if !is_capture_or_pawn_promotion {
@@ -1197,7 +1200,7 @@ impl Thread {
                     best_value = tt_value;
                 }
             } else {
-                best_value = if get_stack(stack, -1).current_move.unwrap_unchecked() != Move::NULL {
+                best_value = if get_stack(stack, -1).current_move.non_zero_unwrap_unchecked() != Move::NULL {
                     evaluate(
                         &mut self.position,
                         stack,
@@ -1246,7 +1249,7 @@ impl Thread {
             &self.capture_history,
             &cont_hists,
             &self.position,
-            get_stack(stack, -1).current_move.unwrap_unchecked().to(),
+            get_stack(stack, -1).current_move.non_zero_unwrap_unchecked().to(),
             tt_move,
             depth,
         );
@@ -1431,7 +1434,7 @@ impl Thread {
         }
     }
     fn update_quiet_stats(&mut self, stack: &mut [Stack], m: Move, bonus: i32, depth: Depth) {
-        if get_stack(stack, 0).killers[0].unwrap_unchecked() != m {
+        if get_stack(stack, 0).killers[0].non_zero_unwrap_unchecked() != m {
             let ss = get_stack_mut(stack, 0);
             ss.killers[1] = ss.killers[0];
             ss.killers[0] = Some(m);
@@ -1446,7 +1449,7 @@ impl Thread {
 
         let prev_move = get_stack(stack, -1).current_move;
         if prev_move.is_normal_move() {
-            let prev_sq = prev_move.unwrap_unchecked().to();
+            let prev_sq = prev_move.non_zero_unwrap_unchecked().to();
             self.counter_moves.set(prev_sq, self.position.piece_on(prev_sq), m);
         }
         if depth.0 > 12 && get_stack(stack, 0).ply < LowPlyHistory::MAX_LPH as i32 {

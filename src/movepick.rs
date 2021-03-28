@@ -202,22 +202,22 @@ impl ContinuationHistory {
 custom_derive! {
     #[derive(Debug, NextVariant)]
     enum StagesForMainSearch {
-        MainTT, CaptureInit, GoodCapture, Refutation, QuietInit, Quiet, BadCapture,
-        EvasionTT, EvasionInit, Evasion,
+        MainTt, CaptureInit, GoodCapture, Refutation, QuietInit, Quiet, BadCapture,
+        EvasionTt, EvasionInit, Evasion,
     }
 }
 custom_derive! {
     #[derive(Debug, NextVariant)]
     enum StagesForQSearch {
-        QSearchTT, QCaptureInit, QCapture, /*QCheckInit, QCheck,*/
-        QRecaptureTT, QRecaptureInit, QRecapture,
-        EvasionTT, EvasionInit, Evasion,
+        QSearchTt, QCaptureInit, QCapture, /*QCheckInit, QCheck,*/
+        QRecaptureTt, QRecaptureInit, QRecapture,
+        EvasionTt, EvasionInit, Evasion,
     }
 }
 custom_derive! {
     #[derive(Debug, NextVariant)]
     enum StagesForProbCut {
-        TT, Init, ProbCut,
+        Tt, Init, ProbCut,
     }
 }
 
@@ -237,7 +237,7 @@ fn select_next_refutation(
     for &mv in list {
         *current_index += 1;
         if let Some(m) = mv {
-            if m != tt_move.unwrap_unchecked() && !m.is_capture(pos) && pos.pseudo_legal::<SearchingType>(m) {
+            if m != tt_move.non_zero_unwrap_unchecked() && !m.is_capture(pos) && pos.pseudo_legal::<SearchingType>(m) {
                 return Some(m);
             }
         }
@@ -257,7 +257,7 @@ fn select_best_good_capture(
         let m = pick_best(&mut ext_moves[*current_index..ext_moves_size]);
         let score = ext_moves[*current_index].score;
         *current_index += 1;
-        if m != tt_move.unwrap_unchecked() {
+        if m != tt_move.non_zero_unwrap_unchecked() {
             if pos.see_ge(m, Value(-55 * score / 1024)) {
                 return Some(m);
             } else {
@@ -278,10 +278,10 @@ fn select_next_quiet(
     for ext_move in list {
         *current_index += 1;
         let m = ext_move.mv;
-        if m != tt_move.unwrap_unchecked()
-            && m != refutations[0].unwrap_unchecked()
-            && m != refutations[1].unwrap_unchecked()
-            && m != refutations[2].unwrap_unchecked()
+        if m != tt_move.non_zero_unwrap_unchecked()
+            && m != refutations[0].non_zero_unwrap_unchecked()
+            && m != refutations[1].non_zero_unwrap_unchecked()
+            && m != refutations[2].non_zero_unwrap_unchecked()
         {
             return Some(m);
         }
@@ -293,7 +293,7 @@ fn select_next_bad_capture(list: &[ExtMove], current_index: &mut usize, tt_move:
     for ext_move in list {
         *current_index += 1;
         let m = ext_move.mv;
-        if m != tt_move.unwrap_unchecked() {
+        if m != tt_move.non_zero_unwrap_unchecked() {
             return Some(m);
         }
     }
@@ -304,7 +304,7 @@ fn select_best_evasion(list: &mut [ExtMove], current_index: &mut usize, tt_move:
     for i in 0..list.len() {
         let m = pick_best(&mut list[i..]);
         *current_index += 1;
-        if m != tt_move.unwrap_unchecked() {
+        if m != tt_move.non_zero_unwrap_unchecked() {
             return Some(m);
         }
     }
@@ -315,7 +315,7 @@ fn select_best_qcapture(list: &mut [ExtMove], current_index: &mut usize, tt_move
     for i in 0..list.len() {
         let m = pick_best(&mut list[i..]);
         *current_index += 1;
-        if m != tt_move.unwrap_unchecked() {
+        if m != tt_move.non_zero_unwrap_unchecked() {
             return Some(m);
         }
     }
@@ -326,7 +326,7 @@ fn select_best_qrecapture(list: &mut [ExtMove], current_index: &mut usize, tt_mo
     for i in 0..list.len() {
         let m = pick_best(&mut list[i..]);
         *current_index += 1;
-        if m != tt_move.unwrap_unchecked() {
+        if m != tt_move.non_zero_unwrap_unchecked() {
             return Some(m);
         }
     }
@@ -343,7 +343,7 @@ fn select_best_probcut(
     for i in 0..list.len() {
         let m = pick_best(&mut list[i..]);
         *current_index += 1;
-        if m != tt_move.unwrap_unchecked() && pos.see_ge(m, threshold) {
+        if m != tt_move.non_zero_unwrap_unchecked() && pos.see_ge(m, threshold) {
             return Some(m);
         }
     }
@@ -444,9 +444,9 @@ impl<'a> MovePickerForMainSearch<'a> {
         ply: i32,
     ) -> MovePickerForMainSearch<'a> {
         let mut stage = if pos.in_check() {
-            StagesForMainSearch::EvasionTT
+            StagesForMainSearch::EvasionTt
         } else {
-            StagesForMainSearch::MainTT
+            StagesForMainSearch::MainTt
         };
         let tt_move = match ttm {
             Some(ttm_inner) if pos.pseudo_legal::<SearchingType>(ttm_inner) => ttm,
@@ -474,7 +474,7 @@ impl<'a> MovePickerForMainSearch<'a> {
     pub fn next_move(&mut self, pos: &Position, skip_quiets: bool) -> Option<Move> {
         loop {
             match self.stage {
-                StagesForMainSearch::MainTT | StagesForMainSearch::EvasionTT => {
+                StagesForMainSearch::MainTt | StagesForMainSearch::EvasionTt => {
                     self.stage = self.stage.next_variant().unwrap();
                     return self.tt_move;
                 }
@@ -580,11 +580,11 @@ impl<'a> MovePickerForQSearch<'a> {
         depth: Depth,
     ) -> MovePickerForQSearch<'a> {
         let mut stage = if pos.in_check() {
-            StagesForQSearch::EvasionTT
+            StagesForQSearch::EvasionTt
         } else if depth > Depth::QS_RECAPTURES {
-            StagesForQSearch::QSearchTT
+            StagesForQSearch::QSearchTt
         } else {
-            StagesForQSearch::QRecaptureTT
+            StagesForQSearch::QRecaptureTt
         };
         let tt_move = match ttm {
             Some(ttm_inner)
@@ -613,7 +613,7 @@ impl<'a> MovePickerForQSearch<'a> {
     pub fn next_move(&mut self, pos: &Position) -> Option<Move> {
         loop {
             match self.stage {
-                StagesForQSearch::QSearchTT | StagesForQSearch::EvasionTT | StagesForQSearch::QRecaptureTT => {
+                StagesForQSearch::QSearchTt | StagesForQSearch::EvasionTt | StagesForQSearch::QRecaptureTt => {
                     self.stage = self.stage.next_variant().unwrap();
                     return self.tt_move;
                 }
@@ -669,7 +669,7 @@ pub struct MovePickerForProbCut {
 impl MovePickerForProbCut {
     pub fn new(pos: &Position, ttm: Option<Move>, thresh: Value, cph: &CapturePieceToHistory) -> MovePickerForProbCut {
         debug_assert!(!pos.in_check());
-        let mut stage = StagesForProbCut::TT;
+        let mut stage = StagesForProbCut::Tt;
         let tt_move = match ttm {
             Some(ttm_inner)
                 if ttm_inner.is_capture(pos) && pos.pseudo_legal::<SearchingType>(ttm_inner) && pos.see_ge(ttm_inner, thresh) =>
@@ -694,7 +694,7 @@ impl MovePickerForProbCut {
     pub fn next_move(&mut self, pos: &Position) -> Option<Move> {
         loop {
             match self.stage {
-                StagesForProbCut::TT => {
+                StagesForProbCut::Tt => {
                     self.stage = self.stage.next_variant().unwrap();
                     return self.tt_move;
                 }

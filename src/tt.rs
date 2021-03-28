@@ -4,7 +4,7 @@ use crate::thread::*;
 use crate::types::*;
 use rayon::prelude::*;
 
-pub struct TTEntry {
+pub struct TtEntry {
     key16: u16,
     mv16: u16,
     value16: i16,
@@ -13,7 +13,7 @@ pub struct TTEntry {
     depth8: u8,
 }
 
-impl TTEntry {
+impl TtEntry {
     pub fn mv(&self, pos: &Position) -> Option<Move> {
         // This can be illegal move.
         let m = Move(unsafe { std::num::NonZeroU32::new_unchecked(u32::from(self.mv16)) });
@@ -85,13 +85,13 @@ impl TTEntry {
 const CLUSTER_SIZE: usize = 3;
 
 #[repr(align(32))]
-struct TTCluster {
-    entry: [TTEntry; CLUSTER_SIZE],
+struct TtCluster {
+    entry: [TtEntry; CLUSTER_SIZE],
     _padding: [u8; 2],
 }
 
 pub struct TranspositionTable {
-    table: Vec<TTCluster>,
+    table: Vec<TtCluster>,
     generation8: u8,
 }
 
@@ -105,11 +105,11 @@ impl TranspositionTable {
     pub fn resize(&mut self, mega_byte_size: usize, thread_pool: &mut ThreadPool) {
         thread_pool.wait_for_search_finished();
         let mega_byte_size = (mega_byte_size + 1).next_power_of_two() >> 1;
-        let cluster_count = mega_byte_size * 1024 * 1024 / std::mem::size_of::<TTCluster>();
+        let cluster_count = mega_byte_size * 1024 * 1024 / std::mem::size_of::<TtCluster>();
         // self.table can be very large and takes much time to clear, so parallelize self.clear().
         self.table.clear();
         self.table.shrink_to_fit();
-        self.table = Vec::<TTCluster>::with_capacity(cluster_count);
+        self.table = Vec::<TtCluster>::with_capacity(cluster_count);
         unsafe {
             self.table.set_len(cluster_count);
         }
@@ -128,11 +128,11 @@ impl TranspositionTable {
         let mask = self.table.len() - 1;
         key.0 as usize & mask
     }
-    fn get_mut_cluster(&mut self, index: usize) -> &mut TTCluster {
+    fn get_mut_cluster(&mut self, index: usize) -> &mut TtCluster {
         debug_assert!(index < self.table.len());
         unsafe { self.table.get_unchecked_mut(index) }
     }
-    pub fn probe(&mut self, key: Key) -> (&mut TTEntry, bool) {
+    pub fn probe(&mut self, key: Key) -> (&mut TtEntry, bool) {
         let generation8 = self.generation8;
         let key16 = (key.0 >> 48) as u16;
         let cluster = self.get_mut_cluster(self.cluster_index(key));
@@ -162,9 +162,9 @@ impl TranspositionTable {
 
 #[test]
 fn test_size() {
-    assert_eq!(std::mem::size_of::<TTEntry>(), 10);
-    assert_eq!(std::mem::size_of::<TTCluster>(), 32);
-    assert_eq!(std::mem::size_of::<[TTCluster; 4]>(), 128);
+    assert_eq!(std::mem::size_of::<TtEntry>(), 10);
+    assert_eq!(std::mem::size_of::<TtCluster>(), 32);
+    assert_eq!(std::mem::size_of::<[TtCluster; 4]>(), 128);
 }
 
 #[test]

@@ -31,7 +31,7 @@ fn go(
         let item = iter.next().ok_or_else(|| format!("Error: No token after {}.", limit_type))?;
         let n = item.parse().map_err(|_| "Error: Parse error.".to_string())?;
         Ok(n)
-    };
+    }
     let mut ponder_mode = false;
     while let Some(&limit_type) = iter.next() {
         match limit_type {

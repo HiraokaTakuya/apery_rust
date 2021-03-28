@@ -345,7 +345,7 @@ impl Evaluator {
     fn evaluate_difference_calc(&self, pos: &mut Position, stack: &mut [Stack], ehash: *mut EvalHash) -> Value {
         if get_stack(stack, 0).static_eval_raw.is_not_evaluated() {
             debug_assert!(!get_stack(stack, -1).static_eval_raw.is_not_evaluated());
-            debug_assert!(get_stack(stack, -1).current_move.unwrap_unchecked() != Move::NULL);
+            debug_assert!(get_stack(stack, -1).current_move.non_zero_unwrap_unchecked() != Move::NULL);
             let key_exclude_turn = Key(pos.key().0 >> 1);
             let mut entry = unsafe { (*ehash).get(key_exclude_turn) };
             entry.decode();
@@ -355,7 +355,7 @@ impl Evaluator {
                 return entry.sum(pos.side_to_move()) / FV_SCALE;
             }
 
-            let last_move = get_stack(stack, -1).current_move.unwrap_unchecked();
+            let last_move = get_stack(stack, -1).current_move.non_zero_unwrap_unchecked();
             let sq_bk = pos.king_square(Color::BLACK);
             let sq_wk = pos.king_square(Color::WHITE);
             if PieceType::new(last_move.piece_moved_before_move()) == PieceType::KING {

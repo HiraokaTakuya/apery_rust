@@ -253,13 +253,13 @@ impl Move {
     }
 }
 
-pub trait UnwrapUnchecked {
-    fn unwrap_unchecked(self) -> Move;
+pub trait NonZeroUnwrapUnchecked {
+    fn non_zero_unwrap_unchecked(self) -> Move;
 }
 
-impl UnwrapUnchecked for Option<Move> {
+impl NonZeroUnwrapUnchecked for Option<Move> {
     #[inline]
-    fn unwrap_unchecked(self) -> Move {
+    fn non_zero_unwrap_unchecked(self) -> Move {
         unsafe { std::mem::transmute::<Option<Move>, Move>(self) }
     }
 }
@@ -270,7 +270,7 @@ pub trait IsNormalMove {
 
 impl IsNormalMove for Option<Move> {
     fn is_normal_move(&self) -> bool {
-        let val = self.unwrap_unchecked().0.get();
+        let val = self.non_zero_unwrap_unchecked().0.get();
         let ret = (val & 0x1ff) != (val >> 9);
         debug_assert_eq!(
             ret,
