@@ -821,7 +821,7 @@ impl Thread {
                 continue;
             }
 
-            if root_node && self.root_moves.iter().skip(self.pv_idx).find(|x| x.pv[0] == m).is_none() {
+            if root_node && !self.root_moves.iter().skip(self.pv_idx).any(|x| x.pv[0] == m) {
                 continue;
             }
 

@@ -141,7 +141,7 @@ impl Bitboard {
     pub fn notand(self, other: Bitboard) -> Bitboard {
         (!self) & other
     }
-    pub fn to_bool(&self) -> bool {
+    pub fn to_bool(self) -> bool {
         self.merge() != 0
     }
     pub fn and_to_bool(self, other: Bitboard) -> bool {
