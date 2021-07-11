@@ -266,25 +266,25 @@ impl MoveList {
             }
         }
         if hand.except_pawn_exist() {
-            let mut possessions: [Piece; 6] = unsafe { std::mem::MaybeUninit::uninit().assume_init() };
-            let mut possessions_num: usize = 0;
+            let mut possessions = arrayvec::ArrayVec::<[Piece; 6]>::new();
             let sgbr_num;
             let sgbrl_num;
             {
-                let mut func = |c, pt, num: &mut usize| {
+                let f = |c: Color, pt: PieceType, possessions: &mut arrayvec::ArrayVec<[Piece; 6]>| {
                     if hand.exist(pt) {
-                        possessions[*num] = Piece::new(c, pt);
-                        *num += 1;
+                        unsafe {
+                            possessions.push_unchecked(Piece::new(c, pt));
+                        }
                     }
                 };
-                func(us, PieceType::ROOK, &mut possessions_num);
-                func(us, PieceType::BISHOP, &mut possessions_num);
-                func(us, PieceType::GOLD, &mut possessions_num);
-                func(us, PieceType::SILVER, &mut possessions_num);
-                sgbr_num = possessions_num;
-                func(us, PieceType::LANCE, &mut possessions_num);
-                sgbrl_num = possessions_num;
-                func(us, PieceType::KNIGHT, &mut possessions_num);
+                f(us, PieceType::ROOK, &mut possessions);
+                f(us, PieceType::BISHOP, &mut possessions);
+                f(us, PieceType::GOLD, &mut possessions);
+                f(us, PieceType::SILVER, &mut possessions);
+                sgbr_num = possessions.len();
+                f(us, PieceType::LANCE, &mut possessions);
+                sgbrl_num = possessions.len();
+                f(us, PieceType::KNIGHT, &mut possessions);
             }
             let (to_bb_r1, to_bb_r2, to_bb) = {
                 let r1 = Rank::new_from_color_and_rank_as_black(us, RankAsBlack::RANK1);
@@ -295,7 +295,7 @@ impl MoveList {
             };
             self.generate_drop_for_possessions(&possessions[..sgbr_num], to_bb_r1);
             self.generate_drop_for_possessions(&possessions[..sgbrl_num], to_bb_r2);
-            self.generate_drop_for_possessions(&possessions[..possessions_num], to_bb);
+            self.generate_drop_for_possessions(&possessions[..], to_bb);
         }
     }
     fn generate_for_piece<PTT: PieceTypeTrait, AMT: AllowMovesTrait>(&mut self, pos: &Position, target: &Bitboard) {

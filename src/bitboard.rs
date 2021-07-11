@@ -684,7 +684,7 @@ pub struct MagicTable<'a> {
 impl<'a> MagicTable<'a> {
     fn new(table_num: usize, shifts: &[i8; Square::NUM], magic_nums: &[u64; Square::NUM], deltas: &[Square]) -> MagicTable<'a> {
         let mut attacks = vec![Bitboard::ZERO; table_num];
-        let mut magics: [Magic<'a>; Square::NUM] = unsafe { std::mem::MaybeUninit::uninit().assume_init() };
+        let mut magics = std::mem::MaybeUninit::<[Magic<'a>; Square::NUM]>::uninit();
         let mut count = 0;
         for sq in Square::ALL.iter() {
             let mask = Magic::attack_mask(deltas, *sq);
@@ -704,11 +704,13 @@ impl<'a> MagicTable<'a> {
                 attacks: slice_attacks,
                 shift: shifts[sq.0 as usize] as u32,
             };
-            magics[sq.0 as usize] = tmp_magic;
+            unsafe {
+                (magics.as_mut_ptr() as *mut Magic).add(sq.0 as usize).write(tmp_magic);
+            }
         }
         debug_assert_eq!(table_num, count);
         MagicTable {
-            magics,
+            magics: unsafe { magics.assume_init() },
             _attacks: attacks,
         }
     }
