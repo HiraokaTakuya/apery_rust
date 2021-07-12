@@ -898,9 +898,7 @@ impl Thread {
                 && tte.depth().0 >= depth.0 - 3 * Depth::ONE_PLY.0
                 && self.position.legal(m)
             {
-                let singular_beta = Value(
-                    tt_value.0 - ((i32::from(tt_pv && !pv_node) + 4) * depth.0) / Depth::ONE_PLY.0, /*2 * depth.0 / Depth::ONE_PLY.0*/
-                );
+                let singular_beta = Value(tt_value.0 - ((i32::from(tt_pv && !pv_node) + 4) * depth.0) / (2 * Depth::ONE_PLY.0));
                 let half_depth = Depth(depth.0 / (2 * Depth::ONE_PLY.0) * Depth::ONE_PLY.0);
                 get_stack_mut(stack, 0).excluded_move = Some(m);
                 value = self.search::<NonPv>(stack, singular_beta - Value(1), singular_beta, half_depth, cut_node);
