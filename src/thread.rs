@@ -993,9 +993,23 @@ impl Thread {
                         r += Depth::ONE_PLY;
                     }
                     r -= Depth(get_stack(stack, 0).stat_score / 16434 * Depth::ONE_PLY.0);
-                } else if depth < Depth(8) && move_count > 2 {
-                    r += Depth::ONE_PLY;
+                } else {
+                    if depth < Depth(8) && move_count > 2 {
+                        r += Depth::ONE_PLY;
+                    }
+                    if !gives_check
+                        && Value(
+                            get_stack(stack, 0).static_eval.0
+                                + capture_piece_value(self.position.captured_piece()).0
+                                + 200 * depth.0,
+                        ) <= alpha
+                    {
+                        r += Depth::ONE_PLY;
+                    }
                 }
+                //else if depth < Depth(8) && move_count > 2 {
+                //    r += Depth::ONE_PLY;
+                //}
                 let d = std::cmp::max(new_depth - std::cmp::max(r, Depth::ZERO), Depth::ONE_PLY);
                 value = -self.search::<NonPv>(&mut stack[1..], -(alpha + Value(1)), -alpha, d, true);
                 (value > alpha && d != new_depth, true)
