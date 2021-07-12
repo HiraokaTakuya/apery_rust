@@ -965,7 +965,7 @@ impl Thread {
                 //}
 
                 if singular_lmr {
-                    r -= Depth(2 * Depth::ONE_PLY.0);
+                    r -= Depth(1 + i32::from(tt_pv && !pv_node) * Depth::ONE_PLY.0);
                 }
 
                 if !is_capture_or_pawn_promotion {
