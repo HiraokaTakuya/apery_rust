@@ -252,7 +252,7 @@ impl Thread {
                 self.sel_depth = 0;
                 if self.root_depth >= Depth(4 * Depth::ONE_PLY.0) {
                     let previous_score = self.root_moves[self.pv_idx].previous_score;
-                    delta = Value(21 + previous_score.0.abs() / 256);
+                    delta = Value(21);
                     alpha = std::cmp::max(previous_score - delta, -Value::INFINITE);
                     beta = std::cmp::min(previous_score + delta, Value::INFINITE);
                 }
