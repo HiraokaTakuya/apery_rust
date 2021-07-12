@@ -959,6 +959,10 @@ impl Thread {
                 //    r -= Depth(2 * Depth::ONE_PLY.0);
                 //}
 
+                if move_count_pruning && !former_pv {
+                    r += Depth::ONE_PLY;
+                }
+
                 //if get_stack(stack, -1).move_count > 14 {
                 //    r -= Depth::ONE_PLY;
                 //}
