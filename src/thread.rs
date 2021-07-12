@@ -819,6 +819,7 @@ impl Thread {
                 .non_zero_unwrap_unchecked()
                 .is_capture_or_pawn_promotion(&self.position);
         let mut singular_lmr = false;
+        let former_pv = tt_pv && !pv_node;
 
         let th = ThreadHolding::new(self, key, get_stack(stack, 0).ply);
 
@@ -898,9 +899,8 @@ impl Thread {
                 && tte.depth().0 >= depth.0 - 3 * Depth::ONE_PLY.0
                 && self.position.legal(m)
             {
-                let singular_beta = Value(tt_value.0 - ((i32::from(tt_pv && !pv_node) + 4) * depth.0) / (2 * Depth::ONE_PLY.0));
-                let singular_depth =
-                    Depth((depth.0 - 1 + 3 * i32::from(tt_pv && !pv_node)) / (2 * Depth::ONE_PLY.0) * Depth::ONE_PLY.0);
+                let singular_beta = Value(tt_value.0 - ((i32::from(former_pv) + 4) * depth.0) / (2 * Depth::ONE_PLY.0));
+                let singular_depth = Depth((depth.0 - 1 + 3 * i32::from(former_pv)) / (2 * Depth::ONE_PLY.0) * Depth::ONE_PLY.0);
                 get_stack_mut(stack, 0).excluded_move = Some(m);
                 value = self.search::<NonPv>(stack, singular_beta - Value(1), singular_beta, singular_depth, cut_node);
                 get_stack_mut(stack, 0).excluded_move = None;
@@ -964,7 +964,7 @@ impl Thread {
                 //}
 
                 if singular_lmr {
-                    r -= Depth(1 + i32::from(tt_pv && !pv_node) * Depth::ONE_PLY.0);
+                    r -= Depth((1 + i32::from(former_pv)) * Depth::ONE_PLY.0);
                 }
 
                 if !is_capture_or_pawn_promotion {
