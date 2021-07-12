@@ -988,7 +988,7 @@ impl Thread {
                     } else if get_stack(stack, -1).stat_score >= -116 && get_stack(stack, 0).stat_score < -154 {
                         r += Depth::ONE_PLY;
                     }
-                    r -= Depth(get_stack(stack, 0).stat_score / 16384 * Depth::ONE_PLY.0);
+                    r -= Depth(get_stack(stack, 0).stat_score / 16434 * Depth::ONE_PLY.0);
                 } else if depth < Depth(8) && move_count > 2 {
                     r += Depth::ONE_PLY;
                 }
