@@ -135,6 +135,7 @@ impl CapturePieceToHistory {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct PieceToHistory {
     v: [[i16; Piece::NUM]; Square::NUM],
 }
@@ -169,16 +170,10 @@ pub struct ContinuationHistory {
 }
 
 impl ContinuationHistory {
-    pub fn new() -> ContinuationHistory {
-        let mut ch = ContinuationHistory {
-            v: unsafe { std::mem::MaybeUninit::uninit().assume_init() },
-        };
-        for x in ch.v.iter_mut() {
-            for y in x.iter_mut() {
-                y.fill(0);
-            }
+    pub fn new() -> Self {
+        Self {
+            v: [[PieceToHistory::new(); Square::NUM]; Piece::NUM],
         }
-        ch
     }
     #[allow(dead_code)]
     pub fn get(&self, pc: Piece, to: Square) -> &PieceToHistory {
