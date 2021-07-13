@@ -842,11 +842,11 @@ impl Thread {
             // Step 13
             if !root_node && best_value > Value::MATED_IN_MAX_PLY {
                 move_count_pruning = move_count >= futility_move_count(improving, depth.0);
+                let lmr_depth = std::cmp::max(
+                    new_depth - unsafe { (*self.reductions).get(improving, depth, move_count) },
+                    Depth::ZERO,
+                );
                 if !is_capture_or_pawn_promotion && !gives_check {
-                    let lmr_depth = std::cmp::max(
-                        new_depth - unsafe { (*self.reductions).get(improving, depth, move_count) },
-                        Depth::ZERO,
-                    );
                     if lmr_depth.0 < 3 + i32::from(get_stack(stack, -1).stat_score > 0 || get_stack(stack, -1).move_count == 1)
                         && unsafe { (*cont_hists[0]).get(to, piece_moved_after_move) } < i32::from(COUNTER_MOVE_PRUNE_THRESHOLD)
                         && unsafe { (*cont_hists[1]).get(to, piece_moved_after_move) } < i32::from(COUNTER_MOVE_PRUNE_THRESHOLD)
@@ -869,8 +869,19 @@ impl Thread {
                     {
                         continue;
                     }
-                } else if (!gives_check || extension == Depth::ZERO) && !self.position.see_ge(m, Value(-194 * depth.0)) {
-                    continue;
+                } else {
+                    if !gives_check
+                        && lmr_depth < Depth::ONE_PLY
+                        && self
+                            .capture_history
+                            .get(piece_moved_after_move, to, PieceType::new(self.position.piece_on(to)))
+                            < 0
+                    {
+                        continue;
+                    }
+                    if (!gives_check || extension == Depth::ZERO) && !self.position.see_ge(m, Value(-194 * depth.0)) {
+                        continue;
+                    }
                 }
             }
 
