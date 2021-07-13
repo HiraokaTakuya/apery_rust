@@ -907,6 +907,14 @@ impl Thread {
                     singular_lmr = true;
                 } else if singular_beta >= beta {
                     return singular_beta;
+                } else if tt_value >= beta {
+                    get_stack_mut(stack, 0).excluded_move = Some(m);
+                    value = self.search::<NonPv>(stack, beta - Value(1), beta, Depth((depth.0 + 3) / 2), cut_node);
+                    get_stack_mut(stack, 0).excluded_move = None;
+
+                    if value >= beta {
+                        return beta;
+                    }
                 }
             } else if gives_check
                 && ((!m.is_drop() && self.position.blockers_for_king(us.inverse()).is_set(m.from()))
