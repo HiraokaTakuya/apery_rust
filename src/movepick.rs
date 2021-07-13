@@ -443,13 +443,12 @@ impl<'a> MovePickerForMainSearch<'a> {
         } else {
             StagesForMainSearch::MainTt
         };
-        let tt_move = match ttm {
-            Some(ttm_inner) if pos.pseudo_legal::<SearchingType>(ttm_inner) => ttm,
+        match ttm {
+            Some(ttm_inner) if pos.pseudo_legal::<SearchingType>(ttm_inner) => {}
             _ => {
                 stage = stage.next_variant().unwrap();
-                None
             }
-        };
+        }
         MovePickerForMainSearch {
             main_history: mh,
             low_ply_history: lph,
@@ -458,7 +457,7 @@ impl<'a> MovePickerForMainSearch<'a> {
             cur: 0,
             end_bad_captures: 0,
             stage,
-            tt_move,
+            tt_move: ttm,
             refutations: [killers[0], killers[1], cm],
             refutations_size: 3,
             depth,
@@ -581,18 +580,14 @@ impl<'a> MovePickerForQSearch<'a> {
         } else {
             StagesForQSearch::QRecaptureTt
         };
-        let tt_move = match ttm {
+        match ttm {
             Some(ttm_inner)
                 if (depth > Depth::QS_RECAPTURES || ttm_inner.to() == recapture_square)
-                    && pos.pseudo_legal::<SearchingType>(ttm_inner) =>
-            {
-                ttm
-            }
+                    && pos.pseudo_legal::<SearchingType>(ttm_inner) => {}
             _ => {
                 stage = stage.next_variant().unwrap();
-                None
             }
-        };
+        }
         MovePickerForQSearch {
             main_history,
             capture_history,
@@ -600,7 +595,7 @@ impl<'a> MovePickerForQSearch<'a> {
             cur: 0,
             recapture_square,
             stage,
-            tt_move,
+            tt_move: ttm,
             move_list: MoveList::new(),
         }
     }
@@ -665,22 +660,19 @@ impl MovePickerForProbCut {
     pub fn new(pos: &Position, ttm: Option<Move>, thresh: Value, cph: &CapturePieceToHistory) -> MovePickerForProbCut {
         debug_assert!(!pos.in_check());
         let mut stage = StagesForProbCut::Tt;
-        let tt_move = match ttm {
+        match ttm {
             Some(ttm_inner)
-                if ttm_inner.is_capture(pos) && pos.pseudo_legal::<SearchingType>(ttm_inner) && pos.see_ge(ttm_inner, thresh) =>
-            {
-                ttm
+                if ttm_inner.is_capture(pos) && pos.pseudo_legal::<SearchingType>(ttm_inner) && pos.see_ge(ttm_inner, thresh) => {
             }
             _ => {
                 stage = stage.next_variant().unwrap();
-                None
             }
-        };
+        }
         MovePickerForProbCut {
             capture_history: cph,
             cur: 0,
             stage,
-            tt_move,
+            tt_move: ttm,
             threshold: thresh,
             move_list: MoveList::new(),
         }
