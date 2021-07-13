@@ -520,7 +520,7 @@ impl<'a> MovePickerForMainSearch<'a> {
                             self.continuation_history,
                             self.ply,
                         );
-                        partial_insertion_sort(self.move_list.slice_mut(self.cur), -3000 * self.depth.0 / Depth::ONE_PLY.0);
+                        partial_insertion_sort(self.move_list.slice_mut(self.cur), -3000 * self.depth.0);
                     }
                     self.stage = self.stage.next_variant().unwrap();
                 }

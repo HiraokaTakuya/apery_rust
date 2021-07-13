@@ -196,7 +196,7 @@ pub fn value_mated_in(ply: i32) -> Value {
 pub const TEMPO: Value = Value(28);
 
 pub fn stat_bonus(depth: Depth) -> i32 {
-    let d = depth.0 / Depth::ONE_PLY.0;
+    let d = depth.0;
     if d > 15 {
         -8
     } else {
@@ -222,7 +222,7 @@ pub fn update_continuation_histories(stack: &mut [Stack], pc: Piece, to: Square,
 pub const RAZOR_MARGIN: Value = Value(531);
 
 pub fn futility_margin(depth: Depth) -> Value {
-    Value(75 * depth.0 / Depth::ONE_PLY.0)
+    Value(75 * depth.0)
 }
 
 pub fn futility_move_count(improving: bool, depth_per_one_ply: i32) -> i32 {
@@ -244,10 +244,8 @@ impl Reductions {
         r
     }
     pub fn get(&self, improving: bool, depth: Depth, move_count: i32) -> Depth {
-        let r = unsafe {
-            self.values.get_unchecked((depth.0 / Depth::ONE_PLY.0) as usize) * self.values.get_unchecked(move_count as usize)
-        };
-        Depth(((r + 511) / 1024 + i32::from(!improving && r > 1007)) * Depth::ONE_PLY.0)
+        let r = unsafe { self.values.get_unchecked(depth.0 as usize) * self.values.get_unchecked(move_count as usize) };
+        Depth((r + 511) / 1024 + i32::from(!improving && r > 1007))
     }
 }
 

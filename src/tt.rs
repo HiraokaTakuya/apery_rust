@@ -37,7 +37,7 @@ impl TtEntry {
         Value(i32::from(self.eval16))
     }
     pub fn depth(&self) -> Depth {
-        Depth(i32::from(self.depth8) * Depth::ONE_PLY.0) + Depth::OFFSET
+        Depth(i32::from(self.depth8)) + Depth::OFFSET
     }
     pub fn is_pv(&self) -> bool {
         (self.genbound8 & 0x4) != 0
@@ -60,8 +60,6 @@ impl TtEntry {
         eval: Value,
         generation: u8,
     ) {
-        debug_assert!(depth.0 / Depth::ONE_PLY.0 * Depth::ONE_PLY.0 == depth.0);
-
         if let Some(mv) = mv {
             self.mv16 = u32::from(mv.0) as u16;
         } else if (key.0 >> 48) as u16 != self.key16 {
@@ -69,15 +67,15 @@ impl TtEntry {
         }
 
         if (key.0 >> 48) as u16 != self.key16
-            || (depth.0 - Depth::OFFSET.0) / Depth::ONE_PLY.0 > i32::from(self.depth8) - 4
+            || depth.0 - Depth::OFFSET.0 > i32::from(self.depth8) - 4
             || bound.0 == Bound::EXACT.0
         {
-            debug_assert!((depth.0 - Depth::OFFSET.0) / Depth::ONE_PLY.0 >= 0);
+            debug_assert!(depth.0 - Depth::OFFSET.0 >= 0);
             self.key16 = (key.0 >> 48) as u16;
             self.value16 = value.0 as i16;
             self.eval16 = eval.0 as i16;
             self.genbound8 = (i32::from(generation) | (i32::from(pv) << 2) | bound.0) as u8;
-            self.depth8 = ((depth.0 - Depth::OFFSET.0) / Depth::ONE_PLY.0) as u8;
+            self.depth8 = (depth.0 - Depth::OFFSET.0) as u8;
         }
     }
 }
