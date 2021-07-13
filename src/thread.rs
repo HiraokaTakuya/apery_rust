@@ -131,7 +131,7 @@ struct Thread {
 
     nodes: Arc<AtomicI64>,
     // following variables are shared one object that ThreadPool has.
-    previous_score: Arc<Mutex<Value>>,
+    best_previous_score: Arc<Mutex<Value>>,
     iter_values: Arc<Mutex<[Value; 4]>>,
     increase_depth: Arc<AtomicBool>,
     // following variables are used only main thread.
@@ -155,7 +155,7 @@ pub struct ThreadPool {
     nodess: Vec<Arc<AtomicI64>>,
     pub book: Option<Book>,
     timeman: Arc<Mutex<TimeManagement>>,
-    previous_score: Arc<Mutex<Value>>,
+    best_previous_score: Arc<Mutex<Value>>,
     iter_values: Arc<Mutex<[Value; 4]>>,
     best_move_changess: Vec<Arc<AtomicU64>>,
     stop_on_ponderhit: Arc<AtomicBool>,
@@ -202,14 +202,14 @@ impl Thread {
             item.continuation_history = self.continuation_history[0][0].sentinel();
         }
         if self.is_main() {
-            let previous_score = *self.previous_score.lock().unwrap();
-            if previous_score == Value::INFINITE {
+            let best_previous_score = *self.best_previous_score.lock().unwrap();
+            if best_previous_score == Value::INFINITE {
                 for item in self.iter_values.lock().unwrap().iter_mut() {
                     *item = Value::ZERO;
                 }
             } else {
                 for item in self.iter_values.lock().unwrap().iter_mut() {
-                    *item = previous_score;
+                    *item = best_previous_score;
                 }
             }
         }
@@ -348,7 +348,7 @@ impl Thread {
                 && !self.stop_on_ponderhit.load(Ordering::Relaxed)
             {
                 let falling_eval = f64::from(
-                    332 + 6 * (self.previous_score.lock().unwrap().0 - best_value.0)
+                    332 + 6 * (self.best_previous_score.lock().unwrap().0 - best_value.0)
                         + 6 * (self.iter_values.lock().unwrap()[iter_index].0 - best_value.0),
                 ) / 704.0;
                 let falling_eval = num::clamp(falling_eval, 0.5, 1.5);
@@ -716,7 +716,8 @@ impl Thread {
 
             // Step 10
             if !pv_node && depth.0 >= 5 && beta.0.abs() < Value::MATE_IN_MAX_PLY.0 {
-                let raised_beta = std::cmp::min(Value(beta.0 + 189 - 45 * i32::from(improving)), Value::INFINITE);
+                let raised_beta = Value(beta.0 + 189 - 45 * i32::from(improving));
+                debug_assert!(raised_beta < Value::INFINITE);
                 let mut mp = MovePickerForProbCut::new(
                     &self.position,
                     tt_move,
@@ -1538,7 +1539,7 @@ impl ThreadPool {
             nodess: vec![],
             book: None,
             timeman: Arc::new(Mutex::new(TimeManagement::new())),
-            previous_score: Arc::new(Mutex::new(Value::INFINITE)),
+            best_previous_score: Arc::new(Mutex::new(Value::INFINITE)),
             iter_values: Arc::new(Mutex::new([Value::ZERO; 4])),
             best_move_changess: vec![],
             stop_on_ponderhit: Arc::new(AtomicBool::new(false)),
@@ -1560,7 +1561,7 @@ impl ThreadPool {
         let thread_pool_base = self.thread_pool_base.lock().unwrap();
         let mut main_thread = thread_pool_base.threads[0].lock().unwrap();
         main_thread.calls_count = 0;
-        *main_thread.previous_score.lock().unwrap() = Value::INFINITE;
+        *main_thread.best_previous_score.lock().unwrap() = Value::INFINITE;
         main_thread.previous_time_reduction = 1.0;
     }
     pub fn set(
@@ -1612,7 +1613,7 @@ impl ThreadPool {
                     best_move_changes: self.best_move_changess[i].clone(),
                     best_move_changess: self.best_move_changess.clone(),
                     nodes: self.nodess[i].clone(),
-                    previous_score: self.previous_score.clone(),
+                    best_previous_score: self.best_previous_score.clone(),
                     iter_values: self.iter_values.clone(),
                     increase_depth: self.increase_depth.clone(),
                     previous_time_reduction: 1.0,
@@ -1681,7 +1682,7 @@ impl ThreadPool {
         let pos = Position::new_from_position(pos, dummy_nodes);
         let nodess_cloned = self.nodess.clone();
         let timeman_cloned = self.timeman.clone();
-        let previous_score_cloned = self.previous_score.clone();
+        let previous_score_cloned = self.best_previous_score.clone();
         let thread_pool_base_cloned = self.thread_pool_base.clone();
         let stop_cloned = self.stop.clone();
         let ponder_cloned = self.ponder.clone();
