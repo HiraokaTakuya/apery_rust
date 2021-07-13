@@ -409,7 +409,7 @@ impl Thread {
         debug_assert!(!(pv_node && cut_node));
 
         // Step 1
-        let in_check = self.position.in_check();
+        get_stack_mut(stack, 0).in_check = self.position.in_check();
         let prior_capture = self.position.captured_piece();
         let us = self.position.side_to_move();
         let mut best_value = -Value::INFINITE;
@@ -430,7 +430,7 @@ impl Thread {
             match self.position.is_repetition() {
                 Repetition::Not => {
                     if self.stop.load(Ordering::Relaxed) || get_stack(stack, 0).ply >= MAX_PLY {
-                        return if get_stack(stack, 0).ply >= MAX_PLY && !in_check {
+                        return if get_stack(stack, 0).ply >= MAX_PLY && !get_stack(stack, 0).in_check {
                             evaluate(
                                 &mut self.position,
                                 stack,
@@ -582,7 +582,7 @@ impl Thread {
             return best_value;
         }
 
-        if !root_node && !in_check {
+        if !root_node && !get_stack(stack, 0).in_check {
             if let Some(mate_move) = self.position.mate_move_in_1ply() {
                 best_value = Value::mate_in(get_stack(stack, 0).ply);
                 get_stack_mut(stack, 0).static_eval = best_value; // is this necessary?
@@ -612,7 +612,7 @@ impl Thread {
         };
         let improving;
         // Step 6
-        if in_check {
+        if get_stack(stack, 0).in_check {
             get_stack_mut(stack, 0).static_eval = pure_static_eval;
             improving = false;
         } else {
@@ -733,8 +733,8 @@ impl Thread {
                     if m != excluded_move.non_zero_unwrap_unchecked() && self.position.legal(m) {
                         prob_cut_count += 1;
                         get_stack_mut(stack, 0).current_move = Some(m);
-                        get_stack_mut(stack, 0).continuation_history = self.continuation_history[usize::from(in_check)]
-                            [(prior_capture != Piece::EMPTY) as usize]
+                        get_stack_mut(stack, 0).continuation_history = self.continuation_history
+                            [usize::from(get_stack(stack, 0).in_check)][(prior_capture != Piece::EMPTY) as usize]
                             .get_mut(m.piece_moved_after_move(), m.to());
                         debug_assert!(depth.0 >= 5);
 
@@ -856,7 +856,7 @@ impl Thread {
                         continue;
                     }
                     if lmr_depth < Depth(6)
-                        && !in_check
+                        && !get_stack(stack, 0).in_check
                         && get_stack(stack, 0).static_eval.0 + 235 + 172 * lmr_depth.0 <= alpha.0
                         && unsafe { (*cont_hists[0]).get(to, piece_moved_after_move) }
                             + unsafe { (*cont_hists[1]).get(to, piece_moved_after_move) }
@@ -932,7 +932,7 @@ impl Thread {
             }
 
             get_stack_mut(stack, 0).current_move = Some(m);
-            get_stack_mut(stack, 0).continuation_history = self.continuation_history[usize::from(in_check)]
+            get_stack_mut(stack, 0).continuation_history = self.continuation_history[usize::from(get_stack(stack, 0).in_check)]
                 [(prior_capture != Piece::EMPTY) as usize]
                 .get_mut(piece_moved_after_move, to);
 
@@ -1100,7 +1100,9 @@ impl Thread {
             mlist.generate::<LegalType>(pos, current_size);
             mlist.size
         }
-        debug_assert!(move_count != 0 || !in_check || excluded_move.is_some() || legal_moves_size(&self.position) == 0);
+        debug_assert!(
+            move_count != 0 || !get_stack(stack, 0).in_check || excluded_move.is_some() || legal_moves_size(&self.position) == 0
+        );
 
         if move_count == 0 {
             best_value = if excluded_move.is_some() {
@@ -1159,7 +1161,7 @@ impl Thread {
         get_stack_mut(stack, 0).current_move = None;
         get_stack_mut(stack, 0).continuation_history = self.continuation_history[0][0].sentinel();
         let mut best_move: Option<Move> = None;
-        let in_check = self.position.in_check();
+        get_stack_mut(stack, 0).in_check = self.position.in_check();
         let prior_capture = self.position.captured_piece();
         let mut _move_count = 0;
 
@@ -1172,7 +1174,7 @@ impl Thread {
 
         debug_assert!(0 <= get_stack(stack, 0).ply && get_stack(stack, 0).ply < MAX_PLY);
 
-        let tt_depth = if in_check || depth >= Depth::QS_CHECKS {
+        let tt_depth = if get_stack(stack, 0).in_check || depth >= Depth::QS_CHECKS {
             Depth::QS_CHECKS
         } else {
             Depth::QS_NO_CHECKS
@@ -1202,7 +1204,7 @@ impl Thread {
 
         let mut best_value;
         let futility_base;
-        if in_check {
+        if get_stack(stack, 0).in_check {
             get_stack_mut(stack, 0).static_eval = Value::NONE;
             futility_base = -Value::INFINITE;
             best_value = -Value::INFINITE;
@@ -1296,7 +1298,7 @@ impl Thread {
             debug_assert!(m != Move::NULL);
             let gives_check = self.position.gives_check(m);
             _move_count += 1;
-            if !in_check && !gives_check && futility_base > -Value::KNOWN_WIN {
+            if !get_stack(stack, 0).in_check && !gives_check && futility_base > -Value::KNOWN_WIN {
                 let futility_value = futility_base
                     + capture_piece_value(self.position.piece_on(m.to()))
                     + if m.is_promotion() {
@@ -1316,7 +1318,7 @@ impl Thread {
                 }
             }
 
-            if !in_check && !self.position.see_ge(m, Value::ZERO) {
+            if !get_stack(stack, 0).in_check && !self.position.see_ge(m, Value::ZERO) {
                 continue;
             }
 
@@ -1326,7 +1328,7 @@ impl Thread {
             }
 
             get_stack_mut(stack, 0).current_move = Some(m);
-            get_stack_mut(stack, 0).continuation_history = self.continuation_history[usize::from(in_check)]
+            get_stack_mut(stack, 0).continuation_history = self.continuation_history[usize::from(get_stack(stack, 0).in_check)]
                 [(prior_capture != Piece::EMPTY) as usize]
                 .get_mut(m.piece_moved_after_move(), m.to());
 
@@ -1356,7 +1358,7 @@ impl Thread {
             }
         }
 
-        if in_check && best_value == -Value::INFINITE {
+        if get_stack(stack, 0).in_check && best_value == -Value::INFINITE {
             return Value::mated_in(get_stack(stack, 0).ply);
         }
 

@@ -138,6 +138,7 @@ pub struct Stack {
     pub static_eval_raw: EvalSum,
     pub stat_score: i32,
     pub move_count: i32,
+    pub in_check: bool,
 }
 
 impl Stack {
@@ -153,6 +154,7 @@ impl Stack {
             static_eval_raw: EvalSum::new(),
             stat_score: 0,
             move_count: 0,
+            in_check: false,
         }
     }
 }
@@ -209,7 +211,10 @@ pub fn value_draw(nodes: i64) -> Value {
 }
 
 pub fn update_continuation_histories(stack: &mut [Stack], pc: Piece, to: Square, bonus: i32) {
-    for i in [2i64, 3, 5, 7].iter() {
+    for i in [2i64, 3, 5, 7] {
+        if get_stack(stack, -1).in_check && i > 3 {
+            break;
+        }
         let m = get_stack(stack, -i).current_move;
         if m.is_normal_move() {
             unsafe {
