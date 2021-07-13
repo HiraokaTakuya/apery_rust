@@ -727,10 +727,7 @@ impl Thread {
                 let mut prob_cut_count = 0;
                 while let Some(m) = mp.next_move(&self.position) {
                     if !(prob_cut_count < 2 + 2 * i32::from(cut_node)
-                        && !(Some(m) == tt_move
-                            && tte.bound().include_lower()
-                            && tte.depth() >= depth - Depth(4)
-                            && tt_value < raised_beta))
+                        && !(Some(m) == tt_move && tte.depth() >= depth - Depth(4) && tt_value < raised_beta))
                     {
                         break;
                     }
