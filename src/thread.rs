@@ -610,14 +610,13 @@ impl Thread {
                 self.ehash,
             )
         };
-        let mut eval;
         let improving;
         // Step 6
         if in_check {
-            eval = pure_static_eval;
             get_stack_mut(stack, 0).static_eval = pure_static_eval;
             improving = false;
         } else {
+            let mut eval;
             if tt_hit {
                 eval = tte.eval();
                 get_stack_mut(stack, 0).static_eval = eval;
@@ -906,7 +905,7 @@ impl Thread {
                 if value < singular_beta {
                     extension = Depth::ONE_PLY;
                     singular_lmr = true;
-                } else if eval >= beta && singular_beta >= beta {
+                } else if singular_beta >= beta {
                     return singular_beta;
                 }
             } else if gives_check
