@@ -879,7 +879,7 @@ impl Thread {
                     {
                         continue;
                     }
-                    if (!gives_check || extension == Depth::ZERO) && !self.position.see_ge(m, Value(-194 * depth.0)) {
+                    if !self.position.see_ge(m, Value(-194 * depth.0)) {
                         continue;
                     }
                 }
