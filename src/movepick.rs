@@ -253,7 +253,7 @@ fn select_best_good_capture(
         let score = ext_moves[*current_index].score;
         *current_index += 1;
         if m != tt_move.non_zero_unwrap_unchecked() {
-            if pos.see_ge(m, Value(-55 * score / 1024)) {
+            if pos.see_ge(m, Value(-69 * score / 1024)) {
                 return Some(m);
             } else {
                 ext_moves[*end_bad_captures].mv = m;
