@@ -21,7 +21,7 @@ impl TimeManagement {
         self.start_time = limits.start_time;
         let min_thinking_time = usi_optoins.get_i64(UsiOptions::MINIMUM_THINKING_TIME) as u64;
         let moves_to_go = 50;
-        let move_overhead = 0;
+        let move_overhead = 10;
         let slow_mover = usi_optoins.get_i64(UsiOptions::SLOW_MOVER) as i64;
         let time_left = std::cmp::max(
             1,
