@@ -94,7 +94,7 @@ impl UsiOptions {
         options.insert(Self::EVAL_HASH, UsiOptionValue::spin(256, 1, 1024 * 1024));
         options.insert(Self::MINIMUM_THINKING_TIME, UsiOptionValue::spin(20, 0, 5000));
         options.insert(Self::MULTI_PV, UsiOptionValue::spin(1, 1, 500));
-        options.insert(Self::SLOW_MOVER, UsiOptionValue::spin(84, 10, 1000));
+        options.insert(Self::SLOW_MOVER, UsiOptionValue::spin(100, 10, 1000));
         options.insert(Self::THREADS, UsiOptionValue::spin(1, 1, 8192));
         options.insert(Self::TIME_MARGIN, UsiOptionValue::spin(500, 0, i64::max_value()));
         options.insert(Self::USI_HASH, UsiOptionValue::spin(256, 1, 1024 * 1024));
