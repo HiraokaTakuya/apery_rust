@@ -78,6 +78,14 @@ impl LowPlyHistory {
             }
         }
     }
+    pub fn keep_data_from_previous_search(&mut self) {
+        for ply in 2..Self::MAX_LPH {
+            self.v[ply - 2] = self.v[ply];
+        }
+        for ply in Self::MAX_LPH - 2..Self::MAX_LPH {
+            self.v[ply].iter_mut().for_each(|item| *item = 0);
+        }
+    }
 }
 
 pub struct CounterMoveHistory {

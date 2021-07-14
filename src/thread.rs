@@ -213,6 +213,9 @@ impl Thread {
                 }
             }
         }
+
+        self.low_ply_history.keep_data_from_previous_search();
+
         let multi_pv = std::cmp::min(self.usi_options.get_i64(UsiOptions::MULTI_PV) as usize, self.root_moves.len());
         self.tt_hit_average = TT_HIT_AVERAGE_WINDOW * TT_HIT_AVERAGE_RESOLUTION / 2;
 
@@ -1758,7 +1761,6 @@ impl ThreadPool {
                             th.position = pos;
                             th.usi_options = usi_options_cloned;
                             th.timeman = timeman_cloned;
-                            th.low_ply_history.fill(0);
                             th.iterative_deepening_loop();
                         };
                         if i == 0 {
