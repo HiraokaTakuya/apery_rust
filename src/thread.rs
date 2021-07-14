@@ -811,7 +811,7 @@ impl Thread {
             && tt_move
                 .non_zero_unwrap_unchecked()
                 .is_capture_or_pawn_promotion(&self.position);
-        let mut singular_lmr = false;
+        let mut singular_quiet_lmr = false;
         let former_pv = tt_pv && !pv_node;
 
         let th = ThreadHolding::new(self, key, get_stack(stack, 0).ply);
@@ -921,7 +921,7 @@ impl Thread {
                 get_stack_mut(stack, 0).excluded_move = None;
                 if value < singular_beta {
                     extension = Depth::ONE_PLY;
-                    singular_lmr = true;
+                    singular_quiet_lmr = !tt_capture;
                 } else if singular_beta >= beta {
                     return singular_beta;
                 } else if tt_value >= beta {
@@ -990,7 +990,7 @@ impl Thread {
                 //    r -= Depth::ONE_PLY;
                 //}
 
-                if singular_lmr {
+                if singular_quiet_lmr {
                     r -= Depth(1 + i32::from(former_pv));
                 }
 
