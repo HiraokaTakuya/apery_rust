@@ -366,23 +366,25 @@ impl Thread {
                     best_move_changes.store(0, Ordering::Relaxed);
                 }
                 let best_move_instability = 1.0 + total_best_move_changes / self.best_move_changess.len() as f64;
-                if self.root_moves.len() == 1 || {
+                let (elapsed, optimum_millis) = {
                     let timeman = self.timeman.lock().unwrap();
-                    timeman.elapsed()
-                        > (timeman.optimum_millis() as f64 * falling_eval * reduction * best_move_instability) as i64
-                } {
+                    (timeman.elapsed(), timeman.optimum_millis())
+                };
+                let total_time = if self.root_moves.len() == 1 {
+                    0
+                } else {
+                    (optimum_millis as f64 * falling_eval * reduction * best_move_instability) as i64
+                };
+                if elapsed > total_time {
                     if self.ponder.load(Ordering::Relaxed) {
                         self.stop_on_ponderhit.store(true, Ordering::Relaxed);
                     } else {
                         self.stop.store(true, Ordering::Relaxed);
                     }
-                } else if self.increase_depth.load(Ordering::Relaxed) && self.ponder.load(Ordering::Relaxed) && {
-                    let (elapsed, optimum) = {
-                        let timeman = self.timeman.lock().unwrap();
-                        (timeman.elapsed(), timeman.optimum_millis())
-                    };
-                    elapsed as f64 > optimum as f64 * falling_eval * reduction * best_move_instability * 0.6
-                } {
+                } else if self.increase_depth.load(Ordering::Relaxed)
+                    && self.ponder.load(Ordering::Relaxed)
+                    && elapsed as f64 > total_time as f64 * 0.6
+                {
                     self.increase_depth.store(false, Ordering::Relaxed);
                 } else {
                     self.increase_depth.store(true, Ordering::Relaxed);
