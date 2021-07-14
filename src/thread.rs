@@ -886,6 +886,7 @@ impl Thread {
                     }
                     if !gives_check
                         && lmr_depth < Depth(6)
+                        && !(pv_node && best_value.0.abs() < 2)
                         && !get_stack(stack, 0).in_check
                         && Value(
                             get_stack(stack, 0).static_eval.0
