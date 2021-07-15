@@ -90,6 +90,7 @@ struct TtCluster {
 
 pub struct TranspositionTable {
     table: Vec<TtCluster>,
+    cluster_count: usize,
     generation8: u8,
 }
 
@@ -97,19 +98,20 @@ impl TranspositionTable {
     pub fn new() -> TranspositionTable {
         TranspositionTable {
             table: vec![],
+            cluster_count: 0,
             generation8: 0,
         }
     }
     pub fn resize(&mut self, mega_byte_size: usize, thread_pool: &mut ThreadPool) {
         thread_pool.wait_for_search_finished();
         let mega_byte_size = (mega_byte_size + 1).next_power_of_two() >> 1;
-        let cluster_count = mega_byte_size * 1024 * 1024 / std::mem::size_of::<TtCluster>();
+        self.cluster_count = mega_byte_size * 1024 * 1024 / std::mem::size_of::<TtCluster>();
         // self.table can be very large and takes much time to clear, so parallelize self.clear().
         self.table.clear();
         self.table.shrink_to_fit();
-        self.table = Vec::<TtCluster>::with_capacity(cluster_count);
+        self.table = Vec::<TtCluster>::with_capacity(self.cluster_count);
         unsafe {
-            self.table.set_len(cluster_count);
+            self.table.set_len(self.cluster_count);
         }
         self.clear();
     }
@@ -123,8 +125,7 @@ impl TranspositionTable {
         self.generation8 = self.generation8.wrapping_add(8);
     }
     fn cluster_index(&self, key: Key) -> usize {
-        let mask = self.table.len() - 1;
-        key.0 as usize & mask
+        (key.0 as u32 as usize * self.cluster_count) >> 32
     }
     fn get_mut_cluster(&mut self, index: usize) -> &mut TtCluster {
         debug_assert!(index < self.table.len());
