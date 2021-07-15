@@ -81,6 +81,7 @@ impl TtEntry {
 }
 
 const CLUSTER_SIZE: usize = 3;
+const CLUSTERS_PER_SUPER_CLUSTER: usize = 256;
 
 #[repr(align(32))]
 struct TtCluster {
@@ -90,7 +91,7 @@ struct TtCluster {
 
 pub struct TranspositionTable {
     table: Vec<TtCluster>,
-    cluster_count: usize,
+    super_cluster_count: usize,
     generation8: u8,
 }
 
@@ -98,20 +99,20 @@ impl TranspositionTable {
     pub fn new() -> TranspositionTable {
         TranspositionTable {
             table: vec![],
-            cluster_count: 0,
+            super_cluster_count: 0,
             generation8: 0,
         }
     }
     pub fn resize(&mut self, mega_byte_size: usize, thread_pool: &mut ThreadPool) {
         thread_pool.wait_for_search_finished();
         let mega_byte_size = (mega_byte_size + 1).next_power_of_two() >> 1;
-        self.cluster_count = mega_byte_size * 1024 * 1024 / std::mem::size_of::<TtCluster>();
+        self.super_cluster_count = mega_byte_size * 1024 * 1024 / (std::mem::size_of::<TtCluster>() * CLUSTERS_PER_SUPER_CLUSTER);
         // self.table can be very large and takes much time to clear, so parallelize self.clear().
         self.table.clear();
         self.table.shrink_to_fit();
-        self.table = Vec::<TtCluster>::with_capacity(self.cluster_count);
+        self.table = Vec::<TtCluster>::with_capacity(self.super_cluster_count * CLUSTERS_PER_SUPER_CLUSTER);
         unsafe {
-            self.table.set_len(self.cluster_count);
+            self.table.set_len(self.super_cluster_count * CLUSTERS_PER_SUPER_CLUSTER);
         }
         self.clear();
     }
@@ -125,7 +126,9 @@ impl TranspositionTable {
         self.generation8 = self.generation8.wrapping_add(8);
     }
     fn cluster_index(&self, key: Key) -> usize {
-        (key.0 as u32 as usize * self.cluster_count) >> 32
+        let first_term = key.excluded_turn().0 as u32 as u64 * self.super_cluster_count as u64;
+        let second_term = ((key.0 >> 32) as u16 as u64 * self.super_cluster_count as u64) >> 16;
+        ((((first_term + second_term) >> 25) << 1) | key.turn_bit()) as usize
     }
     fn get_mut_cluster(&mut self, index: usize) -> &mut TtCluster {
         debug_assert!(index < self.table.len());

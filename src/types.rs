@@ -1187,6 +1187,11 @@ impl Key {
     pub fn excluded_turn(self) -> KeyExcludedTurn {
         KeyExcludedTurn(self.0 >> 1)
     }
+    #[allow(dead_code)]
+    #[inline]
+    pub fn turn_bit(self) -> u64 {
+        self.0 & 1
+    }
 }
 
 #[test]

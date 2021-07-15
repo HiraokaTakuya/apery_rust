@@ -97,7 +97,8 @@ impl UsiOptions {
         options.insert(Self::SLOW_MOVER, UsiOptionValue::spin(100, 10, 1000));
         options.insert(Self::THREADS, UsiOptionValue::spin(1, 1, 8192));
         options.insert(Self::TIME_MARGIN, UsiOptionValue::spin(500, 0, i64::max_value()));
-        options.insert(Self::USI_HASH, UsiOptionValue::spin(256, 1, 1024 * 1024));
+        const MAX_HASH_MB: usize = 0x200_0000;
+        options.insert(Self::USI_HASH, UsiOptionValue::spin(256, 1, MAX_HASH_MB as i64));
         options.insert(Self::USI_PONDER, UsiOptionValue::check(true));
 
         UsiOptions { v: options }
