@@ -804,7 +804,7 @@ impl Thread {
             &cont_hists,
             counter_move,
             &get_stack(stack, 0).killers,
-            if depth > Depth(12) { get_stack(stack, 0).ply } else { MAX_PLY },
+            get_stack(stack, 0).ply,
         );
 
         let mut value = best_value;
