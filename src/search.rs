@@ -200,9 +200,9 @@ pub const TEMPO: Value = Value(28);
 pub fn stat_bonus(depth: Depth) -> i32 {
     let d = depth.0;
     if d > 15 {
-        -8
+        28
     } else {
-        19 * d * d + 155 * d - 132
+        19 * d * d + 135 * d - 136
     }
 }
 
@@ -224,14 +224,14 @@ pub fn update_continuation_histories(stack: &mut [Stack], pc: Piece, to: Square,
     }
 }
 
-pub const RAZOR_MARGIN: Value = Value(531);
+pub const RAZOR_MARGIN: Value = Value(516);
 
 pub fn futility_margin(depth: Depth) -> Value {
     Value(75 * depth.0)
 }
 
 pub fn futility_move_count(improving: bool, depth_per_one_ply: i32) -> i32 {
-    (4 + depth_per_one_ply * depth_per_one_ply) / (2 - i32::from(improving))
+    (3 + depth_per_one_ply * depth_per_one_ply) / (2 - i32::from(improving))
 }
 
 pub struct Reductions {
@@ -244,13 +244,13 @@ impl Reductions {
             values: [0; ExtMove::MAX_LEGAL_MOVES],
         };
         for (i, v) in r.values.iter_mut().enumerate().skip(1) {
-            *v = ((24.8 + f64::from(thread_num as i32).ln()) * f64::from(i as i32).ln()) as i32;
+            *v = ((24.9 + f64::from(thread_num as i32).ln()) * f64::from(i as i32).ln()) as i32;
         }
         r
     }
     pub fn get(&self, improving: bool, depth: Depth, move_count: i32) -> Depth {
         let r = unsafe { self.values.get_unchecked(depth.0 as usize) * self.values.get_unchecked(move_count as usize) };
-        Depth((r + 511) / 1024 + i32::from(!improving && r > 1007))
+        Depth((r + 529) / 1024 + i32::from(!improving && r > 1050))
     }
 }
 
