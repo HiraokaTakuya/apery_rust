@@ -866,7 +866,8 @@ impl Thread {
                         && unsafe { (*cont_hists[0]).get(to, piece_moved_after_move) }
                             + unsafe { (*cont_hists[1]).get(to, piece_moved_after_move) }
                             + unsafe { (*cont_hists[3]).get(to, piece_moved_after_move) }
-                            < 27400
+                            + unsafe { (*cont_hists[5]).get(to, piece_moved_after_move) } / 2
+                            < 31400
                     {
                         continue;
                     }
