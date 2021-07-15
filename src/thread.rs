@@ -253,7 +253,7 @@ impl Thread {
                 self.sel_depth = 0;
                 if self.root_depth >= Depth(4) {
                     let previous_score = self.root_moves[self.pv_idx].previous_score;
-                    delta = Value(21);
+                    delta = Value(19);
                     alpha = std::cmp::max(previous_score - delta, -Value::INFINITE);
                     beta = std::cmp::min(previous_score + delta, Value::INFINITE);
                 }
@@ -351,16 +351,16 @@ impl Thread {
                 && !self.stop_on_ponderhit.load(Ordering::Relaxed)
             {
                 let falling_eval = f64::from(
-                    293 + 6 * (self.best_previous_score.lock().unwrap().0 - best_value.0)
+                    296 + 6 * (self.best_previous_score.lock().unwrap().0 - best_value.0)
                         + 6 * (self.iter_values.lock().unwrap()[iter_index].0 - best_value.0),
-                ) / 742.0;
+                ) / 725.0;
                 let falling_eval = num::clamp(falling_eval, 0.5, 1.5);
                 time_reduction = if last_best_move_depth.0 + 10 < self.completed_depth.0 {
-                    1.93
+                    1.92
                 } else {
-                    0.96
+                    0.95
                 };
-                let reduction = (1.36 + self.previous_time_reduction) / (2.21 * time_reduction);
+                let reduction = (1.47 + self.previous_time_reduction) / (2.22 * time_reduction);
                 for best_move_changes in self.best_move_changess.iter() {
                     total_best_move_changes += best_move_changes.load(Ordering::Relaxed) as f64;
                     best_move_changes.store(0, Ordering::Relaxed);
@@ -383,7 +383,7 @@ impl Thread {
                     }
                 } else if self.increase_depth.load(Ordering::Relaxed)
                     && self.ponder.load(Ordering::Relaxed)
-                    && elapsed as f64 > total_time as f64 * 0.57
+                    && elapsed as f64 > total_time as f64 * 0.56
                 {
                     self.increase_depth.store(false, Ordering::Relaxed);
                 } else {
@@ -674,16 +674,16 @@ impl Thread {
             // Step 9
             if !pv_node
                 && get_stack(stack, -1).current_move.is_some()
-                && get_stack(stack, -1).stat_score < 24714
+                && get_stack(stack, -1).stat_score < 23824
                 && eval >= beta
                 && eval >= get_stack(stack, 0).static_eval
                 && get_stack(stack, 0).static_eval.0
-                    >= beta.0 - 29 * depth.0 - 31 * i32::from(improving) + 119 * i32::from(tt_pv) + 299
+                    >= beta.0 - 33 * depth.0 - 33 * i32::from(improving) + 112 * i32::from(tt_pv) + 311
                 && excluded_move.is_none()
                 && (get_stack(stack, 0).ply >= self.null_move_pruning_min_ply || us != self.null_move_pruning_color)
             {
                 debug_assert!(eval - beta >= Value(0));
-                let r = Depth((793 + 70 * depth.0) / 252 + std::cmp::min((eval.0 - beta.0) / 192, 3));
+                let r = Depth((737 + 77 * depth.0) / 246 + std::cmp::min((eval.0 - beta.0) / 192, 3));
                 get_stack_mut(stack, 0).current_move = Some(Move::NULL);
                 get_stack_mut(stack, 0).continuation_history = self.continuation_history[0][0].sentinel();
 
@@ -719,8 +719,8 @@ impl Thread {
             }
 
             // Step 10
-            if !pv_node && depth.0 > 5 && beta.0.abs() < Value::MATE_IN_MAX_PLY.0 {
-                let raised_beta = Value(beta.0 + 182 - 48 * i32::from(improving));
+            if !pv_node && depth.0 > 4 && beta.0.abs() < Value::MATE_IN_MAX_PLY.0 {
+                let raised_beta = Value(beta.0 + 176 - 49 * i32::from(improving));
                 debug_assert!(raised_beta < Value::INFINITE);
                 let mut mp = MovePickerForProbCut::new(
                     &self.position,
@@ -754,7 +754,7 @@ impl Thread {
                                 &mut stack[1..],
                                 -raised_beta,
                                 -raised_beta + Value(1),
-                                Depth(depth.0 - 5),
+                                Depth(depth.0 - 4),
                                 !cut_node,
                             );
                         }
@@ -862,18 +862,18 @@ impl Thread {
                     }
                     if lmr_depth < Depth(6)
                         && !get_stack(stack, 0).in_check
-                        && get_stack(stack, 0).static_eval.0 + 252 + 176 * lmr_depth.0 <= alpha.0
+                        && get_stack(stack, 0).static_eval.0 + 284 + 188 * lmr_depth.0 <= alpha.0
                         && unsafe { (*cont_hists[0]).get(to, piece_moved_after_move) }
                             + unsafe { (*cont_hists[1]).get(to, piece_moved_after_move) }
                             + unsafe { (*cont_hists[3]).get(to, piece_moved_after_move) }
                             + unsafe { (*cont_hists[5]).get(to, piece_moved_after_move) } / 2
-                            < 30251
+                            < 28388
                     {
                         continue;
                     }
                     if !self
                         .position
-                        .see_ge(m, Value(-(31 - std::cmp::min(lmr_depth.0, 18)) * lmr_depth.0 * lmr_depth.0))
+                        .see_ge(m, Value(-(29 - std::cmp::min(lmr_depth.0, 17)) * lmr_depth.0 * lmr_depth.0))
                     {
                         continue;
                     }
@@ -893,15 +893,15 @@ impl Thread {
                         && !get_stack(stack, 0).in_check
                         && Value(
                             get_stack(stack, 0).static_eval.0
-                                + 264
-                                + 397 * lmr_depth.0
+                                + 267
+                                + 391 * lmr_depth.0
                                 + capture_piece_value(self.position.piece_on(to)).0,
                         ) <= alpha
                     {
                         continue;
                     }
 
-                    if !self.position.see_ge(m, Value(-192 * depth.0)) {
+                    if !self.position.see_ge(m, Value(-202 * depth.0)) {
                         continue;
                     }
                 }
@@ -969,11 +969,11 @@ impl Thread {
                     || move_count_pruning
                     || get_stack(stack, 0).static_eval + capture_piece_value(self.position.captured_piece()) <= alpha
                     || cut_node
-                    || self.tt_hit_average < 399 * TT_HIT_AVERAGE_RESOLUTION * TT_HIT_AVERAGE_WINDOW / 1024)
+                    || self.tt_hit_average < 415 * TT_HIT_AVERAGE_RESOLUTION * TT_HIT_AVERAGE_WINDOW / 1024)
             {
                 let mut r = unsafe { (*self.reductions).get(improving, depth, move_count) };
 
-                if self.tt_hit_average > 492 * TT_HIT_AVERAGE_RESOLUTION * TT_HIT_AVERAGE_WINDOW / 1024 {
+                if self.tt_hit_average > 473 * TT_HIT_AVERAGE_RESOLUTION * TT_HIT_AVERAGE_WINDOW / 1024 {
                     r -= Depth::ONE_PLY;
                 }
 
@@ -989,7 +989,7 @@ impl Thread {
                     r += Depth::ONE_PLY;
                 }
 
-                //if get_stack(stack, -1).move_count > 14 {
+                //if get_stack(stack, -1).move_count > 13 {
                 //    r -= Depth::ONE_PLY;
                 //}
 
@@ -1011,14 +1011,14 @@ impl Thread {
                         + unsafe { (*cont_hists[0]).get(to, piece_moved_after_move) }
                         + unsafe { (*cont_hists[1]).get(to, piece_moved_after_move) }
                         + unsafe { (*cont_hists[3]).get(to, piece_moved_after_move) }
-                        - 4926;
+                        - 4826;
 
-                    if get_stack(stack, 0).stat_score >= -99 && get_stack(stack, -1).stat_score < -116 {
+                    if get_stack(stack, 0).stat_score >= -100 && get_stack(stack, -1).stat_score < -112 {
                         r -= Depth::ONE_PLY;
-                    } else if get_stack(stack, -1).stat_score >= -117 && get_stack(stack, 0).stat_score < -150 {
+                    } else if get_stack(stack, -1).stat_score >= -125 && get_stack(stack, 0).stat_score < -138 {
                         r += Depth::ONE_PLY;
                     }
-                    r -= Depth(get_stack(stack, 0).stat_score / 15896);
+                    r -= Depth(get_stack(stack, 0).stat_score / 14615);
                 } else {
                     if depth < Depth(8) && move_count > 2 {
                         r += Depth::ONE_PLY;
@@ -1027,7 +1027,7 @@ impl Thread {
                         && Value(
                             get_stack(stack, 0).static_eval.0
                                 + capture_piece_value(self.position.captured_piece()).0
-                                + 200 * depth.0,
+                                + 211 * depth.0,
                         ) <= alpha
                     {
                         r += Depth::ONE_PLY;
@@ -1287,7 +1287,7 @@ impl Thread {
                 alpha = best_value;
             }
 
-            futility_base = best_value + Value(138);
+            futility_base = best_value + Value(141);
         }
 
         let cont_hists = [
@@ -1501,7 +1501,7 @@ impl Thread {
             let prev_sq = prev_move.non_zero_unwrap_unchecked().to();
             self.counter_moves.set(prev_sq, self.position.piece_on(prev_sq), m);
         }
-        if depth.0 > 12 && get_stack(stack, 0).ply < LowPlyHistory::MAX_LPH as i32 {
+        if depth.0 > 11 && get_stack(stack, 0).ply < LowPlyHistory::MAX_LPH as i32 {
             self.low_ply_history
                 .update(get_stack(stack, 0).ply, m, stat_bonus(depth - Depth(7)));
         }
