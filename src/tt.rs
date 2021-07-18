@@ -60,18 +60,16 @@ impl TtEntry {
         eval: Value,
         generation: u8,
     ) {
+        let key = key.excluded_turn().0 as u16;
         if let Some(mv) = mv {
             self.mv16 = u32::from(mv.0) as u16;
-        } else if (key.0 >> 48) as u16 != self.key16 {
+        } else if key != self.key16 {
             self.mv16 = 0;
         }
 
-        if (key.0 >> 48) as u16 != self.key16
-            || depth.0 - Depth::OFFSET.0 > i32::from(self.depth8) - 4
-            || bound.0 == Bound::EXACT.0
-        {
+        if key != self.key16 || depth.0 - Depth::OFFSET.0 > i32::from(self.depth8) - 4 || bound.0 == Bound::EXACT.0 {
             debug_assert!(depth.0 - Depth::OFFSET.0 >= 0);
-            self.key16 = (key.0 >> 48) as u16;
+            self.key16 = key;
             self.value16 = value.0 as i16;
             self.eval16 = eval.0 as i16;
             self.genbound8 = (i32::from(generation) | (i32::from(pv) << 2) | bound.0) as u8;
@@ -81,7 +79,6 @@ impl TtEntry {
 }
 
 const CLUSTER_SIZE: usize = 3;
-const CLUSTERS_PER_SUPER_CLUSTER: usize = 256;
 
 #[repr(align(32))]
 struct TtCluster {
@@ -91,7 +88,7 @@ struct TtCluster {
 
 pub struct TranspositionTable {
     table: Vec<TtCluster>,
-    super_cluster_count: usize,
+    cluster_count: usize,
     generation8: u8,
 }
 
@@ -99,20 +96,20 @@ impl TranspositionTable {
     pub fn new() -> TranspositionTable {
         TranspositionTable {
             table: vec![],
-            super_cluster_count: 0,
+            cluster_count: 0,
             generation8: 0,
         }
     }
     pub fn resize(&mut self, mega_byte_size: usize, thread_pool: &mut ThreadPool) {
         thread_pool.wait_for_search_finished();
-        let mega_byte_size = (mega_byte_size + 1).next_power_of_two() >> 1;
-        self.super_cluster_count = mega_byte_size * 1024 * 1024 / (std::mem::size_of::<TtCluster>() * CLUSTERS_PER_SUPER_CLUSTER);
+        self.cluster_count = mega_byte_size * 1024 * 1024 / std::mem::size_of::<TtCluster>();
+        debug_assert!(self.cluster_count & 1 == 0);
         // self.table can be very large and takes much time to clear, so parallelize self.clear().
         self.table.clear();
         self.table.shrink_to_fit();
-        self.table = Vec::<TtCluster>::with_capacity(self.super_cluster_count * CLUSTERS_PER_SUPER_CLUSTER);
+        self.table = Vec::<TtCluster>::with_capacity(self.cluster_count);
         unsafe {
-            self.table.set_len(self.super_cluster_count * CLUSTERS_PER_SUPER_CLUSTER);
+            self.table.set_len(self.cluster_count);
         }
         self.clear();
     }
@@ -126,9 +123,11 @@ impl TranspositionTable {
         self.generation8 = self.generation8.wrapping_add(8);
     }
     fn cluster_index(&self, key: Key) -> usize {
-        let first_term = key.excluded_turn().0 as u32 as u64 * self.super_cluster_count as u64;
-        let second_term = ((key.0 >> 32) as u16 as u64 * self.super_cluster_count as u64) >> 16;
-        ((((first_term + second_term) >> 25) << 1) | key.turn_bit()) as usize
+        fn mul_hi64(l: u64, r: u64) -> u64 {
+            ((u128::from(l) * u128::from(r)) >> 64) as u64
+        }
+        let index = mul_hi64(key.excluded_turn().0, self.cluster_count as u64); // [0, self.cluster_count / 2 - 1]
+        ((index << 1) | key.turn_bit()) as usize // [0, self.cluster_count - 1]
     }
     fn get_mut_cluster(&mut self, index: usize) -> &mut TtCluster {
         debug_assert!(index < self.table.len());
@@ -136,7 +135,7 @@ impl TranspositionTable {
     }
     pub fn probe(&mut self, key: Key) -> (&mut TtEntry, bool) {
         let generation8 = self.generation8;
-        let key16 = (key.0 >> 48) as u16;
+        let key16 = key.excluded_turn().0 as u16;
         let cluster = self.get_mut_cluster(self.cluster_index(key));
         for i in 0..cluster.entry.len() {
             if cluster.entry[i].key16 == 0 || cluster.entry[i].key16 == key16 {
@@ -167,6 +166,42 @@ fn test_size() {
     assert_eq!(std::mem::size_of::<TtEntry>(), 10);
     assert_eq!(std::mem::size_of::<TtCluster>(), 32);
     assert_eq!(std::mem::size_of::<[TtCluster; 4]>(), 128);
+}
+
+#[test]
+fn test_cluster_index() {
+    #[cfg(feature = "kppt")]
+    use crate::evaluate::kppt::*;
+    use crate::search::*;
+    std::thread::Builder::new()
+        .stack_size(crate::stack_size::STACK_SIZE)
+        .spawn(|| {
+            let mut thread_pool = ThreadPool::new();
+            let mut tt = TranspositionTable::new();
+            #[cfg(feature = "kppt")]
+            let mut ehash = EvalHash::new();
+            let mut breadcrumbs = Breadcrumbs::new();
+            let mut reductions = Reductions::new(1);
+            thread_pool.set(
+                1,
+                &mut tt,
+                #[cfg(feature = "kppt")]
+                &mut ehash,
+                &mut breadcrumbs,
+                &mut reductions,
+            );
+            tt.resize(1, &mut thread_pool);
+            #[cfg(feature = "kppt")]
+            ehash.resize(1, &mut thread_pool);
+
+            // If key is all 1 bits, index is max.
+            let key = Key(0xffff_ffff_ffff_ffff);
+            let index = tt.cluster_index(key);
+            assert_eq!(index, tt.cluster_count - 1);
+        })
+        .unwrap()
+        .join()
+        .unwrap();
 }
 
 #[test]
