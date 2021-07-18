@@ -346,10 +346,10 @@ impl Evaluator {
         if get_stack(stack, 0).static_eval_raw.is_not_evaluated() {
             debug_assert!(!get_stack(stack, -1).static_eval_raw.is_not_evaluated());
             debug_assert!(get_stack(stack, -1).current_move.non_zero_unwrap_unchecked() != Move::NULL);
-            let key_exclude_turn = Key(pos.key().0 >> 1);
-            let mut entry = unsafe { (*ehash).get(key_exclude_turn) };
+            let key_excluded_turn = pos.key().excluded_turn();
+            let mut entry = unsafe { (*ehash).get(key_excluded_turn) };
             entry.decode();
-            if entry.key == key_exclude_turn {
+            if entry.key == key_excluded_turn {
                 get_stack_mut(stack, 0).static_eval_raw = entry;
                 debug_assert_eq!(entry.sum(pos.side_to_move()), self.evaluate_debug(pos));
                 return entry.sum(pos.side_to_move()) / FV_SCALE;
@@ -429,11 +429,11 @@ impl Evaluator {
                         );
                     }
                 }
-                sum.key = key_exclude_turn;
+                sum.key = key_excluded_turn;
                 sum.encode();
                 debug_assert_eq!(sum.sum(pos.side_to_move()), self.evaluate_debug(pos));
                 unsafe {
-                    (*ehash).set(key_exclude_turn, sum);
+                    (*ehash).set(key_excluded_turn, sum);
                 }
                 sum.sum(pos.side_to_move()) / FV_SCALE
             } else {
@@ -511,7 +511,7 @@ impl Evaluator {
                 diff.val[2][0] += pos.material_diff().0 * FV_SCALE;
                 get_stack_mut(stack, 0).static_eval_raw = get_stack(stack, -1).static_eval_raw;
                 get_stack_mut(stack, 0).static_eval_raw += diff;
-                get_stack_mut(stack, 0).static_eval_raw.key = key_exclude_turn;
+                get_stack_mut(stack, 0).static_eval_raw.key = key_excluded_turn;
                 get_stack_mut(stack, 0).static_eval_raw.encode();
                 debug_assert_eq!(
                     get_stack(stack, 0).static_eval_raw.sum(pos.side_to_move()),
@@ -614,7 +614,7 @@ pub fn evaluate_at_root(pos: &Position, stack: &mut [Stack]) -> Value {
 #[derive(Clone, Copy)]
 pub struct EvalSum {
     pub val: [[i32; 2]; 3],
-    pub key: Key,
+    pub key: KeyExcludedTurn,
 }
 
 impl std::ops::AddAssign for EvalSum {
@@ -644,7 +644,7 @@ impl EvalSum {
     pub fn new() -> EvalSum {
         EvalSum {
             val: [[0; 2]; 3],
-            key: Key(0),
+            key: KeyExcludedTurn(0),
         }
     }
     fn sum(&self, side_to_move: Color) -> Value {
@@ -660,7 +660,7 @@ impl EvalSum {
         Value(value_board + value_turn)
     }
     fn decode(&mut self) {
-        self.key = Key(unsafe {
+        self.key = KeyExcludedTurn(unsafe {
             self.key.0
                 ^ std::mem::transmute::<[i32; 2], u64>(self.val[0])
                 ^ std::mem::transmute::<[i32; 2], u64>(self.val[1])
@@ -705,12 +705,12 @@ impl EvalHash {
             *x = unsafe { std::mem::zeroed() };
         });
     }
-    pub fn get(&self, key: Key) -> EvalSum {
+    pub fn get(&self, key: KeyExcludedTurn) -> EvalSum {
         let mask = self.value.len() - 1;
         let index = key.0 as usize & mask;
         unsafe { *self.value.get_unchecked(index) }
     }
-    pub fn set(&mut self, key: Key, entry: &EvalSum) {
+    pub fn set(&mut self, key: KeyExcludedTurn, entry: &EvalSum) {
         let mask = self.value.len() - 1;
         let index = key.0 as usize & mask;
         unsafe {

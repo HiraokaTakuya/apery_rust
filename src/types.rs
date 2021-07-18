@@ -1179,6 +1179,15 @@ impl Depth {
 
 #[derive(Clone, Copy, PartialEq, Eq, BitXor, BitXorAssign, Hash)]
 pub struct Key(pub u64);
+#[derive(Clone, Copy, PartialEq, Eq, BitXor, BitXorAssign, Hash)]
+pub struct KeyExcludedTurn(pub u64);
+
+impl Key {
+    #[inline]
+    pub fn excluded_turn(self) -> KeyExcludedTurn {
+        KeyExcludedTurn(self.0 >> 1)
+    }
+}
 
 #[test]
 fn test_color_inverse() {
