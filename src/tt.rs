@@ -195,47 +195,72 @@ fn test_probe() {
             let pv = false;
             let gen8 = tt.generation8;
 
-            let key = Key(0xffff_ffff_ffff_ffff);
+            use rand::prelude::*;
+            let mut rand: StdRng = SeedableRng::seed_from_u64(123);
+            let key = Key(0x0123_4567_89ab_cdef);
+            let cluster_index = tt.cluster_index(key);
+
             let (tte, found) = tt.probe(key);
             assert!(!found);
             let (d2_val, d2) = (Value(20), Depth(2));
             tte.save(key, d2_val, pv, Bound::EXACT, d2, None, Value(0), gen8); // cluster: [(d2, gen_old), 0, 0]
+            let (_, found) = tt.probe(key);
+            assert!(found);
 
-            let key = Key(0x7fff_ffff_ffff_ffff);
+            fn gen_same_cluster_index_key(rng: &mut StdRng, cluster_index: usize, tt: &TranspositionTable) -> Key {
+                loop {
+                    let key = Key(rng.gen());
+                    let c_index = tt.cluster_index(key);
+                    if c_index == cluster_index {
+                        return key;
+                    }
+                }
+            }
+            let key = gen_same_cluster_index_key(&mut rand, cluster_index, &tt);
             let (tte, found) = tt.probe(key);
             assert!(!found);
             let (d1_val, d1) = (Value(10), Depth(1));
             tte.save(key, d1_val, pv, Bound::EXACT, d1, None, Value(0), gen8); // cluster: [(d2, gen_old), (d1, gen_old), 0]
+            let (_, found) = tt.probe(key);
+            assert!(found);
 
-            let key = Key(0x3fff_ffff_ffff_ffff);
+            let key = gen_same_cluster_index_key(&mut rand, cluster_index, &tt);
             let (tte, found) = tt.probe(key);
             assert!(!found);
             let (d9_val, d9) = (Value(90), Depth(9));
             tte.save(key, d9_val, pv, Bound::EXACT, d9, None, Value(0), gen8); // cluster: [(d2, gen_old), (d1, gen_old), (d9, gen_old)]
+            let (_, found) = tt.probe(key);
+            assert!(found);
 
             tt.new_search();
             let gen8 = tt.generation8;
 
-            let key = Key(0x1fff_ffff_ffff_ffff);
+            let key = gen_same_cluster_index_key(&mut rand, cluster_index, &tt);
             let (tte, found) = tt.probe(key);
             assert!(!found);
             assert_eq!(tte.value(), d1_val); // the entry is most shallow depth
             let (d1_val, d1) = (Value(10), Depth(1));
             tte.save(key, d1_val, pv, Bound::EXACT, d1, None, Value(0), gen8); // cluster: [(d2, gen_old), (d1, gen_new), (d9, gen_old)]
+            let (_, found) = tt.probe(key);
+            assert!(found);
 
-            let key = Key(0x0fff_ffff_ffff_ffff);
+            let key = gen_same_cluster_index_key(&mut rand, cluster_index, &tt);
             let (tte, found) = tt.probe(key);
             assert!(!found);
             assert_eq!(tte.value(), d2_val); // old and shallow entry.
             let (d3_val, d3) = (Value(30), Depth(3));
             tte.save(key, d3_val, pv, Bound::EXACT, d3, None, Value(0), gen8); // cluster: [d3, gen_new), (d1, gen_new), (d9, gen_old)]
+            let (_, found) = tt.probe(key);
+            assert!(found);
 
-            let key = Key(0x07ff_ffff_ffff_ffff);
+            let key = gen_same_cluster_index_key(&mut rand, cluster_index, &tt);
             let (tte, found) = tt.probe(key);
             assert!(!found);
             assert_eq!(tte.value(), d1_val); // d9 entry has very deep depth. d9 isn't chosen.
             let (d2_val, d2) = (Value(20), Depth(2));
             tte.save(key, d2_val, pv, Bound::EXACT, d2, None, Value(0), gen8); // cluster: [d3, gen_new), (d2, gen_new), (d9, gen_old)]
+            let (_, found) = tt.probe(key);
+            assert!(found);
         })
         .unwrap()
         .join()
