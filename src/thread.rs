@@ -503,6 +503,20 @@ impl Thread {
             None
         };
         let tt_pv = pv_node || (tt_hit && tte.is_pv());
+
+        if tt_pv
+            && depth > Depth(12)
+            && get_stack(stack, 0).ply - 1 < LowPlyHistory::MAX_LPH as i32
+            && self.position.captured_piece() == Piece::EMPTY
+            && get_stack(stack, -1).current_move.is_normal_move()
+        {
+            self.low_ply_history.update(
+                get_stack(stack, 0).ply - 1,
+                get_stack(stack, -1).current_move.non_zero_unwrap_unchecked(),
+                stat_bonus(depth - Depth(5)),
+            );
+        }
+
         self.tt_hit_average = (TT_HIT_AVERAGE_WINDOW - 1) * self.tt_hit_average / TT_HIT_AVERAGE_WINDOW
             + TT_HIT_AVERAGE_RESOLUTION * u64::from(tt_hit);
 
