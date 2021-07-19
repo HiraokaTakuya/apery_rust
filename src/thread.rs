@@ -509,7 +509,7 @@ impl Thread {
         if tt_pv
             && depth > Depth(12)
             && get_stack(stack, 0).ply - 1 < LowPlyHistory::MAX_LPH as i32
-            && self.position.captured_piece() == Piece::EMPTY
+            && prior_capture == Piece::EMPTY
             && get_stack(stack, -1).current_move.is_normal_move()
         {
             self.low_ply_history.update(
