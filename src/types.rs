@@ -1184,6 +1184,10 @@ pub struct KeyExcludedTurn(pub u64);
 
 impl Key {
     #[inline]
+    pub fn make_key(seed: u64) -> Key {
+        Key(seed.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407) & !1)
+    }
+    #[inline]
     pub fn excluded_turn(self) -> KeyExcludedTurn {
         KeyExcludedTurn(self.0 >> 1)
     }

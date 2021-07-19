@@ -489,8 +489,11 @@ impl Thread {
 
         // Step 4
         let excluded_move = get_stack(stack, 0).excluded_move;
-        let key = self.position.key().0 ^ (u64::from(excluded_move.non_zero_unwrap_unchecked().0.get()) << 48);
-        let key = Key(key);
+        let key = if let Some(excluded_move) = excluded_move {
+            Key(self.position.key().0 ^ Key::make_key(u64::from(excluded_move.0.get())).0)
+        } else {
+            self.position.key()
+        };
         let (mut tte, mut tt_hit) = unsafe { (*self.tt).probe(key) };
         let mut tt_value = if tt_hit {
             value_from_tt(tte.value(), get_stack(stack, 0).ply)
