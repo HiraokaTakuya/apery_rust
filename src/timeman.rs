@@ -19,7 +19,6 @@ impl TimeManagement {
     }
     pub fn init(&mut self, usi_optoins: &UsiOptions, limits: &mut LimitsType, us: Color, ply: i32) {
         self.start_time = limits.start_time;
-        let min_thinking_time = usi_optoins.get_i64(UsiOptions::MINIMUM_THINKING_TIME) as u64;
         let moves_to_go = 50;
         let move_overhead = 10;
         let slow_mover = usi_optoins.get_i64(UsiOptions::SLOW_MOVER) as i64;
@@ -37,8 +36,7 @@ impl TimeManagement {
         fn min(x: f64, y: f64) -> f64 {
             x.min(y)
         }
-        self.optimum_time_milli =
-            std::time::Duration::from_millis(std::cmp::max(min_thinking_time, (opt_scale * time_left as f64) as u64));
+        self.optimum_time_milli = std::time::Duration::from_millis((opt_scale * time_left as f64) as u64);
         self.maximum_time_milli = std::time::Duration::from_millis(min(
             0.8 * limits.time[us.0 as usize].as_millis() as f64 - move_overhead as f64,
             max_scale * self.optimum_time_milli.as_millis() as f64,

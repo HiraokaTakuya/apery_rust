@@ -73,7 +73,6 @@ impl UsiOptions {
     pub const EVAL_DIR: &'static str = "Eval_Dir";
     #[cfg(feature = "kppt")]
     pub const EVAL_HASH: &'static str = "Eval_Hash";
-    pub const MINIMUM_THINKING_TIME: &'static str = "Minimum_Thinking_Time";
     pub const MULTI_PV: &'static str = "MultiPV";
     pub const SLOW_MOVER: &'static str = "Slow_Mover";
     pub const THREADS: &'static str = "Threads";
@@ -92,7 +91,6 @@ impl UsiOptions {
         options.insert(Self::EVAL_DIR, UsiOptionValue::string("eval/20190617"));
         #[cfg(feature = "kppt")]
         options.insert(Self::EVAL_HASH, UsiOptionValue::spin(256, 1, 1024 * 1024));
-        options.insert(Self::MINIMUM_THINKING_TIME, UsiOptionValue::spin(20, 0, 5000));
         options.insert(Self::MULTI_PV, UsiOptionValue::spin(1, 1, 500));
         options.insert(Self::SLOW_MOVER, UsiOptionValue::spin(100, 10, 1000));
         options.insert(Self::THREADS, UsiOptionValue::spin(1, 1, 8192));
