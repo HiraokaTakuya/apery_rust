@@ -721,8 +721,26 @@ impl Thread {
                 }
             }
 
+            let prob_cut_beta = Value(beta.0 + 176 - 49 * i32::from(improving));
+
             // Step 10
-            if !pv_node && depth.0 > 4 && beta.0.abs() < Value::MATE_IN_MAX_PLY.0 {
+            if !pv_node
+                && depth.0 > 4
+                && beta.0.abs() < Value::MATE_IN_MAX_PLY.0
+                && !(tt_hit && tte.depth() >= depth - Depth(3) && tt_value != Value::NONE && tt_value < prob_cut_beta)
+            {
+                if tt_hit
+                    && tte.depth() >= depth - Depth(3)
+                    && tt_value != Value::NONE
+                    && tt_value >= prob_cut_beta
+                    && tt_move.is_some()
+                    && tt_move
+                        .non_zero_unwrap_unchecked()
+                        .is_capture_or_pawn_promotion(&self.position)
+                {
+                    return prob_cut_beta;
+                }
+
                 let raised_beta = Value(beta.0 + 176 - 49 * i32::from(improving));
                 debug_assert!(raised_beta < Value::INFINITE);
                 let mut mp = MovePickerForProbCut::new(
@@ -733,9 +751,7 @@ impl Thread {
                 );
                 let mut prob_cut_count = 0;
                 while let Some(m) = mp.next_move(&self.position) {
-                    if !(prob_cut_count < 2 + 2 * i32::from(cut_node)
-                        && !(Some(m) == tt_move && tte.depth() >= depth - Depth(4) && tt_value < raised_beta))
-                    {
+                    if !(prob_cut_count < 2 + 2 * i32::from(cut_node)) {
                         break;
                     }
                     if m != excluded_move.non_zero_unwrap_unchecked() && self.position.legal(m) {
@@ -751,19 +767,29 @@ impl Thread {
                         #[cfg(feature = "kppt")]
                         get_stack_mut(stack, 1).static_eval_raw.set_not_evaluated();
                         let mut value =
-                            -self.qsearch::<NonPv>(&mut stack[1..], -raised_beta, -raised_beta + Value(1), Depth::ZERO);
-                        if value >= raised_beta {
+                            -self.qsearch::<NonPv>(&mut stack[1..], -prob_cut_beta, -prob_cut_beta + Value(1), Depth::ZERO);
+                        if value >= prob_cut_beta {
                             value = -self.search::<NonPv>(
                                 &mut stack[1..],
-                                -raised_beta,
-                                -raised_beta + Value(1),
+                                -prob_cut_beta,
+                                -prob_cut_beta + Value(1),
                                 Depth(depth.0 - 4),
                                 !cut_node,
                             );
                         }
                         self.position.undo_move(m);
 
-                        if value >= raised_beta {
+                        if value >= prob_cut_beta {
+                            tte.save(
+                                key,
+                                value_to_tt(value, get_stack(stack, 0).ply),
+                                tt_pv,
+                                Bound::LOWER,
+                                depth - Depth(3),
+                                Some(m),
+                                get_stack(stack, 0).static_eval,
+                                unsafe { (*self.tt).generation() },
+                            );
                             return value;
                         }
                     }
