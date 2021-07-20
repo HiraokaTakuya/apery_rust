@@ -780,16 +780,18 @@ impl Thread {
                         self.position.undo_move(m);
 
                         if value >= prob_cut_beta {
-                            tte.save(
-                                key,
-                                value_to_tt(value, get_stack(stack, 0).ply),
-                                tt_pv,
-                                Bound::LOWER,
-                                depth - Depth(3),
-                                Some(m),
-                                get_stack(stack, 0).static_eval,
-                                unsafe { (*self.tt).generation() },
-                            );
+                            if !(tt_hit && tte.depth() >= depth - Depth(3) && tt_value != Value::NONE) {
+                                tte.save(
+                                    key,
+                                    value_to_tt(value, get_stack(stack, 0).ply),
+                                    tt_pv,
+                                    Bound::LOWER,
+                                    depth - Depth(3),
+                                    Some(m),
+                                    get_stack(stack, 0).static_eval,
+                                    unsafe { (*self.tt).generation() },
+                                );
+                            }
                             return value;
                         }
                     }
