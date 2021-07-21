@@ -866,6 +866,10 @@ impl Thread {
                 continue;
             }
 
+            if !root_node && !self.position.legal(m) {
+                continue;
+            }
+
             move_count += 1;
             get_stack_mut(stack, 0).move_count = move_count;
 
@@ -976,12 +980,6 @@ impl Thread {
             }
 
             let new_depth = new_depth + extension;
-
-            if !root_node && !self.position.legal(m) {
-                move_count -= 1;
-                get_stack_mut(stack, 0).move_count = move_count;
-                continue;
-            }
 
             get_stack_mut(stack, 0).current_move = Some(m);
             get_stack_mut(stack, 0).continuation_history = self.continuation_history[usize::from(get_stack(stack, 0).in_check)]
