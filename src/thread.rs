@@ -951,7 +951,6 @@ impl Thread {
                 && tt_value.0.abs() < Value::KNOWN_WIN.0
                 && tte.bound().include_lower()
                 && tte.depth().0 >= depth.0 - 3
-                && self.position.legal(m)
             {
                 let singular_beta = Value(tt_value.0 - ((i32::from(former_pv) + 4) * depth.0) / 2);
                 let singular_depth = Depth((depth.0 - 1 + 3 * i32::from(former_pv)) / 2);
