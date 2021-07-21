@@ -944,7 +944,7 @@ impl Thread {
             }
 
             // Step 14
-            if depth.0 >= 6
+            if depth.0 >= 7
                 && m == tt_move.non_zero_unwrap_unchecked()
                 && !root_node
                 && excluded_move.is_none()
