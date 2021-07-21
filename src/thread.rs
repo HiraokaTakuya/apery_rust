@@ -992,7 +992,7 @@ impl Thread {
 
             // Step 16
             let (do_full_depth_search, did_lmr) = if depth.0 >= 3
-                && move_count > 1 + if root_node { 2 } else { 0 }
+                && move_count > 1 + 2 * i32::from(root_node) + 2 * i32::from(pv_node && best_value.0.abs() < 2)
                 && (!root_node || self.best_move_count(m) == 0)
                 && (!is_capture_or_pawn_promotion
                     || move_count_pruning
