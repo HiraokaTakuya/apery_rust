@@ -929,8 +929,8 @@ impl Thread {
                         && !get_stack(stack, 0).in_check
                         && Value(
                             get_stack(stack, 0).static_eval.0
-                                + 267
-                                + 391 * lmr_depth.0
+                                + 178
+                                + 261 * lmr_depth.0
                                 + capture_piece_value(self.position.piece_on(to)).0,
                         ) <= alpha
                     {
