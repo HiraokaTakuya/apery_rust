@@ -670,7 +670,7 @@ impl Thread {
             };
 
             // Step 8
-            if !pv_node && depth.0 < 6 && eval - futility_margin(depth) >= beta && eval < Value::KNOWN_WIN {
+            if !pv_node && depth.0 < 8 && eval - futility_margin(depth) >= beta && eval < Value::KNOWN_WIN {
                 return eval;
             }
 
