@@ -681,7 +681,7 @@ impl Thread {
                 && eval >= beta
                 && eval >= get_stack(stack, 0).static_eval
                 && get_stack(stack, 0).static_eval.0
-                    >= beta.0 - 33 * depth.0 - 33 * i32::from(improving) + 112 * i32::from(tt_pv) + 311
+                    >= beta.0 - 28 * depth.0 - 28 * i32::from(improving) + 94 * i32::from(tt_pv) + 200
                 && excluded_move.is_none()
                 && (get_stack(stack, 0).ply >= self.null_move_pruning_min_ply || us != self.null_move_pruning_color)
             {
