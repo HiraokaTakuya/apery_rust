@@ -1372,10 +1372,20 @@ impl Thread {
                 continue;
             }
 
+            let piece_moved_after_move = m.piece_moved_after_move();
+            let to = m.to();
             get_stack_mut(stack, 0).current_move = Some(m);
             get_stack_mut(stack, 0).continuation_history = self.continuation_history[usize::from(get_stack(stack, 0).in_check)]
                 [usize::from(is_capture_or_pawn_promotion)]
-            .get_mut(m.piece_moved_after_move(), m.to());
+            .get_mut(piece_moved_after_move, to);
+
+            if !is_capture_or_pawn_promotion
+                && move_count >= depth.0.abs() + 1
+                && unsafe { (*cont_hists[0]).get(to, piece_moved_after_move) } < i32::from(COUNTER_MOVE_PRUNE_THRESHOLD)
+                && unsafe { (*cont_hists[1]).get(to, piece_moved_after_move) } < i32::from(COUNTER_MOVE_PRUNE_THRESHOLD)
+            {
+                continue;
+            }
 
             self.position.do_move(m, gives_check);
             #[cfg(feature = "kppt")]
