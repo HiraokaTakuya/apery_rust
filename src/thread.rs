@@ -1384,7 +1384,15 @@ impl Thread {
                 }
             }
 
-            if !get_stack(stack, 0).in_check && !self.position.see_ge(m, Value::ZERO) {
+            if !get_stack(stack, 0).in_check
+                && !(gives_check
+                    && !m.is_drop()
+                    && self
+                        .position
+                        .blockers_for_king(self.position.side_to_move().inverse())
+                        .is_set(m.from()))
+                && !self.position.see_ge(m, Value::ZERO)
+            {
                 continue;
             }
 
