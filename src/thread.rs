@@ -995,7 +995,6 @@ impl Thread {
             // Step 16
             let (do_full_depth_search, did_lmr) = if depth.0 >= 3
                 && move_count > 1 + 2 * i32::from(root_node) + 2 * i32::from(pv_node && best_value.0.abs() < 2)
-                && (!root_node || self.best_move_count(m) == 0)
                 && (!is_capture_or_pawn_promotion
                     || move_count_pruning
                     || get_stack(stack, 0).static_eval + capture_piece_value(self.position.captured_piece()) <= alpha
@@ -1459,13 +1458,6 @@ impl Thread {
         debug_assert!(-Value::INFINITE < best_value && best_value < Value::INFINITE);
 
         best_value
-    }
-    fn best_move_count(&self, m: Move) -> usize {
-        let rm = self.root_moves.iter().skip(self.pv_idx).find(|rm| rm.pv[0] == m);
-        match rm {
-            Some(rm) => rm.best_move_count,
-            None => 0,
-        }
     }
     fn nodes_searched(&self) -> i64 {
         debug_assert!(self.is_main());
