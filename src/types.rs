@@ -1166,15 +1166,14 @@ pub const MAX_PLY: i32 = 246;
 pub struct Depth(pub i32);
 
 impl Depth {
-    const ONE_PLY_VAL: i32 = 1;
-    pub const ONE_PLY: Depth = Depth(Depth::ONE_PLY_VAL);
+    pub const ONE_PLY: Depth = Depth(1);
     pub const ZERO: Depth = Depth(0);
     pub const QS_CHECKS: Depth = Depth(0);
-    pub const QS_NO_CHECKS: Depth = Depth(-Depth::ONE_PLY_VAL);
-    pub const QS_RECAPTURES: Depth = Depth(-5 * Depth::ONE_PLY_VAL);
-    pub const NONE: Depth = Depth(-6 * Depth::ONE_PLY_VAL);
+    pub const QS_NO_CHECKS: Depth = Depth(-1);
+    pub const QS_RECAPTURES: Depth = Depth(-5);
+    pub const NONE: Depth = Depth(-6);
     pub const OFFSET: Depth = Depth::NONE;
-    pub const MAX: Depth = Depth(MAX_PLY * Depth::ONE_PLY_VAL);
+    pub const MAX: Depth = Depth(MAX_PLY);
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, BitXor, BitXorAssign, Hash)]
