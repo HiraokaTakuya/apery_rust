@@ -1205,7 +1205,7 @@ impl Thread {
         let mut best_move: Option<Move> = None;
         get_stack_mut(stack, 0).in_check = self.position.in_check();
         let prior_capture = self.position.captured_piece();
-        let mut _move_count = 0;
+        let mut move_count = 0;
 
         // We don't have to check repetition.
         // Because qsearch use only capture-moves, promotion-moves, and evasion-moves.
@@ -1339,8 +1339,11 @@ impl Thread {
         while let Some(m) = mp.next_move(&self.position) {
             debug_assert!(m != Move::NULL);
             let gives_check = self.position.gives_check(m);
-            _move_count += 1;
+            move_count += 1;
             if !get_stack(stack, 0).in_check && !gives_check && futility_base > -Value::KNOWN_WIN {
+                if move_count > depth.0.abs() + 2 {
+                    continue;
+                }
                 let futility_value = futility_base
                     + capture_piece_value(self.position.piece_on(m.to()))
                     + if m.is_promotion() {
@@ -1365,7 +1368,7 @@ impl Thread {
             }
 
             if !self.position.legal(m) {
-                _move_count -= 1;
+                move_count -= 1;
                 continue;
             }
 
