@@ -971,7 +971,7 @@ impl Thread {
 
             get_stack_mut(stack, 0).current_move = Some(m);
             get_stack_mut(stack, 0).continuation_history = self.continuation_history[usize::from(get_stack(stack, 0).in_check)]
-                [usize::from(prior_capture != Piece::EMPTY)]
+                [usize::from(is_capture_or_pawn_promotion)]
             .get_mut(piece_moved_after_move, to);
 
             // Step 15
@@ -1204,7 +1204,6 @@ impl Thread {
         get_stack_mut(stack, 0).continuation_history = self.continuation_history[0][0].sentinel();
         let mut best_move: Option<Move> = None;
         get_stack_mut(stack, 0).in_check = self.position.in_check();
-        let prior_capture = self.position.captured_piece();
         let mut move_count = 0;
 
         // We don't have to check repetition.
@@ -1339,6 +1338,7 @@ impl Thread {
         while let Some(m) = mp.next_move(&self.position) {
             debug_assert!(m != Move::NULL);
             let gives_check = self.position.gives_check(m);
+            let is_capture_or_pawn_promotion = m.is_capture_or_pawn_promotion(&self.position);
             move_count += 1;
             if !get_stack(stack, 0).in_check && !gives_check && futility_base > -Value::KNOWN_WIN {
                 if move_count > depth.0.abs() + 2 {
@@ -1374,7 +1374,7 @@ impl Thread {
 
             get_stack_mut(stack, 0).current_move = Some(m);
             get_stack_mut(stack, 0).continuation_history = self.continuation_history[usize::from(get_stack(stack, 0).in_check)]
-                [usize::from(prior_capture != Piece::EMPTY)]
+                [usize::from(is_capture_or_pawn_promotion)]
             .get_mut(m.piece_moved_after_move(), m.to());
 
             self.position.do_move(m, gives_check);
