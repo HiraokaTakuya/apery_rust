@@ -1336,7 +1336,7 @@ impl Thread {
             let is_capture_or_pawn_promotion = m.is_capture_or_pawn_promotion(&self.position);
             move_count += 1;
             if !get_stack(stack, 0).in_check && !gives_check && futility_base > -Value::KNOWN_WIN {
-                if move_count > depth.0.abs() + 2 {
+                if move_count > 2 {
                     continue;
                 }
                 let futility_value = futility_base
