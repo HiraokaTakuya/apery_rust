@@ -660,6 +660,7 @@ pub fn is_aligned_and_sq2_is_not_between_sq0_and_sq1(sq0: Square, sq1: Square, s
     result
 }
 
+#[derive(PartialEq, Eq)]
 pub struct Bound(pub i32);
 
 impl Bound {
@@ -1172,7 +1173,7 @@ impl Depth {
     pub const QS_NO_CHECKS: Depth = Depth(-1);
     pub const QS_RECAPTURES: Depth = Depth(-5);
     pub const NONE: Depth = Depth(-6);
-    pub const OFFSET: Depth = Depth::NONE;
+    pub const OFFSET: Depth = Depth(-7);
     pub const MAX: Depth = Depth(MAX_PLY);
 }
 

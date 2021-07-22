@@ -67,8 +67,9 @@ impl TtEntry {
             self.mv16 = 0;
         }
 
-        if key != self.key16 || depth.0 - Depth::OFFSET.0 > i32::from(self.depth8) - 4 || bound.0 == Bound::EXACT.0 {
-            debug_assert!(depth.0 - Depth::OFFSET.0 >= 0);
+        if bound == Bound::EXACT || key != self.key16 || depth.0 - Depth::OFFSET.0 > i32::from(self.depth8) - 4 {
+            debug_assert!(depth > Depth::OFFSET);
+            debug_assert!(depth.0 < 256 + Depth::OFFSET.0);
             self.key16 = key;
             self.value16 = value.0 as i16;
             self.eval16 = eval.0 as i16;
@@ -138,9 +139,9 @@ impl TranspositionTable {
         let key16 = key.excluded_turn().0 as u16;
         let cluster = self.get_mut_cluster(self.cluster_index(key));
         for i in 0..cluster.entry.len() {
-            if cluster.entry[i].key16 == 0 || cluster.entry[i].key16 == key16 {
+            if cluster.entry[i].key16 == key16 || i32::from(cluster.entry[i].depth8) == 0 {
                 cluster.entry[i].genbound8 = generation8 | (cluster.entry[i].genbound8 & 0x7); // refresh
-                let found = cluster.entry[i].key16 != 0;
+                let found = i32::from(cluster.entry[i].depth8) != 0;
                 return (&mut cluster.entry[i], found);
             }
         }
