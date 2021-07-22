@@ -139,6 +139,7 @@ pub struct Stack {
     pub stat_score: i32,
     pub move_count: i32,
     pub in_check: bool,
+    pub tt_pv: bool,
 }
 
 impl Stack {
@@ -155,6 +156,7 @@ impl Stack {
             stat_score: 0,
             move_count: 0,
             in_check: false,
+            tt_pv: false,
         }
     }
 }

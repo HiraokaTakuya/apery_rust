@@ -473,6 +473,7 @@ impl Thread {
         debug_assert!(0 <= get_stack(stack, 0).ply && get_stack(stack, 0).ply < MAX_PLY);
 
         get_stack_mut(stack, 1).ply = get_stack(stack, 0).ply + 1;
+        get_stack_mut(stack, 1).tt_pv = false;
         let mut best_move: Option<Move> = None;
         get_stack_mut(stack, 1).excluded_move = None;
         get_stack_mut(stack, 2).killers[0] = None;
@@ -507,9 +508,12 @@ impl Thread {
         } else {
             None
         };
-        let tt_pv = pv_node || (tt_hit && tte.is_pv());
+        if excluded_move.is_none() {
+            get_stack_mut(stack, 0).tt_pv = pv_node || (tt_hit && tte.is_pv());
+        }
+        let former_pv = get_stack(stack, 0).tt_pv && !pv_node;
 
-        if tt_pv
+        if get_stack(stack, 0).tt_pv
             && depth > Depth(12)
             && get_stack(stack, 0).ply - 1 < LowPlyHistory::MAX_LPH as i32
             && prior_capture == Piece::EMPTY
@@ -579,7 +583,7 @@ impl Thread {
                 tte.save(
                     key,
                     value_to_tt(best_value, get_stack(stack, 0).ply),
-                    tt_pv,
+                    get_stack(stack, 0).tt_pv,
                     Bound::EXACT,
                     depth,
                     Some(Move::WIN),
@@ -597,7 +601,7 @@ impl Thread {
                 tte.save(
                     key,
                     value_to_tt(best_value, get_stack(stack, 0).ply),
-                    tt_pv,
+                    get_stack(stack, 0).tt_pv,
                     Bound::EXACT,
                     depth,
                     Some(mate_move),
@@ -652,9 +656,16 @@ impl Thread {
                     eval = -get_stack(stack, -1).static_eval + Value(2 * TEMPO.0);
                     get_stack_mut(stack, 0).static_eval = eval;
                 }
-                tte.save(key, Value::NONE, tt_pv, Bound::BOUND_NONE, Depth::NONE, None, eval, unsafe {
-                    (*self.tt).generation()
-                });
+                tte.save(
+                    key,
+                    Value::NONE,
+                    get_stack(stack, 0).tt_pv,
+                    Bound::BOUND_NONE,
+                    Depth::NONE,
+                    None,
+                    eval,
+                    unsafe { (*self.tt).generation() },
+                );
             }
 
             // Step 7
@@ -680,7 +691,7 @@ impl Thread {
                 && eval >= beta
                 && eval >= get_stack(stack, 0).static_eval
                 && get_stack(stack, 0).static_eval.0
-                    >= beta.0 - 30 * depth.0 - 28 * i32::from(improving) + 84 * i32::from(tt_pv) + 182
+                    >= beta.0 - 30 * depth.0 - 28 * i32::from(improving) + 84 * i32::from(get_stack(stack, 0).tt_pv) + 182
                 && excluded_move.is_none()
                 && (get_stack(stack, 0).ply >= self.null_move_pruning_min_ply || us != self.null_move_pruning_color)
             {
@@ -749,6 +760,8 @@ impl Thread {
                     &self.capture_history,
                 );
                 let mut prob_cut_count = 0;
+                let tt_pv = get_stack(stack, 0).tt_pv;
+                get_stack_mut(stack, 0).tt_pv = false;
                 while let Some(m) = mp.next_move(&self.position) {
                     if !(prob_cut_count < 2 + 2 * i32::from(cut_node)) {
                         break;
@@ -795,6 +808,7 @@ impl Thread {
                         }
                     }
                 }
+                get_stack_mut(stack, 0).tt_pv = tt_pv;
             }
 
             // Step 11
@@ -834,7 +848,6 @@ impl Thread {
                 .non_zero_unwrap_unchecked()
                 .is_capture_or_pawn_promotion(&self.position);
         let mut singular_quiet_lmr = false;
-        let former_pv = tt_pv && !pv_node;
 
         let th = ThreadHolding::new(self, key, get_stack(stack, 0).ply);
 
@@ -1003,8 +1016,8 @@ impl Thread {
                     r += Depth::ONE_PLY;
                 }
 
-                //if tt_pv {
-                //    r -= Depth(2 * Depth::ONE_PLY.0);
+                //if get_stack(stack, 0).tt_pv {
+                //    r -= Depth(2);
                 //}
 
                 if move_count_pruning && !former_pv {
@@ -1026,7 +1039,10 @@ impl Thread {
                     if cut_node {
                         r += Depth(2);
                     } else if !self.position.see_ge(m.reverse(), Value::ZERO) {
-                        r -= Depth(2 + i32::from(tt_pv) - i32::from(PieceType::new(piece_moved_after_move) == PieceType::PAWN));
+                        r -= Depth(
+                            2 + i32::from(get_stack(stack, 0).tt_pv)
+                                - i32::from(PieceType::new(piece_moved_after_move) == PieceType::PAWN),
+                        );
                     }
 
                     get_stack_mut(stack, 0).stat_score = self.main_history.get(us, m)
@@ -1171,11 +1187,17 @@ impl Thread {
             best_value = std::cmp::min(best_value, max_value);
         }
 
+        if best_value <= alpha {
+            get_stack_mut(stack, 0).tt_pv = get_stack(stack, 0).tt_pv || (get_stack(stack, -1).tt_pv && depth > Depth(3));
+        } else if depth > Depth(3) {
+            get_stack_mut(stack, 0).tt_pv = get_stack(stack, 0).tt_pv && get_stack(stack, 1).tt_pv;
+        }
+
         if excluded_move.is_none() && !(root_node && self.pv_idx != 0) {
             tte.save(
                 key,
                 value_to_tt(best_value, get_stack(stack, 0).ply),
-                tt_pv,
+                get_stack(stack, 0).tt_pv,
                 if best_value >= beta {
                     Bound::LOWER
                 } else if pv_node && best_move.is_some() {
