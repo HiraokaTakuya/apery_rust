@@ -757,8 +757,8 @@ impl Thread {
                         prob_cut_count += 1;
                         get_stack_mut(stack, 0).current_move = Some(m);
                         get_stack_mut(stack, 0).continuation_history = self.continuation_history
-                            [usize::from(get_stack(stack, 0).in_check)][(prior_capture != Piece::EMPTY) as usize]
-                            .get_mut(m.piece_moved_after_move(), m.to());
+                            [usize::from(get_stack(stack, 0).in_check)][usize::from(prior_capture != Piece::EMPTY)]
+                        .get_mut(m.piece_moved_after_move(), m.to());
                         debug_assert!(depth.0 >= 5);
 
                         let gives_check = self.position.gives_check(m);
@@ -971,8 +971,8 @@ impl Thread {
 
             get_stack_mut(stack, 0).current_move = Some(m);
             get_stack_mut(stack, 0).continuation_history = self.continuation_history[usize::from(get_stack(stack, 0).in_check)]
-                [(prior_capture != Piece::EMPTY) as usize]
-                .get_mut(piece_moved_after_move, to);
+                [usize::from(prior_capture != Piece::EMPTY)]
+            .get_mut(piece_moved_after_move, to);
 
             // Step 15
             self.position.do_move(m, gives_check);
@@ -1374,8 +1374,8 @@ impl Thread {
 
             get_stack_mut(stack, 0).current_move = Some(m);
             get_stack_mut(stack, 0).continuation_history = self.continuation_history[usize::from(get_stack(stack, 0).in_check)]
-                [(prior_capture != Piece::EMPTY) as usize]
-                .get_mut(m.piece_moved_after_move(), m.to());
+                [usize::from(prior_capture != Piece::EMPTY)]
+            .get_mut(m.piece_moved_after_move(), m.to());
 
             self.position.do_move(m, gives_check);
             #[cfg(feature = "kppt")]
