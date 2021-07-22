@@ -1402,7 +1402,7 @@ impl Thread {
             .get_mut(piece_moved_after_move, to);
 
             if !is_capture_or_pawn_promotion
-                && move_count >= depth.0.abs() + 1
+                && move_count != 0
                 && unsafe { (*cont_hists[0]).get(to, piece_moved_after_move) } < i32::from(COUNTER_MOVE_PRUNE_THRESHOLD)
                 && unsafe { (*cont_hists[1]).get(to, piece_moved_after_move) } < i32::from(COUNTER_MOVE_PRUNE_THRESHOLD)
             {
