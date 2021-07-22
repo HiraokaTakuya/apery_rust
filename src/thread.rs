@@ -400,7 +400,7 @@ impl Thread {
 
         self.previous_time_reduction = time_reduction;
     }
-    fn search<IsPv: Bool>(&mut self, stack: &mut [Stack], alpha: Value, beta: Value, depth: Depth, cut_node: bool) -> Value {
+    fn search<IsPv: Bool>(&mut self, stack: &mut [Stack], alpha: Value, beta: Value, mut depth: Depth, cut_node: bool) -> Value {
         let pv_node: bool = IsPv::BOOL;
         let root_node = pv_node && get_stack(stack, 0).ply == 0;
 
@@ -494,13 +494,13 @@ impl Thread {
         } else {
             self.position.key()
         };
-        let (mut tte, mut tt_hit) = unsafe { (*self.tt).probe(key) };
-        let mut tt_value = if tt_hit {
+        let (tte, tt_hit) = unsafe { (*self.tt).probe(key) };
+        let tt_value = if tt_hit {
             value_from_tt(tte.value(), get_stack(stack, 0).ply)
         } else {
             Value::NONE
         };
-        let mut tt_move = if root_node {
+        let tt_move = if root_node {
             Some(self.root_moves[self.pv_idx].pv[0])
         } else if tt_hit {
             tte.mv(&self.position)
@@ -798,18 +798,8 @@ impl Thread {
             }
 
             // Step 11
-            if depth.0 >= 7 && tt_move.is_none() {
-                self.search::<IsPv>(stack, alpha, beta, Depth(depth.0 - 7), cut_node);
-
-                let (tte_new, tt_hit_new) = unsafe { (*self.tt).probe(key) };
-                tte = tte_new;
-                tt_hit = tt_hit_new;
-                tt_value = if tt_hit {
-                    value_from_tt(tte.value(), get_stack(stack, 0).ply)
-                } else {
-                    Value::NONE
-                };
-                tt_move = if tt_hit { tte.mv(&self.position) } else { None };
+            if pv_node && depth >= Depth(6) && tt_move.is_none() {
+                depth -= Depth(2);
             }
         }
 
