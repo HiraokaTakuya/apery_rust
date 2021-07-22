@@ -1575,14 +1575,17 @@ impl Thread {
         let elapsed_millis = self.limits.start_time.unwrap().elapsed().as_millis() as i64 + 1; // "+ 1": avoid dividing by 0
         let info_with_multi_pv_index = |i: usize, rm: &RootMove| -> Option<String> {
             let updated = rm.score != -Value::INFINITE;
-            if depth == Depth::ONE_PLY && !updated {
+            if depth == Depth::ONE_PLY && !updated && i > 0 {
                 return None;
             }
-            let (d, v) = if updated {
+            let (d, mut v) = if updated {
                 (depth, rm.score)
             } else {
-                (depth - Depth::ONE_PLY, rm.previous_score)
+                (std::cmp::max(Depth::ONE_PLY, depth - Depth::ONE_PLY), rm.previous_score)
             };
+            if v == -Value::INFINITE {
+                v = Value::ZERO;
+            }
             let line = format!(
                 "info depth {depth} seldepth {seldepth} multipv {multipv} score {score} {bound}nodes {nodes} nps {nps} time {time} pv {pv}",
                 depth = d.0,
