@@ -1028,7 +1028,7 @@ impl Thread {
                 //}
 
                 if singular_quiet_lmr {
-                    r -= Depth(1 + i32::from(former_pv));
+                    r -= Depth(1);
                 }
 
                 if !is_capture_or_pawn_promotion {
