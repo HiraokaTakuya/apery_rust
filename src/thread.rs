@@ -1003,10 +1003,6 @@ impl Thread {
             {
                 let mut r = unsafe { (*self.reductions).get(improving, depth, move_count) };
 
-                if cut_node && depth <= Depth(10) && move_count <= 2 && !get_stack(stack, 0).in_check {
-                    r -= Depth::ONE_PLY;
-                }
-
                 if self.tt_hit_average > 509 * TT_HIT_AVERAGE_RESOLUTION * TT_HIT_AVERAGE_WINDOW / 1024 {
                     r -= Depth::ONE_PLY;
                 }
