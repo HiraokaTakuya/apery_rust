@@ -646,8 +646,7 @@ impl Thread {
                 }
             } else {
                 if get_stack(stack, -1).current_move.is_some() {
-                    let bonus = -get_stack(stack, -1).stat_score / 512;
-                    eval = pure_static_eval + Value(bonus);
+                    eval = pure_static_eval;
                     get_stack_mut(stack, 0).static_eval = eval;
                 } else {
                     eval = -get_stack(stack, -1).static_eval + Value(2 * TEMPO.0);
