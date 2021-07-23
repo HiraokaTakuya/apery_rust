@@ -365,7 +365,7 @@ impl Thread {
                     total_best_move_changes += best_move_changes.load(Ordering::Relaxed) as f64;
                     best_move_changes.store(0, Ordering::Relaxed);
                 }
-                let best_move_instability = 1.0 + total_best_move_changes / self.best_move_changess.len() as f64;
+                let best_move_instability = 1.0 + 2.0 * total_best_move_changes / self.best_move_changess.len() as f64;
                 let (elapsed, optimum_millis) = {
                     let timeman = self.timeman.lock().unwrap();
                     (timeman.elapsed(), timeman.optimum_millis())
