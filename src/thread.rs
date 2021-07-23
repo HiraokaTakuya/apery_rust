@@ -495,21 +495,25 @@ impl Thread {
         } else {
             self.position.key()
         };
-        let (tte, tt_hit) = unsafe { (*self.tt).probe(key) };
-        let tt_value = if tt_hit {
+        let tte = {
+            let (tte, tt_hit) = unsafe { (*self.tt).probe(key) };
+            get_stack_mut(stack, 0).tt_hit = tt_hit;
+            tte
+        };
+        let tt_value = if get_stack(stack, 0).tt_hit {
             value_from_tt(tte.value(), get_stack(stack, 0).ply)
         } else {
             Value::NONE
         };
         let tt_move = if root_node {
             Some(self.root_moves[self.pv_idx].pv[0])
-        } else if tt_hit {
+        } else if get_stack(stack, 0).tt_hit {
             tte.mv(&self.position)
         } else {
             None
         };
         if excluded_move.is_none() {
-            get_stack_mut(stack, 0).tt_pv = pv_node || (tt_hit && tte.is_pv());
+            get_stack_mut(stack, 0).tt_pv = pv_node || (get_stack(stack, 0).tt_hit && tte.is_pv());
         }
         let former_pv = get_stack(stack, 0).tt_pv && !pv_node;
 
@@ -527,10 +531,10 @@ impl Thread {
         }
 
         self.tt_hit_average = (TT_HIT_AVERAGE_WINDOW - 1) * self.tt_hit_average / TT_HIT_AVERAGE_WINDOW
-            + TT_HIT_AVERAGE_RESOLUTION * u64::from(tt_hit);
+            + TT_HIT_AVERAGE_RESOLUTION * u64::from(get_stack(stack, 0).tt_hit);
 
         if !pv_node
-            && tt_hit
+            && get_stack(stack, 0).tt_hit
             && tte.depth() >= depth
             && tt_value != Value::NONE
             && if tt_value >= beta {
@@ -629,7 +633,7 @@ impl Thread {
             improving = false;
         } else {
             let mut eval;
-            if tt_hit {
+            if get_stack(stack, 0).tt_hit {
                 eval = tte.eval();
                 get_stack_mut(stack, 0).static_eval = eval;
                 if eval == Value::NONE {
@@ -737,9 +741,12 @@ impl Thread {
             if !pv_node
                 && depth.0 > 4
                 && beta.0.abs() < Value::MATE_IN_MAX_PLY.0
-                && !(tt_hit && tte.depth() >= depth - Depth(3) && tt_value != Value::NONE && tt_value < prob_cut_beta)
+                && !(get_stack(stack, 0).tt_hit
+                    && tte.depth() >= depth - Depth(3)
+                    && tt_value != Value::NONE
+                    && tt_value < prob_cut_beta)
             {
-                if tt_hit
+                if get_stack(stack, 0).tt_hit
                     && tte.depth() >= depth - Depth(3)
                     && tt_value != Value::NONE
                     && tt_value >= prob_cut_beta
@@ -792,7 +799,7 @@ impl Thread {
                         self.position.undo_move(m);
 
                         if value >= prob_cut_beta {
-                            if !(tt_hit && tte.depth() >= depth - Depth(3) && tt_value != Value::NONE) {
+                            if !(get_stack(stack, 0).tt_hit && tte.depth() >= depth - Depth(3) && tt_value != Value::NONE) {
                                 tte.save(
                                     key,
                                     value_to_tt(value, get_stack(stack, 0).ply),
@@ -1238,17 +1245,25 @@ impl Thread {
             Depth::QS_NO_CHECKS
         };
         let key = self.position.key();
-        let (tte, tt_hit) = unsafe { (*self.tt).probe(key) };
-        let tt_value = if tt_hit {
+        let tte = {
+            let (tte, tt_hit) = unsafe { (*self.tt).probe(key) };
+            get_stack_mut(stack, 0).tt_hit = tt_hit;
+            tte
+        };
+        let tt_value = if get_stack(stack, 0).tt_hit {
             value_from_tt(tte.value(), get_stack(stack, 0).ply)
         } else {
             Value::NONE
         };
-        let tt_move = if tt_hit { tte.mv(&self.position) } else { None };
-        let pv_hit = tt_hit && tte.is_pv();
+        let tt_move = if get_stack(stack, 0).tt_hit {
+            tte.mv(&self.position)
+        } else {
+            None
+        };
+        let pv_hit = get_stack(stack, 0).tt_hit && tte.is_pv();
 
         if !pv_node
-            && tt_hit
+            && get_stack(stack, 0).tt_hit
             && tte.depth() >= tt_depth
             && tt_value != Value::NONE // Only in case of TT access race
             && if tt_value >= beta {
@@ -1270,7 +1285,7 @@ impl Thread {
             if let Some(_mate_move) = self.position.mate_move_in_1ply() {
                 return value_mate_in(get_stack(stack, 0).ply);
             }
-            if tt_hit {
+            if get_stack(stack, 0).tt_hit {
                 best_value = tte.eval();
                 get_stack_mut(stack, 0).static_eval = best_value;
                 if best_value == Value::NONE {
@@ -1306,7 +1321,7 @@ impl Thread {
             }
 
             if best_value >= beta {
-                if !tt_hit {
+                if !get_stack(stack, 0).tt_hit {
                     tte.save(
                         key,
                         value_to_tt(best_value, get_stack(stack, 0).ply),
@@ -1523,7 +1538,8 @@ impl Thread {
             capture_history.update(moved_piece, best_move.to(), captured, bonus1);
         }
 
-        if (get_stack(stack, -1).move_count == 1 || get_stack(stack, -1).current_move == get_stack(stack, -1).killers[0])
+        if (get_stack(stack, -1).move_count == 1 + i32::from(get_stack(stack, -1).tt_hit)
+            || get_stack(stack, -1).current_move == get_stack(stack, -1).killers[0])
             && self.position.captured_piece() == Piece::EMPTY
         {
             update_continuation_histories(stack, self.position.piece_on(prev_sq), prev_sq, -bonus1);

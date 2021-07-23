@@ -140,6 +140,7 @@ pub struct Stack {
     pub move_count: i32,
     pub in_check: bool,
     pub tt_pv: bool,
+    pub tt_hit: bool,
 }
 
 impl Stack {
@@ -157,6 +158,7 @@ impl Stack {
             move_count: 0,
             in_check: false,
             tt_pv: false,
+            tt_hit: false,
         }
     }
 }
