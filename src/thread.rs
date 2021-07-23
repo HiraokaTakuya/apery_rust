@@ -482,9 +482,7 @@ impl Thread {
         // get_stack(stack, -1).current_move can be None. None => prev_sq: Square(0)
         let prev_sq = get_stack(stack, -1).current_move.non_zero_unwrap_unchecked().to(); // todo: Move::NULL
 
-        if root_node {
-            get_stack_mut(stack, 4).stat_score = 0;
-        } else {
+        if !root_node {
             get_stack_mut(stack, 2).stat_score = 0;
         }
 
