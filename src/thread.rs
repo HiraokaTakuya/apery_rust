@@ -998,7 +998,7 @@ impl Thread {
 
             // Step 16
             let (do_full_depth_search, did_lmr) = if depth.0 >= 3
-                && move_count > 1 + 2 * i32::from(root_node) + 2 * i32::from(pv_node && best_value.0.abs() < 2)
+                && move_count > 1 + 2 * i32::from(root_node)
                 && (!is_capture_or_pawn_promotion
                     || move_count_pruning
                     || get_stack(stack, 0).static_eval + capture_piece_value(self.position.captured_piece()) <= alpha
