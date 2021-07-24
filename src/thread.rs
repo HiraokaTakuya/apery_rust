@@ -297,7 +297,6 @@ impl Thread {
                         beta = std::cmp::min(best_value + delta, Value::INFINITE);
                         failed_high_count += 1;
                     } else {
-                        self.root_moves[self.pv_idx].best_move_count += 1;
                         break;
                     }
 
