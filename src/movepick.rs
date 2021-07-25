@@ -583,7 +583,8 @@ impl<'a> MovePickerForQSearch<'a> {
         ttm: Option<Move>,
         depth: Depth,
     ) -> MovePickerForQSearch<'a> {
-        let mut stage = if pos.in_check() {
+        let in_check = pos.in_check();
+        let mut stage = if in_check {
             StagesForQSearch::EvasionTt
         } else if depth > Depth::QS_RECAPTURES {
             StagesForQSearch::QSearchTt
@@ -592,7 +593,7 @@ impl<'a> MovePickerForQSearch<'a> {
         };
         match ttm {
             Some(ttm_inner)
-                if (depth > Depth::QS_RECAPTURES || ttm_inner.to() == recapture_square)
+                if (in_check || depth > Depth::QS_RECAPTURES || ttm_inner.to() == recapture_square)
                     && pos.pseudo_legal::<SearchingType>(ttm_inner) => {}
             _ => {
                 stage = stage.next_variant().unwrap();
