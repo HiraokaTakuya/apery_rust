@@ -1394,15 +1394,7 @@ impl Thread {
                 }
             }
 
-            if best_value > Value::MATED_IN_MAX_PLY
-                && !(gives_check
-                    && !m.is_drop()
-                    && self
-                        .position
-                        .blockers_for_king(self.position.side_to_move().inverse())
-                        .is_set(m.from()))
-                && !self.position.see_ge(m, Value::ZERO)
-            {
+            if best_value > Value::MATED_IN_MAX_PLY && !self.position.see_ge(m, Value::ZERO) {
                 continue;
             }
 
