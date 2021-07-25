@@ -402,6 +402,7 @@ impl Thread {
     fn search<IsPv: Bool>(&mut self, stack: &mut [Stack], alpha: Value, beta: Value, mut depth: Depth, cut_node: bool) -> Value {
         let pv_node: bool = IsPv::BOOL;
         let root_node = pv_node && get_stack(stack, 0).ply == 0;
+        let max_next_depth = if root_node { depth } else { depth + Depth::ONE_PLY };
 
         if depth < Depth::ONE_PLY {
             return self.qsearch::<IsPv>(stack, alpha, beta, Depth::ZERO);
@@ -1088,7 +1089,13 @@ impl Thread {
                 }
             }
             if pv_node && (move_count == 1 || (value > alpha && (root_node || value < beta))) {
-                value = -self.search::<Pv>(&mut stack[1..], -beta, -alpha, new_depth, false);
+                value = -self.search::<Pv>(
+                    &mut stack[1..],
+                    -beta,
+                    -alpha,
+                    std::cmp::min(max_next_depth, new_depth),
+                    false,
+                );
             }
 
             // Step 18
