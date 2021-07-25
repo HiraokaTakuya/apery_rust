@@ -1370,7 +1370,7 @@ impl Thread {
             let gives_check = self.position.gives_check(m);
             let is_capture_or_pawn_promotion = m.is_capture_or_pawn_promotion(&self.position);
             move_count += 1;
-            if !get_stack(stack, 0).in_check && !gives_check && futility_base > -Value::KNOWN_WIN {
+            if best_value > Value::MATED_IN_MAX_PLY && !gives_check && futility_base > -Value::KNOWN_WIN {
                 if move_count > 2 {
                     continue;
                 }
@@ -1393,7 +1393,7 @@ impl Thread {
                 }
             }
 
-            if !get_stack(stack, 0).in_check
+            if best_value > Value::MATED_IN_MAX_PLY
                 && !(gives_check
                     && !m.is_drop()
                     && self
