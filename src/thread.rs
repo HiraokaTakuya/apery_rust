@@ -1415,7 +1415,7 @@ impl Thread {
             .get_mut(piece_moved_after_move, to);
 
             if !is_capture_or_pawn_promotion
-                && move_count != 0
+                && best_value > Value::MATED_IN_MAX_PLY
                 && unsafe { (*cont_hists[0]).get(to, piece_moved_after_move) } < i32::from(COUNTER_MOVE_PRUNE_THRESHOLD)
                 && unsafe { (*cont_hists[1]).get(to, piece_moved_after_move) } < i32::from(COUNTER_MOVE_PRUNE_THRESHOLD)
             {
@@ -1449,6 +1449,14 @@ impl Thread {
         }
 
         if get_stack(stack, 0).in_check && best_value == -Value::INFINITE {
+            debug_assert_eq!(
+                {
+                    let mut mlist = MoveList::new();
+                    mlist.generate::<LegalType>(&self.position, 0);
+                    mlist.size
+                },
+                0
+            );
             return Value::mated_in(get_stack(stack, 0).ply);
         }
 
