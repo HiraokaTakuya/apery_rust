@@ -369,10 +369,13 @@ impl Thread {
                     let timeman = self.timeman.lock().unwrap();
                     (timeman.elapsed(), timeman.optimum_millis())
                 };
-                let total_time = if self.root_moves.len() == 1 {
-                    0
-                } else {
-                    (optimum_millis as f64 * falling_eval * reduction * best_move_instability) as i64
+                let total_time = {
+                    let total_time = (optimum_millis as f64 * falling_eval * reduction * best_move_instability) as i64;
+                    if self.root_moves.len() == 1 {
+                        std::cmp::min(500, total_time)
+                    } else {
+                        total_time
+                    }
                 };
                 if elapsed > total_time {
                     if self.ponder.load(Ordering::Relaxed) {
