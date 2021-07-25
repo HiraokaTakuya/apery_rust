@@ -246,13 +246,13 @@ impl Reductions {
             values: [0; ExtMove::MAX_LEGAL_MOVES],
         };
         for (i, v) in r.values.iter_mut().enumerate().skip(1) {
-            *v = ((22.0 + 2.0 * f64::from(thread_num as i32).ln()) * f64::ln(i as f64 + 0.25 * f64::ln(i as f64))) as i32;
+            *v = ((21.3 + 2.0 * f64::from(thread_num as i32).ln()) * f64::ln(i as f64 + 0.25 * f64::ln(i as f64))) as i32;
         }
         r
     }
     pub fn get(&self, improving: bool, depth: Depth, move_count: i32) -> Depth {
         let r = unsafe { self.values.get_unchecked(depth.0 as usize) * self.values.get_unchecked(move_count as usize) };
-        Depth((r + 509) / 1024 + i32::from(!improving && r > 894))
+        Depth((r + 503) / 1024 + i32::from(!improving && r > 915))
     }
 }
 
