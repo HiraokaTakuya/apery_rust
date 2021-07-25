@@ -1009,6 +1009,10 @@ impl Thread {
                 //    r -= Depth(2);
                 //}
 
+                if !pv_node && depth > Depth(10) && self.best_move_changes.load(Ordering::Relaxed) <= 2 {
+                    r += Depth::ONE_PLY;
+                }
+
                 if move_count_pruning && !former_pv {
                     r += Depth::ONE_PLY;
                 }
