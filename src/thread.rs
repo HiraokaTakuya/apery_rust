@@ -1084,14 +1084,11 @@ impl Thread {
                 value = -self.search::<NonPv>(&mut stack[1..], -(alpha + Value(1)), -alpha, new_depth, !cut_node);
 
                 if did_lmr && !is_capture_or_pawn_promotion {
-                    let mut bonus = if value > alpha {
+                    let bonus = if value > alpha {
                         stat_bonus(new_depth)
                     } else {
                         -stat_bonus(new_depth)
                     };
-                    if Some(m) == get_stack(stack, 0).killers[0] {
-                        bonus += bonus / 4;
-                    }
                     update_continuation_histories(stack, piece_moved_after_move, to, bonus);
                 }
             }
