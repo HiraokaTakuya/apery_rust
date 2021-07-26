@@ -375,7 +375,6 @@ fn score_quiets(
     move_list: &mut [ExtMove],
     pos: &Position,
     main_history: *const ButterflyHistory,
-    static_history: *const ButterflyHistory,
     low_ply_history: *const LowPlyHistory,
     continuation_history: &[*const PieceToHistory],
     ply: i32,
@@ -387,7 +386,6 @@ fn score_quiets(
         let piece_moved = m.piece_moved_after_move();
         let side_to_move = pos.side_to_move();
         ext_move.score = unsafe { (*main_history).get(side_to_move, m) }
-            + unsafe { (*static_history).get(side_to_move, m) }
             + 2 * unsafe { (*continuation_history[0]).get(to, piece_moved) }
             + 2 * unsafe { (*continuation_history[1]).get(to, piece_moved) }
             + 2 * unsafe { (*continuation_history[3]).get(to, piece_moved) }
@@ -422,7 +420,6 @@ fn score_evasion(
 
 pub struct MovePickerForMainSearch<'a> {
     main_history: *const ButterflyHistory,
-    static_history: *const ButterflyHistory,
     low_ply_history: *const LowPlyHistory,
     capture_history: *const CapturePieceToHistory,
     continuation_history: &'a [*const PieceToHistory],
@@ -443,7 +440,6 @@ impl<'a> MovePickerForMainSearch<'a> {
         ttm: Option<Move>,
         depth: Depth,
         mh: &ButterflyHistory,
-        sh: &ButterflyHistory,
         lph: &LowPlyHistory,
         cph: &CapturePieceToHistory,
         ch: &'a [*const PieceToHistory],
@@ -464,7 +460,6 @@ impl<'a> MovePickerForMainSearch<'a> {
         }
         MovePickerForMainSearch {
             main_history: mh,
-            static_history: sh,
             low_ply_history: lph,
             capture_history: cph,
             continuation_history: ch,
@@ -529,7 +524,6 @@ impl<'a> MovePickerForMainSearch<'a> {
                             self.move_list.slice_mut(self.cur),
                             pos,
                             self.main_history,
-                            self.static_history,
                             self.low_ply_history,
                             self.continuation_history,
                             self.ply,
@@ -803,7 +797,6 @@ fn test_move_picker_for_main_search_next_move() {
     let pos = Position::new_from_sfen(sfen).unwrap();
     let tt_move = Some(Move::new_unpromote(Square::SQ88, Square::SQ66, Piece::B_BISHOP));
     let mh = ButterflyHistory::new();
-    let sh = ButterflyHistory::new();
     let lph = LowPlyHistory::new();
     let cph = CapturePieceToHistory::new();
     let ch = [
@@ -821,7 +814,7 @@ fn test_move_picker_for_main_search_next_move() {
     ];
     let cm = Some(Move::new_unpromote(Square::SQ88, Square::SQ77, Piece::B_BISHOP));
     let skip_quiets = false;
-    let mut mp = MovePickerForMainSearch::new(&pos, tt_move, Depth(5), &mh, &sh, &lph, &cph, &ch, cm, &killers, 0);
+    let mut mp = MovePickerForMainSearch::new(&pos, tt_move, Depth(5), &mh, &lph, &cph, &ch, cm, &killers, 0);
     let moves_size;
     {
         let mut mlist = MoveList::new();
@@ -876,7 +869,6 @@ fn test_move_picker_for_main_search_next_move_evasion() {
     let pos = Position::new_from_sfen(sfen).unwrap();
     let tt_move = Some(Move::new_unpromote(Square::SQ35, Square::SQ24, Piece::B_KING));
     let mh = ButterflyHistory::new();
-    let sh = ButterflyHistory::new();
     let lph = LowPlyHistory::new();
     let cph = CapturePieceToHistory::new();
     let ch = [
@@ -892,7 +884,7 @@ fn test_move_picker_for_main_search_next_move_evasion() {
     ];
     let cm = Some(Move::new_unpromote(Square::SQ88, Square::SQ77, Piece::B_BISHOP));
     let skip_quiets = false;
-    let mut mp = MovePickerForMainSearch::new(&pos, tt_move, Depth(5), &mh, &sh, &lph, &cph, &ch, cm, &killers, 0);
+    let mut mp = MovePickerForMainSearch::new(&pos, tt_move, Depth(5), &mh, &lph, &cph, &ch, cm, &killers, 0);
     let moves_size;
     {
         let mut mlist = MoveList::new();

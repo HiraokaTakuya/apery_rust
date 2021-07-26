@@ -115,7 +115,6 @@ struct Thread {
     completed_depth: Depth,
     counter_moves: CounterMoveHistory,
     main_history: ButterflyHistory,
-    static_history: ButterflyHistory,
     low_ply_history: LowPlyHistory,
     capture_history: CapturePieceToHistory,
     continuation_history: [[ContinuationHistory; StatsType::NUM]; InCheckType::NUM],
@@ -178,7 +177,6 @@ impl Thread {
         self.calls_count = 0;
         self.counter_moves.fill(None);
         self.main_history.fill(0);
-        self.static_history.fill(0);
         self.low_ply_history.fill(0);
         self.capture_history.fill(0);
 
@@ -675,18 +673,18 @@ impl Thread {
                 );
             }
 
-            if get_stack(stack, -1).current_move.is_normal_move()
+            if get_stack(stack, -1).move_count > 1
+                && get_stack(stack, -1).current_move.is_normal_move()
                 && !get_stack(stack, -1).in_check
                 && prior_capture == Piece::EMPTY
+                && depth < Depth(7)
             {
-                let bonus = if get_stack(stack, 0).static_eval > -get_stack(stack, -1).static_eval + Value(2 * TEMPO.0) {
-                    -stat_bonus(depth)
-                } else if get_stack(stack, 0).static_eval < -get_stack(stack, -1).static_eval + Value(2 * TEMPO.0) {
-                    stat_bonus(depth)
-                } else {
-                    0
-                };
-                self.static_history.update(
+                let bonus = num::clamp(
+                    -(depth.0 + 1) * 2 * (get_stack(stack, -1).static_eval.0 + get_stack(stack, 0).static_eval.0 - 2 * TEMPO.0),
+                    -1000,
+                    1000,
+                );
+                self.main_history.update(
                     us.inverse(),
                     get_stack(stack, -1).current_move.non_zero_unwrap_unchecked(),
                     bonus,
@@ -861,7 +859,6 @@ impl Thread {
             tt_move,
             depth,
             &self.main_history,
-            &self.static_history,
             &self.low_ply_history,
             &self.capture_history,
             &cont_hists,
@@ -1711,7 +1708,6 @@ impl ThreadPool {
                     completed_depth: Depth::ZERO,
                     counter_moves: CounterMoveHistory::new(),
                     main_history: ButterflyHistory::new(),
-                    static_history: ButterflyHistory::new(),
                     low_ply_history: LowPlyHistory::new(),
                     capture_history: CapturePieceToHistory::new(),
                     continuation_history: [
