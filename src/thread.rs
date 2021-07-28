@@ -422,6 +422,9 @@ impl Thread {
         let us = self.position.side_to_move();
         let mut best_value = -Value::INFINITE;
         let max_value = Value::INFINITE;
+        if pv_node {
+            get_stack_mut(stack, 0).distance_from_pv = 0;
+        }
 
         if self.is_main() {
             self.check_time();
@@ -1017,6 +1020,8 @@ impl Thread {
 
             // Step 15
             self.position.do_move(m, gives_check);
+
+            get_stack_mut(stack, 1).distance_from_pv = get_stack(stack, 0).distance_from_pv + move_count - 1;
             #[cfg(feature = "kppt")]
             get_stack_mut(stack, 1).static_eval_raw.set_not_evaluated();
 
@@ -1117,9 +1122,13 @@ impl Thread {
                 //else if depth < Depth(8) && move_count > 2 {
                 //    r += Depth::ONE_PLY;
                 //}
-                let d = num::clamp(new_depth - r, Depth::ONE_PLY, new_depth);
+                let d = num::clamp(
+                    new_depth - r,
+                    Depth::ONE_PLY,
+                    new_depth + Depth(i32::from(get_stack(stack, 1).distance_from_pv <= 4)),
+                );
                 value = -self.search::<NonPv>(&mut stack[1..], -(alpha + Value(1)), -alpha, d, true);
-                (value > alpha && d != new_depth, true)
+                (value > alpha && d < new_depth, true)
             } else {
                 (!pv_node || move_count > 1, false)
             };
