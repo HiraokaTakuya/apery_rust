@@ -689,10 +689,6 @@ impl Thread {
                 );
             }
 
-            // Step 7
-            if !root_node && depth == Depth::ONE_PLY && eval <= alpha - RAZOR_MARGIN {
-                return self.qsearch::<IsPv>(stack, alpha, beta, Depth::ZERO);
-            }
             improving = if get_stack(stack, -2).static_eval == Value::NONE {
                 get_stack(stack, 0).static_eval > get_stack(stack, -4).static_eval
                     || get_stack(stack, -4).static_eval == Value::NONE
@@ -700,12 +696,12 @@ impl Thread {
                 get_stack(stack, 0).static_eval > get_stack(stack, -2).static_eval
             };
 
-            // Step 8
+            // Step 7
             if !pv_node && depth.0 < 9 && eval - futility_margin(depth) >= beta && eval < Value::KNOWN_WIN {
                 return eval;
             }
 
-            // Step 9
+            // Step 8
             if !pv_node
                 && get_stack(stack, -1).current_move.is_some()
                 && get_stack(stack, -1).stat_score < 22977
@@ -754,7 +750,7 @@ impl Thread {
 
             let prob_cut_beta = Value(beta.0 + 194 - 49 * i32::from(improving));
 
-            // Step 10
+            // Step 9
             if !pv_node
                 && depth.0 > 4
                 && beta.0.abs() < Value::MATE_IN_MAX_PLY.0
@@ -835,7 +831,7 @@ impl Thread {
                 get_stack_mut(stack, 0).tt_pv = tt_pv;
             }
 
-            // Step 11
+            // Step 10
             if pv_node && depth >= Depth(6) && tt_move.is_none() {
                 depth -= Depth(2);
             }
@@ -875,7 +871,7 @@ impl Thread {
 
         let th = ThreadHolding::new(self, key, get_stack(stack, 0).ply);
 
-        // Step 12
+        // Step 11
         let mut move_count = 0;
         const CAPTURES_SEARCHED_NUM: usize = 32;
         const QUIETS_SEARCHED_NUM: usize = 64;
@@ -907,7 +903,7 @@ impl Thread {
             let new_depth = depth - Depth::ONE_PLY;
             let to = m.to();
 
-            // Step 13
+            // Step 12
             if !root_node && best_value > Value::MATED_IN_MAX_PLY {
                 move_count_pruning = move_count >= futility_move_count(improving, depth.0);
                 let lmr_depth = std::cmp::max(
@@ -955,7 +951,7 @@ impl Thread {
                 }
             }
 
-            // Step 14
+            // Step 13
             if depth.0 >= 7
                 && m == tt_move.non_zero_unwrap_unchecked()
                 && !root_node
@@ -997,12 +993,12 @@ impl Thread {
                 [usize::from(is_capture_or_pawn_promotion)]
             .get_mut(piece_moved_after_move, to);
 
-            // Step 15
+            // Step 14
             self.position.do_move(m, gives_check);
             #[cfg(feature = "kppt")]
             get_stack_mut(stack, 1).static_eval_raw.set_not_evaluated();
 
-            // Step 16
+            // Step 15
             let (do_full_depth_search, did_lmr) = if depth.0 >= 3
                 && move_count > 1 + 2 * i32::from(root_node)
                 && (!is_capture_or_pawn_promotion
@@ -1098,7 +1094,7 @@ impl Thread {
                 (!pv_node || move_count > 1, false)
             };
 
-            // Step 17
+            // Step 16
             if do_full_depth_search {
                 value = -self.search::<NonPv>(&mut stack[1..], -(alpha + Value(1)), -alpha, new_depth, !cut_node);
 
@@ -1121,12 +1117,12 @@ impl Thread {
                 );
             }
 
-            // Step 18
+            // Step 17
             self.position.undo_move(m);
 
             debug_assert!(-Value::INFINITE < value && value < Value::INFINITE);
 
-            // Step 19
+            // Step 18
             if self.stop.load(Ordering::Relaxed) {
                 return Value::ZERO;
             }
@@ -1172,6 +1168,7 @@ impl Thread {
             }
         }
 
+        // Step 19
         fn legal_moves_size(pos: &Position) -> usize {
             let mut mlist = MoveList::new();
             let current_size = 0;

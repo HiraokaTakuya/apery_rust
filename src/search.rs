@@ -226,8 +226,6 @@ pub fn update_continuation_histories(stack: &mut [Stack], pc: Piece, to: Square,
     }
 }
 
-pub const RAZOR_MARGIN: Value = Value(510);
-
 pub fn futility_margin(depth: Depth) -> Value {
     Value(75 * depth.0)
 }
