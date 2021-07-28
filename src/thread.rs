@@ -1117,7 +1117,7 @@ impl Thread {
                 //else if depth < Depth(8) && move_count > 2 {
                 //    r += Depth::ONE_PLY;
                 //}
-                let d = std::cmp::max(new_depth - std::cmp::max(r, Depth::ZERO), Depth::ONE_PLY);
+                let d = num::clamp(new_depth - r, Depth::ONE_PLY, new_depth);
                 value = -self.search::<NonPv>(&mut stack[1..], -(alpha + Value(1)), -alpha, d, true);
                 (value > alpha && d != new_depth, true)
             } else {
