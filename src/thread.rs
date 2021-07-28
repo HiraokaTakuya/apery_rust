@@ -704,16 +704,16 @@ impl Thread {
             // Step 8
             if !pv_node
                 && get_stack(stack, -1).current_move.is_some()
-                && get_stack(stack, -1).stat_score < 22977
+                && get_stack(stack, -1).stat_score < 22661
                 && eval >= beta
                 && eval >= get_stack(stack, 0).static_eval
                 && get_stack(stack, 0).static_eval.0
-                    >= beta.0 - 30 * depth.0 - 28 * i32::from(improving) + 84 * i32::from(get_stack(stack, 0).tt_pv) + 168
+                    >= beta.0 - 24 * depth.0 - 34 * i32::from(improving) + 162 * i32::from(get_stack(stack, 0).tt_pv) + 159
                 && excluded_move.is_none()
                 && (get_stack(stack, 0).ply >= self.null_move_pruning_min_ply || us != self.null_move_pruning_color)
             {
                 debug_assert!(eval - beta >= Value(0));
-                let r = Depth((1015 + 85 * depth.0) / 256 + std::cmp::min((eval.0 - beta.0) / 191, 3));
+                let r = Depth((1062 + 68 * depth.0) / 256 + std::cmp::min((eval.0 - beta.0) / 190, 3));
                 get_stack_mut(stack, 0).current_move = Some(Move::NULL);
                 get_stack_mut(stack, 0).continuation_history = self.continuation_history[0][0].sentinel();
 
@@ -748,7 +748,7 @@ impl Thread {
                 }
             }
 
-            let prob_cut_beta = Value(beta.0 + 194 - 49 * i32::from(improving));
+            let prob_cut_beta = Value(beta.0 + 209 - 44 * i32::from(improving));
 
             // Step 9
             if !pv_node
@@ -933,12 +933,12 @@ impl Thread {
                     }
                     if lmr_depth < Depth(7)
                         && !get_stack(stack, 0).in_check
-                        && get_stack(stack, 0).static_eval.0 + 254 + 159 * lmr_depth.0 <= alpha.0
+                        && get_stack(stack, 0).static_eval.0 + 174 + 157 * lmr_depth.0 <= alpha.0
                         && unsafe { (*cont_hists[0]).get(to, piece_moved_after_move) }
                             + unsafe { (*cont_hists[1]).get(to, piece_moved_after_move) }
                             + unsafe { (*cont_hists[3]).get(to, piece_moved_after_move) }
-                            + unsafe { (*cont_hists[5]).get(to, piece_moved_after_move) } / 2
-                            < 26394
+                            + unsafe { (*cont_hists[5]).get(to, piece_moved_after_move) } / 3
+                            < 26237
                     {
                         continue;
                     }
@@ -1065,21 +1065,21 @@ impl Thread {
                         + unsafe { (*cont_hists[0]).get(to, piece_moved_after_move) }
                         + unsafe { (*cont_hists[1]).get(to, piece_moved_after_move) }
                         + unsafe { (*cont_hists[3]).get(to, piece_moved_after_move) }
-                        - 5287;
+                        - 5337;
 
-                    if get_stack(stack, 0).stat_score >= -105 && get_stack(stack, -1).stat_score < -103 {
+                    if get_stack(stack, 0).stat_score >= -89 && get_stack(stack, -1).stat_score < -116 {
                         r -= Depth::ONE_PLY;
-                    } else if get_stack(stack, -1).stat_score >= -122 && get_stack(stack, 0).stat_score < -129 {
+                    } else if get_stack(stack, -1).stat_score >= -112 && get_stack(stack, 0).stat_score < -100 {
                         r += Depth::ONE_PLY;
                     }
 
                     if get_stack(stack, 0).in_check {
                         r -= Depth(
-                            (self.main_history.get(us, m) + unsafe { (*cont_hists[0]).get(to, piece_moved_after_move) } - 4333)
+                            (self.main_history.get(us, m) + unsafe { (*cont_hists[0]).get(to, piece_moved_after_move) } - 4341)
                                 / 16384,
                         )
                     } else {
-                        r -= Depth(get_stack(stack, 0).stat_score / 14884);
+                        r -= Depth(get_stack(stack, 0).stat_score / 14382);
                     }
                 } else {
                     if !gives_check
@@ -1548,7 +1548,7 @@ impl Thread {
         let bonus2 = if best_value > beta + piece_type_value(PieceType::PAWN) {
             bonus1
         } else {
-            stat_bonus(depth)
+            std::cmp::min(bonus1, stat_bonus(depth))
         };
         if !best_move.is_capture_or_pawn_promotion(&self.position) {
             self.update_quiet_stats(stack, best_move, bonus2, depth);
