@@ -39,7 +39,7 @@ impl ButterflyHistory {
     pub fn update(&mut self, c: Color, m: Move, bonus: i32) {
         let entry = &mut self.v[c.0 as usize][m.0.get() as u16 as usize];
         let mut val = *entry;
-        val += (bonus - i32::from(val) * bonus.abs() / 10692) as i16;
+        val += (bonus - i32::from(val) * bonus.abs() / 13365) as i16;
         *entry = val;
     }
     pub fn fill(&mut self, val: i16) {

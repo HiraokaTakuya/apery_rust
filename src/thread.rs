@@ -701,7 +701,7 @@ impl Thread {
             };
 
             // Step 8
-            if !pv_node && depth.0 < 8 && eval - futility_margin(depth) >= beta && eval < Value::KNOWN_WIN {
+            if !pv_node && depth.0 < 9 && eval - futility_margin(depth) >= beta && eval < Value::KNOWN_WIN {
                 return eval;
             }
 
@@ -752,7 +752,7 @@ impl Thread {
                 }
             }
 
-            let prob_cut_beta = Value(beta.0 + 183 - 49 * i32::from(improving));
+            let prob_cut_beta = Value(beta.0 + 194 - 49 * i32::from(improving));
 
             // Step 10
             if !pv_node
@@ -923,12 +923,12 @@ impl Thread {
                     }
                     if lmr_depth < Depth(7)
                         && !get_stack(stack, 0).in_check
-                        && get_stack(stack, 0).static_eval.0 + 266 + 170 * lmr_depth.0 <= alpha.0
+                        && get_stack(stack, 0).static_eval.0 + 254 + 159 * lmr_depth.0 <= alpha.0
                         && unsafe { (*cont_hists[0]).get(to, piece_moved_after_move) }
                             + unsafe { (*cont_hists[1]).get(to, piece_moved_after_move) }
                             + unsafe { (*cont_hists[3]).get(to, piece_moved_after_move) }
                             + unsafe { (*cont_hists[5]).get(to, piece_moved_after_move) } / 2
-                            < 27376
+                            < 26394
                     {
                         continue;
                     }
@@ -949,7 +949,7 @@ impl Thread {
                         continue;
                     }
 
-                    if !self.position.see_ge(m, Value(-213 * depth.0)) {
+                    if !self.position.see_ge(m, Value(-218 * depth.0)) {
                         continue;
                     }
                 }

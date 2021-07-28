@@ -201,10 +201,10 @@ pub const TEMPO: Value = Value(28);
 
 pub fn stat_bonus(depth: Depth) -> i32 {
     let d = depth.0;
-    if d > 13 {
+    if d > 14 {
         29
     } else {
-        17 * d * d + 134 * d - 134
+        8 * d * d + 224 * d - 215
     }
 }
 
