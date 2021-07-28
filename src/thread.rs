@@ -673,14 +673,12 @@ impl Thread {
                 );
             }
 
-            if get_stack(stack, -1).move_count > 1
-                && get_stack(stack, -1).current_move.is_normal_move()
+            if get_stack(stack, -1).current_move.is_normal_move()
                 && !get_stack(stack, -1).in_check
                 && prior_capture == Piece::EMPTY
-                && depth < Depth(7)
             {
                 let bonus = num::clamp(
-                    -(depth.0 + 1) * 2 * (get_stack(stack, -1).static_eval.0 + get_stack(stack, 0).static_eval.0 - 2 * TEMPO.0),
+                    -depth.0 * 4 * (get_stack(stack, -1).static_eval.0 + get_stack(stack, 0).static_eval.0 - 2 * TEMPO.0),
                     -1000,
                     1000,
                 );
