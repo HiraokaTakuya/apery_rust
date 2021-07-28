@@ -387,8 +387,8 @@ fn score_quiets(
         let side_to_move = pos.side_to_move();
         ext_move.score = unsafe { (*main_history).get(side_to_move, m) }
             + 2 * unsafe { (*continuation_history[0]).get(to, piece_moved) }
-            + 2 * unsafe { (*continuation_history[1]).get(to, piece_moved) }
-            + 2 * unsafe { (*continuation_history[3]).get(to, piece_moved) }
+            + unsafe { (*continuation_history[1]).get(to, piece_moved) }
+            + unsafe { (*continuation_history[3]).get(to, piece_moved) }
             + unsafe { (*continuation_history[5]).get(to, piece_moved) }
             + if ply < LowPlyHistory::MAX_LPH as i32 {
                 std::cmp::min(4, depth.0 / 3) * unsafe { (*low_ply_history).get(ply, m) }
@@ -412,7 +412,7 @@ fn score_evasion(
         } else {
             let piece_moved = m.piece_moved_after_move();
             ext_move.score = unsafe { (*main_history).get(pos.side_to_move(), m) }
-                + unsafe { (*continuation_history[0]).get(m.to(), piece_moved) }
+                + 2 * unsafe { (*continuation_history[0]).get(m.to(), piece_moved) }
                 - (1 << 28);
         }
     }
