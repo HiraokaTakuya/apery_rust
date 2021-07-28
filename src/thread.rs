@@ -1072,7 +1072,15 @@ impl Thread {
                     } else if get_stack(stack, -1).stat_score >= -122 && get_stack(stack, 0).stat_score < -129 {
                         r += Depth::ONE_PLY;
                     }
-                    r -= Depth(get_stack(stack, 0).stat_score / 14884);
+
+                    if get_stack(stack, 0).in_check {
+                        r -= Depth(
+                            (self.main_history.get(us, m) + unsafe { (*cont_hists[0]).get(to, piece_moved_after_move) } - 4333)
+                                / 16384,
+                        )
+                    } else {
+                        r -= Depth(get_stack(stack, 0).stat_score / 14884);
+                    }
                 } else {
                     if !gives_check
                         && Value(
