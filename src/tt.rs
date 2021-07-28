@@ -47,7 +47,7 @@ impl TtEntry {
     }
     #[allow(dead_code)]
     pub fn generation(&self) -> u8 {
-        self.genbound8 & 0xf8
+        self.genbound8 & GENERATION_MASK as u8
     }
     pub fn save(
         &mut self,
@@ -80,6 +80,11 @@ impl TtEntry {
 }
 
 const CLUSTER_SIZE: usize = 3;
+
+const GENERATION_BITS: u32 = 3;
+const GENERATION_DELTA: u8 = 1 << GENERATION_BITS;
+const GENERATION_CYCLE: i32 = 255 + (1 << GENERATION_BITS);
+const GENERATION_MASK: i32 = (0xff << GENERATION_BITS) & 0xff;
 
 #[repr(align(32))]
 struct TtCluster {
@@ -121,7 +126,7 @@ impl TranspositionTable {
         });
     }
     pub fn new_search(&mut self) {
-        self.generation8 = self.generation8.wrapping_add(8);
+        self.generation8 = self.generation8.wrapping_add(GENERATION_DELTA);
     }
     fn cluster_index(&self, key: Key) -> usize {
         fn mul_hi64(l: u64, r: u64) -> u64 {
@@ -140,7 +145,7 @@ impl TranspositionTable {
         let cluster = self.get_mut_cluster(self.cluster_index(key));
         for i in 0..cluster.entry.len() {
             if cluster.entry[i].key16 == key16 || i32::from(cluster.entry[i].depth8) == 0 {
-                cluster.entry[i].genbound8 = generation8 | (cluster.entry[i].genbound8 & 0x7); // refresh
+                cluster.entry[i].genbound8 = generation8 | (cluster.entry[i].genbound8 & (GENERATION_DELTA - 1)); // refresh
                 let found = i32::from(cluster.entry[i].depth8) != 0;
                 return (&mut cluster.entry[i], found);
             }
@@ -149,8 +154,10 @@ impl TranspositionTable {
             .entry
             .iter_mut()
             .min_by(|x, y| {
-                let left = i32::from(x.depth8) - ((263 + i32::from(generation8) - i32::from(x.genbound8)) & 0xf8);
-                let right = i32::from(y.depth8) - ((263 + i32::from(generation8) - i32::from(y.genbound8)) & 0xf8);
+                let left = i32::from(x.depth8)
+                    - ((GENERATION_CYCLE + i32::from(generation8) - i32::from(x.genbound8)) & GENERATION_MASK);
+                let right = i32::from(y.depth8)
+                    - ((GENERATION_CYCLE + i32::from(generation8) - i32::from(y.genbound8)) & GENERATION_MASK);
                 left.cmp(&right)
             })
             .unwrap();
