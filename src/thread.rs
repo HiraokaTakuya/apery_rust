@@ -837,6 +837,26 @@ impl Thread {
             }
         }
 
+        let tt_capture = tt_move.is_some()
+            && tt_move
+                .non_zero_unwrap_unchecked()
+                .is_capture_or_pawn_promotion(&self.position);
+
+        // Step 11
+        let prob_cut_beta = beta + Value(400);
+        if get_stack(stack, 0).in_check
+            && !pv_node
+            && depth >= Depth(4)
+            && tt_capture
+            && tte.bound().include_lower()
+            && tte.depth() >= depth - Depth(3)
+            && tt_value >= prob_cut_beta
+            && tt_value.0.abs() <= Value::KNOWN_WIN.0
+            && beta.0.abs() <= Value::KNOWN_WIN.0
+        {
+            return prob_cut_beta;
+        }
+
         let cont_hists = [
             get_stack(stack, -1).continuation_history as *const PieceToHistory,
             get_stack(stack, -2).continuation_history as *const PieceToHistory,
@@ -863,15 +883,11 @@ impl Thread {
 
         let mut value = best_value;
         let mut move_count_pruning = false;
-        let tt_capture = tt_move.is_some()
-            && tt_move
-                .non_zero_unwrap_unchecked()
-                .is_capture_or_pawn_promotion(&self.position);
         let mut singular_quiet_lmr = false;
 
         let th = ThreadHolding::new(self, key, get_stack(stack, 0).ply);
 
-        // Step 11
+        // Step 12
         let mut move_count = 0;
         const CAPTURES_SEARCHED_NUM: usize = 32;
         const QUIETS_SEARCHED_NUM: usize = 64;
@@ -909,7 +925,7 @@ impl Thread {
             let new_depth = depth - Depth::ONE_PLY;
             let to = m.to();
 
-            // Step 12
+            // Step 13
             if !root_node && best_value > Value::MATED_IN_MAX_PLY {
                 move_count_pruning = move_count >= futility_move_count(improving, depth.0);
                 let lmr_depth = std::cmp::max(
@@ -957,7 +973,7 @@ impl Thread {
                 }
             }
 
-            // Step 13
+            // Step 14
             if depth.0 >= 7
                 && m == tt_move.non_zero_unwrap_unchecked()
                 && !root_node
@@ -999,12 +1015,12 @@ impl Thread {
                 [usize::from(is_capture_or_pawn_promotion)]
             .get_mut(piece_moved_after_move, to);
 
-            // Step 14
+            // Step 15
             self.position.do_move(m, gives_check);
             #[cfg(feature = "kppt")]
             get_stack_mut(stack, 1).static_eval_raw.set_not_evaluated();
 
-            // Step 15
+            // Step 16
             let (do_full_depth_search, did_lmr) = if depth.0 >= 3
                 && move_count > 1 + 2 * i32::from(root_node)
                 && (!is_capture_or_pawn_promotion
@@ -1108,7 +1124,7 @@ impl Thread {
                 (!pv_node || move_count > 1, false)
             };
 
-            // Step 16
+            // Step 17
             if do_full_depth_search {
                 value = -self.search::<NonPv>(&mut stack[1..], -(alpha + Value(1)), -alpha, new_depth, !cut_node);
 
@@ -1131,12 +1147,12 @@ impl Thread {
                 );
             }
 
-            // Step 17
+            // Step 18
             self.position.undo_move(m);
 
             debug_assert!(-Value::INFINITE < value && value < Value::INFINITE);
 
-            // Step 18
+            // Step 19
             if self.stop.load(Ordering::Relaxed) {
                 return Value::ZERO;
             }
@@ -1182,7 +1198,7 @@ impl Thread {
             }
         }
 
-        // Step 19
+        // Step 20
         fn legal_moves_size(pos: &Position) -> usize {
             let mut mlist = MoveList::new();
             let current_size = 0;
