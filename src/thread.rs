@@ -704,7 +704,7 @@ impl Thread {
             // Step 8
             if !pv_node
                 && get_stack(stack, -1).current_move.is_some()
-                && get_stack(stack, -1).stat_score < 22661
+                && get_stack(stack, -1).stat_score < 24185
                 && eval >= beta
                 && eval >= get_stack(stack, 0).static_eval
                 && get_stack(stack, 0).static_eval.0
@@ -944,7 +944,7 @@ impl Thread {
                             + unsafe { (*cont_hists[1]).get(to, piece_moved_after_move) }
                             + unsafe { (*cont_hists[3]).get(to, piece_moved_after_move) }
                             + unsafe { (*cont_hists[5]).get(to, piece_moved_after_move) } / 3
-                            < 26237
+                            < 28255
                     {
                         continue;
                     }
@@ -1016,7 +1016,7 @@ impl Thread {
                         && self
                             .capture_history
                             .get(piece_moved_after_move, to, PieceType::new(self.position.captured_piece()))
-                            < 4506)
+                            < 3678)
                     || self.tt_hit_average < 432 * TT_HIT_AVERAGE_RESOLUTION * TT_HIT_AVERAGE_WINDOW / 1024)
             {
                 let mut r = unsafe { (*self.reductions).get(improving, depth, move_count) };
@@ -1071,7 +1071,7 @@ impl Thread {
                         + unsafe { (*cont_hists[0]).get(to, piece_moved_after_move) }
                         + unsafe { (*cont_hists[1]).get(to, piece_moved_after_move) }
                         + unsafe { (*cont_hists[3]).get(to, piece_moved_after_move) }
-                        - 5337;
+                        - 4741;
 
                     if get_stack(stack, 0).stat_score >= -89 && get_stack(stack, -1).stat_score < -116 {
                         r -= Depth::ONE_PLY;
@@ -1081,11 +1081,11 @@ impl Thread {
 
                     if get_stack(stack, 0).in_check {
                         r -= Depth(
-                            (self.main_history.get(us, m) + unsafe { (*cont_hists[0]).get(to, piece_moved_after_move) } - 4341)
+                            (self.main_history.get(us, m) + unsafe { (*cont_hists[0]).get(to, piece_moved_after_move) } - 3833)
                                 / 16384,
                         )
                     } else {
-                        r -= Depth(get_stack(stack, 0).stat_score / 14382);
+                        r -= Depth(get_stack(stack, 0).stat_score / 14790);
                     }
                 } else {
                     if !gives_check
