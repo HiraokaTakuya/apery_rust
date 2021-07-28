@@ -900,6 +900,12 @@ impl Thread {
             let piece_moved_after_move = m.piece_moved_after_move();
             let gives_check = self.position.gives_check(m);
 
+            //let likely_fail_low = pv_node
+            //    && tt_move.is_some()
+            //    && tte.bound().include_upper()
+            //    && tt_value < alpha + Value(200 + 100 * depth.0)
+            //    && tte.depth() >= depth;
+
             let new_depth = depth - Depth::ONE_PLY;
             let to = m.to();
 
@@ -1023,7 +1029,7 @@ impl Thread {
                     r += Depth::ONE_PLY;
                 }
 
-                //if get_stack(stack, 0).tt_pv {
+                //if get_stack(stack, 0).tt_pv && !likely_fail_low {
                 //    r -= Depth(2);
                 //}
 
