@@ -910,7 +910,21 @@ impl Thread {
                     new_depth - unsafe { (*self.reductions).get(improving, depth, move_count) },
                     Depth::ZERO,
                 );
-                if !is_capture_or_pawn_promotion && !gives_check {
+                if is_capture_or_pawn_promotion || gives_check {
+                    if !gives_check
+                        && lmr_depth < Depth::ONE_PLY
+                        && self
+                            .capture_history
+                            .get(piece_moved_after_move, to, PieceType::new(self.position.piece_on(to)))
+                            < 0
+                    {
+                        continue;
+                    }
+
+                    if !self.position.see_ge(m, Value(-218 * depth.0)) {
+                        continue;
+                    }
+                } else {
                     if lmr_depth.0 < 3 + i32::from(get_stack(stack, -1).stat_score > 0 || get_stack(stack, -1).move_count == 1)
                         && unsafe { (*cont_hists[0]).get(to, piece_moved_after_move) } < i32::from(COUNTER_MOVE_PRUNE_THRESHOLD)
                         && unsafe { (*cont_hists[1]).get(to, piece_moved_after_move) } < i32::from(COUNTER_MOVE_PRUNE_THRESHOLD)
@@ -932,20 +946,6 @@ impl Thread {
                         .position
                         .see_ge(m, Value(-(30 - std::cmp::min(lmr_depth.0, 18)) * lmr_depth.0 * lmr_depth.0))
                     {
-                        continue;
-                    }
-                } else {
-                    if !gives_check
-                        && lmr_depth < Depth::ONE_PLY
-                        && self
-                            .capture_history
-                            .get(piece_moved_after_move, to, PieceType::new(self.position.piece_on(to)))
-                            < 0
-                    {
-                        continue;
-                    }
-
-                    if !self.position.see_ge(m, Value(-218 * depth.0)) {
                         continue;
                     }
                 }
