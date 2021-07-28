@@ -1009,6 +1009,7 @@ impl Thread {
                     || move_count_pruning
                     || get_stack(stack, 0).static_eval + capture_piece_value(self.position.captured_piece()) <= alpha
                     || cut_node
+                    || (!pv_node && !former_pv)
                     || self.tt_hit_average < 432 * TT_HIT_AVERAGE_RESOLUTION * TT_HIT_AVERAGE_WINDOW / 1024)
             {
                 let mut r = unsafe { (*self.reductions).get(improving, depth, move_count) };
