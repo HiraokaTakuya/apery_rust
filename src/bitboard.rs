@@ -378,6 +378,7 @@ impl Bitboard {
         debug_assert!(0 <= r.0 && r.0 < Rank::NUM as i32);
         unsafe { *IN_FRONT_MASKS.get_unchecked(r.0 as usize).get_unchecked(c.0 as usize) }
     }
+    // todo: include sq1 for performance.
     pub fn between_mask(sq0: Square, sq1: Square) -> Bitboard {
         debug_assert!(0 <= sq0.0 && sq0.0 < Square::NUM as i32);
         debug_assert!(0 <= sq1.0 && sq1.0 < Square::NUM as i32);
