@@ -976,18 +976,7 @@ impl Thread {
                         + unsafe { (*cont_hists[3]).get(to, piece_moved_after_move) }
                         - 4741;
 
-                    if get_stack(stack, 0).stat_score >= -89 && get_stack(stack, -1).stat_score < -116 {
-                        r -= Depth::ONE_PLY;
-                    } else if get_stack(stack, -1).stat_score >= -112 && get_stack(stack, 0).stat_score < -100 {
-                        r += Depth::ONE_PLY;
-                    }
-
-                    if get_stack(stack, 0).in_check {
-                        r -= Depth(
-                            (self.main_history.get(us, m) + unsafe { (*cont_hists[0]).get(to, piece_moved_after_move) } - 3833)
-                                / 16384,
-                        )
-                    } else {
+                    if !get_stack(stack, 0).in_check {
                         r -= Depth(get_stack(stack, 0).stat_score / 14790);
                     }
                 }
