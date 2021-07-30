@@ -450,7 +450,7 @@ pub fn cmd_loop() {
     let mut tt = TranspositionTable::new();
     #[cfg(feature = "kppt")]
     let mut ehash = EvalHash::new();
-    let mut reductions = Reductions::new(1);
+    let mut reductions = Reductions::new();
     let mut thread_pool = ThreadPool::new();
     thread_pool.set(
         1,

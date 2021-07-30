@@ -237,12 +237,12 @@ pub struct Reductions {
 }
 
 impl Reductions {
-    pub fn new(thread_num: usize) -> Reductions {
+    pub fn new() -> Reductions {
         let mut r = Reductions {
             values: [0; ExtMove::MAX_LEGAL_MOVES],
         };
         for (i, v) in r.values.iter_mut().enumerate().skip(1) {
-            *v = ((21.3 + 2.0 * f64::from(thread_num as i32).ln()) * f64::ln(i as f64 + 0.25 * f64::ln(i as f64))) as i32;
+            *v = (21.3 * f64::ln(i as f64 + 0.25 * f64::ln(i as f64))) as i32;
         }
         r
     }

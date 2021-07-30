@@ -188,7 +188,7 @@ fn test_cluster_index() {
             let mut tt = TranspositionTable::new();
             #[cfg(feature = "kppt")]
             let mut ehash = EvalHash::new();
-            let mut reductions = Reductions::new(1);
+            let mut reductions = Reductions::new();
             thread_pool.set(
                 1,
                 &mut tt,
@@ -222,7 +222,7 @@ fn test_probe() {
             let mut tt = TranspositionTable::new();
             #[cfg(feature = "kppt")]
             let mut ehash = EvalHash::new();
-            let mut reductions = Reductions::new(1);
+            let mut reductions = Reductions::new();
             thread_pool.set(
                 1,
                 &mut tt,

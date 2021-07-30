@@ -1575,7 +1575,7 @@ impl ThreadPool {
         self.thread_pool_base.lock().unwrap().threads.clear();
         self.nodess = (0..requested).map(|_| Arc::new(AtomicI64::new(0))).collect();
         self.best_move_changess = (0..requested).map(|_| Arc::new(AtomicU64::new(0))).collect();
-        *reductions = Reductions::new(requested);
+        *reductions = Reductions::new();
         self.thread_pool_base.lock().unwrap().threads = (0..requested)
             .map(|i| {
                 Arc::new(Mutex::new(Thread {
@@ -1871,7 +1871,7 @@ fn test_start_thinking() {
                         limits.start_time = Some(std::time::Instant::now());
                         limits
                     };
-                    let mut reductions = Reductions::new(1);
+                    let mut reductions = Reductions::new();
                     thread_pool.set(
                         3,
                         &mut tt,

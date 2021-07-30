@@ -151,7 +151,7 @@ pub fn generate_teachers(args: &[&str]) {
             let mut tt = TranspositionTable::new();
             #[cfg(feature = "kppt")]
             let mut ehash = EvalHash::new(); // todo: All threads use same ehash.
-            let mut reductions = Reductions::new(1);
+            let mut reductions = Reductions::new();
             thread_pool.set(
                 1,
                 &mut tt,
