@@ -620,16 +620,16 @@ impl Thread {
             // Step 8
             if !pv_node
                 && get_stack(stack, -1).current_move.is_some()
-                && get_stack(stack, -1).stat_score < 24185
+                && get_stack(stack, -1).stat_score < 23767
                 && eval >= beta
                 && eval >= get_stack(stack, 0).static_eval
                 && get_stack(stack, 0).static_eval.0
-                    >= beta.0 - 22 * depth.0 - 34 * i32::from(improving) + 162 * i32::from(get_stack(stack, 0).tt_pv) + 159
+                    >= beta.0 - 20 * depth.0 - 22 * i32::from(improving) + 168 * i32::from(get_stack(stack, 0).tt_pv) + 159
                 && excluded_move.is_none()
                 && (get_stack(stack, 0).ply >= self.null_move_pruning_min_ply || us != self.null_move_pruning_color)
             {
                 debug_assert!(eval - beta >= Value(0));
-                let r = Depth((1062 + 68 * depth.0) / 256 + std::cmp::min((eval.0 - beta.0) / 190, 3));
+                let r = Depth((1090 + 81 * depth.0) / 256 + std::cmp::min((eval.0 - beta.0) / 205, 3));
                 get_stack_mut(stack, 0).current_move = Some(Move::NULL);
                 get_stack_mut(stack, 0).continuation_history = self.continuation_history[0][0].sentinel();
 
@@ -747,7 +747,7 @@ impl Thread {
                 .is_capture_or_pawn_promotion(&self.position);
 
         // Step 11
-        let prob_cut_beta = beta + Value(400);
+        let prob_cut_beta = beta + Value(409);
         if get_stack(stack, 0).in_check
             && !pv_node
             && depth >= Depth(4)
@@ -890,7 +890,7 @@ impl Thread {
                 if value < singular_beta {
                     extension = Depth::ONE_PLY;
                     singular_quiet_lmr = !tt_capture;
-                    if !pv_node && value < singular_beta - Value(140) {
+                    if !pv_node && value < singular_beta - Value(93) {
                         extension = Depth(2);
                     }
                 } else if singular_beta >= beta {
@@ -960,10 +960,10 @@ impl Thread {
                         + unsafe { (*cont_hists[0]).get(to, piece_moved_after_move) }
                         + unsafe { (*cont_hists[1]).get(to, piece_moved_after_move) }
                         + unsafe { (*cont_hists[3]).get(to, piece_moved_after_move) }
-                        - 4791;
+                        - 4923;
 
                     if !get_stack(stack, 0).in_check {
-                        r -= Depth(get_stack(stack, 0).stat_score / 14790);
+                        r -= Depth(get_stack(stack, 0).stat_score / 14721);
                     }
                 }
                 let d = num::clamp(

@@ -200,9 +200,9 @@ pub fn value_mated_in(ply: i32) -> Value {
 pub fn stat_bonus(depth: Depth) -> i32 {
     let d = depth.0;
     if d > 14 {
-        66
+        73
     } else {
-        6 * d * d + 231 * d - 206
+        6 * d * d + 229 * d - 215
     }
 }
 
@@ -248,7 +248,7 @@ impl Reductions {
     }
     pub fn get(&self, improving: bool, depth: Depth, move_count: i32) -> Depth {
         let r = unsafe { self.values.get_unchecked(depth.0 as usize) * self.values.get_unchecked(move_count as usize) };
-        Depth((r + 503) / 1024 + i32::from(!improving && r > 915))
+        Depth((r + 534) / 1024 + i32::from(!improving && r > 904))
     }
 }
 
