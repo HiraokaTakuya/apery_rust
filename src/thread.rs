@@ -51,7 +51,6 @@ struct Thread {
     usi_options: UsiOptions,
     best_move_changes: Arc<AtomicU64>,
     best_move_changess: Vec<Arc<AtomicU64>>,
-    failed_high_count: i32,
 
     nodes: Arc<AtomicI64>,
     // following variables are shared one object that ThreadPool has.
@@ -175,10 +174,11 @@ impl Thread {
                     beta = std::cmp::min(previous_score + delta, Value::INFINITE);
                 }
 
+                let mut failed_high_count = 0;
                 loop {
                     let adjusted_depth = std::cmp::max(
                         Depth::ONE_PLY,
-                        self.root_depth - Depth(self.failed_high_count + search_again_counter),
+                        self.root_depth - Depth(failed_high_count + search_again_counter),
                     );
                     best_value = self.search::<Pv>(&mut stack, alpha, beta, adjusted_depth, false);
                     self.root_moves[self.pv_idx..].sort_by(|x, y| y.cmp(x));
@@ -205,13 +205,13 @@ impl Thread {
                         beta = (alpha + beta) / 2;
                         alpha = std::cmp::max(best_value - delta, -Value::INFINITE);
 
-                        self.failed_high_count = 0;
+                        failed_high_count = 0;
                         if self.is_main() {
                             self.stop_on_ponderhit.store(false, Ordering::Relaxed);
                         }
                     } else if beta <= best_value {
                         beta = std::cmp::min(best_value + delta, Value::INFINITE);
-                        self.failed_high_count += 1;
+                        failed_high_count += 1;
                     } else {
                         break;
                     }
@@ -952,10 +952,6 @@ impl Thread {
                         r += Depth::ONE_PLY;
                     }
 
-                    if root_node {
-                        r += Depth(self.failed_high_count * self.failed_high_count * move_count / 512);
-                    }
-
                     if cut_node {
                         r += Depth(2);
                     }
@@ -1610,7 +1606,6 @@ impl ThreadPool {
                     usi_options: UsiOptions::new(),
                     best_move_changes: self.best_move_changess[i].clone(),
                     best_move_changess: self.best_move_changess.clone(),
-                    failed_high_count: 0,
                     nodes: self.nodess[i].clone(),
                     best_previous_score: self.best_previous_score.clone(),
                     iter_values: self.iter_values.clone(),
