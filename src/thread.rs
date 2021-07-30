@@ -847,7 +847,7 @@ impl Thread {
                         continue;
                     }
                 } else {
-                    if lmr_depth.0 < 4
+                    if lmr_depth.0 < 5
                         && unsafe { (*cont_hists[0]).get(to, piece_moved_after_move) } < i32::from(COUNTER_MOVE_PRUNE_THRESHOLD)
                         && unsafe { (*cont_hists[1]).get(to, piece_moved_after_move) } < i32::from(COUNTER_MOVE_PRUNE_THRESHOLD)
                     {
