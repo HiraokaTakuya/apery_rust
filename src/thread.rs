@@ -847,7 +847,7 @@ impl Thread {
                         continue;
                     }
                 } else {
-                    if lmr_depth.0 < 3 + i32::from(get_stack(stack, -1).stat_score > 0 || get_stack(stack, -1).move_count == 1)
+                    if lmr_depth.0 < 3
                         && unsafe { (*cont_hists[0]).get(to, piece_moved_after_move) } < i32::from(COUNTER_MOVE_PRUNE_THRESHOLD)
                         && unsafe { (*cont_hists[1]).get(to, piece_moved_after_move) } < i32::from(COUNTER_MOVE_PRUNE_THRESHOLD)
                     {
