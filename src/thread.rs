@@ -947,13 +947,13 @@ impl Thread {
                     r -= Depth(1);
                 }
 
+                if cut_node {
+                    r += Depth(1 + i32::from(!is_capture_or_pawn_promotion));
+                }
+
                 if !is_capture_or_pawn_promotion {
                     if tt_capture {
                         r += Depth::ONE_PLY;
-                    }
-
-                    if cut_node {
-                        r += Depth(2);
                     }
 
                     get_stack_mut(stack, 0).stat_score = self.main_history.get(us, m)
