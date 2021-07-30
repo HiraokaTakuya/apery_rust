@@ -624,7 +624,7 @@ impl Thread {
                 && eval >= beta
                 && eval >= get_stack(stack, 0).static_eval
                 && get_stack(stack, 0).static_eval.0
-                    >= beta.0 - 24 * depth.0 - 34 * i32::from(improving) + 162 * i32::from(get_stack(stack, 0).tt_pv) + 159
+                    >= beta.0 - 22 * depth.0 - 34 * i32::from(improving) + 162 * i32::from(get_stack(stack, 0).tt_pv) + 159
                 && excluded_move.is_none()
                 && (get_stack(stack, 0).ply >= self.null_move_pruning_min_ply || us != self.null_move_pruning_color)
             {
@@ -974,7 +974,7 @@ impl Thread {
                         + unsafe { (*cont_hists[0]).get(to, piece_moved_after_move) }
                         + unsafe { (*cont_hists[1]).get(to, piece_moved_after_move) }
                         + unsafe { (*cont_hists[3]).get(to, piece_moved_after_move) }
-                        - 4741;
+                        - 4791;
 
                     if !get_stack(stack, 0).in_check {
                         r -= Depth(get_stack(stack, 0).stat_score / 14790);
