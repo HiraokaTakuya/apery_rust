@@ -922,7 +922,9 @@ impl Thread {
             // Step 16
             let (do_full_depth_search, did_lmr) = if depth.0 >= 3
                 && move_count > 1 + 2 * i32::from(root_node)
-                && (!is_capture_or_pawn_promotion || cut_node || (!pv_node && !former_pv))
+                && (!is_capture_or_pawn_promotion
+                    || (cut_node && get_stack(stack, -1).move_count > 1)
+                    || (!pv_node && !former_pv))
                 && (!pv_node || get_stack(stack, 0).ply > 1 || self.idx % 4 != 3)
             {
                 let mut r = unsafe { (*self.reductions).get(improving, depth, move_count) };
