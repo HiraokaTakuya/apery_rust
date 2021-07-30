@@ -877,6 +877,10 @@ impl Thread {
         let mut value = best_value;
         let mut move_count_pruning = false;
         let mut singular_quiet_lmr = false;
+        //let likely_fail_low = pv_node
+        //    && tt_move.is_some()
+        //    && tte.bound().include_upper()
+        //    && tte.depth() >= depth;
 
         let th = ThreadHolding::new(self, key, get_stack(stack, 0).ply);
 
@@ -908,12 +912,6 @@ impl Thread {
             let is_capture_or_pawn_promotion = m.is_capture_or_pawn_promotion(&self.position);
             let piece_moved_after_move = m.piece_moved_after_move();
             let gives_check = self.position.gives_check(m);
-
-            //let likely_fail_low = pv_node
-            //    && tt_move.is_some()
-            //    && tte.bound().include_upper()
-            //    && tt_value < alpha + Value(200 + 100 * depth.0)
-            //    && tte.depth() >= depth;
 
             let new_depth = depth - Depth::ONE_PLY;
             let to = m.to();
