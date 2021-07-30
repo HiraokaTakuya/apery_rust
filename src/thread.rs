@@ -997,11 +997,6 @@ impl Thread {
                         return beta;
                     }
                 }
-            } else if gives_check
-                && ((!m.is_drop() && self.position.blockers_for_king(us.inverse()).is_set(m.from()))
-                    || self.position.see_ge(m, Value::ZERO))
-            {
-                extension = Depth::ONE_PLY;
             }
 
             let new_depth = new_depth + extension;
