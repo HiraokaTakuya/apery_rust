@@ -675,18 +675,6 @@ impl Thread {
                     && tt_value != Value::NONE
                     && tt_value < prob_cut_beta)
             {
-                if get_stack(stack, 0).tt_hit
-                    && tte.depth() >= depth - Depth(3)
-                    && tt_value != Value::NONE
-                    && tt_value >= prob_cut_beta
-                    && tt_move.is_some()
-                    && tt_move
-                        .non_zero_unwrap_unchecked()
-                        .is_capture_or_pawn_promotion(&self.position)
-                {
-                    return prob_cut_beta;
-                }
-
                 let raised_beta = Value(beta.0 + 176 - 49 * i32::from(improving));
                 debug_assert!(raised_beta < Value::INFINITE);
                 let mut mp = MovePickerForProbCut::new(
