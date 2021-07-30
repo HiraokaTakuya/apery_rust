@@ -776,7 +776,7 @@ impl Thread {
                 let tt_pv = get_stack(stack, 0).tt_pv;
                 get_stack_mut(stack, 0).tt_pv = false;
                 while let Some(m) = mp.next_move(&self.position) {
-                    if !(prob_cut_count < 2 + 2 * i32::from(cut_node)) {
+                    if prob_cut_count >= 2 + 2 * i32::from(cut_node) {
                         break;
                     }
                     if m != excluded_move.non_zero_unwrap_unchecked() && self.position.legal(m) {

@@ -297,7 +297,7 @@ impl Ord for ExtMove {
 
 impl PartialOrd for ExtMove {
     fn partial_cmp(&self, other: &ExtMove) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(&other))
+        Some(self.cmp(other))
     }
 }
 

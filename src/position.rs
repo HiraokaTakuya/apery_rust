@@ -302,7 +302,7 @@ impl StateInfo {
             hand_of_side_to_move: pos.hand(us),
             checkers_bb: pos.attackers_to_except_king(them, king_sq, &pos.occupied_bb()),
             captured_piece: Piece::EMPTY,
-            check_info: CheckInfo::new(&pos),
+            check_info: CheckInfo::new(pos),
             #[cfg(feature = "kppt")]
             changed_eval_index: ChangedEvalIndex::ZERO,
             #[cfg(feature = "kppt")]
@@ -888,7 +888,7 @@ impl PositionBase {
                     if empty_squares != 0 {
                         s += &empty_squares.to_string();
                     }
-                    s += &pc.to_usi_str();
+                    s += pc.to_usi_str();
                     empty_squares = 0; // reset empty_squares
                 }
             }
@@ -912,7 +912,7 @@ impl PositionBase {
                     }
                     if num != 0 {
                         let pc = Piece::new(*c, *pt);
-                        s += &pc.to_usi_str();
+                        s += pc.to_usi_str();
                     }
                 }
             }
@@ -1213,7 +1213,7 @@ impl Position {
                             // Rank3(Rank7): legal but avoid unpromoted and uncapture move.
                             let r = Rank::new(to);
                             if r.is_in_front_of(us, RankAsBlack::RANK3)
-                                || (r.is_in_front_of(us, RankAsBlack::RANK4) && !m.is_capture(&self))
+                                || (r.is_in_front_of(us, RankAsBlack::RANK4) && !m.is_capture(self))
                             {
                                 return false;
                             }
@@ -1677,7 +1677,7 @@ impl Position {
             let pt_from = PieceType::new(pc_from);
 
             self.base.remove_piece(pc_from, from);
-            if m.is_capture(&self) {
+            if m.is_capture(self) {
                 captured_piece = self.piece_on(to);
                 let pt_captured = PieceType::new(captured_piece);
                 self.base.xor_bbs(them, pt_captured, to);

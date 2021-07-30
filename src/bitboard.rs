@@ -940,11 +940,11 @@ impl<'a> AttackTable<'a> {
 }
 
 pub static ATTACK_TABLE: once_cell::sync::Lazy<AttackTable<'static>> = once_cell::sync::Lazy::new(|| AttackTable {
-    pawn: PieceAttackTable::new(&[&PieceAttackTable::BLACK_PAWN_DELTAS, &PieceAttackTable::WHITE_PAWN_DELTAS]),
+    pawn: PieceAttackTable::new(&[PieceAttackTable::BLACK_PAWN_DELTAS, PieceAttackTable::WHITE_PAWN_DELTAS]),
     lance: LanceAttackTable::new(),
-    knight: PieceAttackTable::new(&[&PieceAttackTable::BLACK_KNIGHT_DELTAS, &PieceAttackTable::WHITE_KNIGHT_DELTAS]),
-    silver: PieceAttackTable::new(&[&PieceAttackTable::BLACK_SILVER_DELTAS, &PieceAttackTable::WHITE_SILVER_DELTAS]),
-    gold: PieceAttackTable::new(&[&PieceAttackTable::BLACK_GOLD_DELTAS, &PieceAttackTable::WHITE_GOLD_DELTAS]),
+    knight: PieceAttackTable::new(&[PieceAttackTable::BLACK_KNIGHT_DELTAS, PieceAttackTable::WHITE_KNIGHT_DELTAS]),
+    silver: PieceAttackTable::new(&[PieceAttackTable::BLACK_SILVER_DELTAS, PieceAttackTable::WHITE_SILVER_DELTAS]),
+    gold: PieceAttackTable::new(&[PieceAttackTable::BLACK_GOLD_DELTAS, PieceAttackTable::WHITE_GOLD_DELTAS]),
     king: KingAttackTable::new(),
     bishop: MagicTable::new(
         AttackTable::BISHOP_ATTACK_TABLE_NUM,

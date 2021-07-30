@@ -108,7 +108,7 @@ fn self_move(thread_pool: &mut ThreadPool, tt: &mut TranspositionTable, usi_opti
             limits.movetime = Some(std::time::Duration::from_millis(4000));
             let ponder_mode = false;
             let hide_all_output = false;
-            thread_pool.start_thinking(&pos, tt, limits, &usi_options, ponder_mode, hide_all_output);
+            thread_pool.start_thinking(&pos, tt, limits, usi_options, ponder_mode, hide_all_output);
             thread_pool.wait_for_search_finished();
             let m = thread_pool.last_best_root_move.lock().unwrap().as_ref().unwrap().pv[0];
             if m == Move::RESIGN {
@@ -222,7 +222,7 @@ pub fn setoption(
 
 fn legal_moves(pos: &Position) {
     let mut mlist = MoveList::new();
-    mlist.generate::<LegalType>(&pos, 0);
+    mlist.generate::<LegalType>(pos, 0);
     for i in 0..mlist.size {
         print!("{} ", mlist.ext_moves[i].mv.to_usi_string());
     }
@@ -231,7 +231,7 @@ fn legal_moves(pos: &Position) {
 
 fn legal_all_moves(pos: &Position) {
     let mut mlist = MoveList::new();
-    mlist.generate::<LegalAllType>(&pos, 0);
+    mlist.generate::<LegalAllType>(pos, 0);
     for i in 0..mlist.size {
         print!("{} ", mlist.ext_moves[i].mv.to_usi_string());
     }
@@ -244,9 +244,9 @@ fn bench_movegen(pos: &Position) {
     let mut mlist = MoveList::new();
     for _ in 0..max {
         mlist.size = 0;
-        mlist.generate::<CaptureOrPawnPromotionsType>(&pos, 0);
+        mlist.generate::<CaptureOrPawnPromotionsType>(pos, 0);
         let size = mlist.size;
-        mlist.generate::<QuietsWithoutPawnPromotionsType>(&pos, size);
+        mlist.generate::<QuietsWithoutPawnPromotionsType>(pos, size);
     }
     let end = start.elapsed();
     let elapsed = (end.as_secs() * 1000) as i64 + i64::from(end.subsec_millis());
@@ -429,7 +429,7 @@ fn csa_record_to_sfen(csa: &[u8]) -> Result<String, String> {
                     // black or white player's move
                     match std::str::from_utf8(&line[1..]) {
                         Ok(line) => {
-                            if let Some(m) = Move::new_from_csa_str(&line, &pos) {
+                            if let Some(m) = Move::new_from_csa_str(line, &pos) {
                                 s += &format!(" {}", m.to_usi_string());
                                 let gives_check = pos.gives_check(m);
                                 pos.do_move(m, gives_check);

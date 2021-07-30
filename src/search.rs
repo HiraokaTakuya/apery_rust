@@ -71,7 +71,7 @@ impl std::cmp::Ord for RootMove {
 }
 impl std::cmp::PartialOrd for RootMove {
     fn partial_cmp(&self, other: &RootMove) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(&other))
+        Some(self.cmp(other))
     }
 }
 impl std::cmp::PartialEq for RootMove {
