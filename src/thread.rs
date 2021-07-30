@@ -969,17 +969,7 @@ impl Thread {
                     r -= Depth(1);
                 }
 
-                if is_capture_or_pawn_promotion {
-                    if !gives_check
-                        && Value(
-                            get_stack(stack, 0).static_eval.0
-                                + capture_piece_value(self.position.captured_piece()).0
-                                + 210 * depth.0,
-                        ) <= alpha
-                    {
-                        r += Depth::ONE_PLY;
-                    }
-                } else {
+                if !is_capture_or_pawn_promotion {
                     if tt_capture {
                         r += Depth::ONE_PLY;
                     }
