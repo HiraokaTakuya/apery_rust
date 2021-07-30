@@ -197,8 +197,6 @@ pub fn value_mated_in(ply: i32) -> Value {
     -Value::MATE + Value(ply)
 }
 
-pub const TEMPO: Value = Value(28);
-
 pub fn stat_bonus(depth: Depth) -> i32 {
     let d = depth.0;
     if d > 14 {

@@ -574,7 +574,7 @@ impl Thread {
                     eval = pure_static_eval;
                     get_stack_mut(stack, 0).static_eval = eval;
                 } else {
-                    eval = -get_stack(stack, -1).static_eval + Value(2 * TEMPO.0);
+                    eval = -get_stack(stack, -1).static_eval;
                     get_stack_mut(stack, 0).static_eval = eval;
                 }
                 tte.save(
@@ -594,7 +594,7 @@ impl Thread {
                 && prior_capture == Piece::EMPTY
             {
                 let bonus = num::clamp(
-                    -depth.0 * 4 * (get_stack(stack, -1).static_eval.0 + get_stack(stack, 0).static_eval.0 - 2 * TEMPO.0),
+                    -depth.0 * 4 * (get_stack(stack, -1).static_eval.0 + get_stack(stack, 0).static_eval.0),
                     -1000,
                     1000,
                 );
@@ -1217,7 +1217,7 @@ impl Thread {
                         self.ehash,
                     )
                 } else {
-                    -get_stack(stack, -1).static_eval + Value(2 * TEMPO.0)
+                    -get_stack(stack, -1).static_eval
                 };
                 get_stack_mut(stack, 0).static_eval = best_value;
             }
