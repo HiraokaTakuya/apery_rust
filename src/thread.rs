@@ -983,6 +983,9 @@ impl Thread {
                 if value < singular_beta {
                     extension = Depth::ONE_PLY;
                     singular_quiet_lmr = !tt_capture;
+                    if !pv_node && value < singular_beta - Value(140) {
+                        extension = Depth(2);
+                    }
                 } else if singular_beta >= beta {
                     return singular_beta;
                 } else if tt_value >= beta {
