@@ -1063,7 +1063,17 @@ impl Thread {
                     r -= Depth(1);
                 }
 
-                if !is_capture_or_pawn_promotion {
+                if is_capture_or_pawn_promotion {
+                    if !gives_check
+                        && Value(
+                            get_stack(stack, 0).static_eval.0
+                                + capture_piece_value(self.position.captured_piece()).0
+                                + 210 * depth.0,
+                        ) <= alpha
+                    {
+                        r += Depth::ONE_PLY;
+                    }
+                } else {
                     if tt_capture {
                         r += Depth::ONE_PLY;
                     }
@@ -1101,20 +1111,7 @@ impl Thread {
                     } else {
                         r -= Depth(get_stack(stack, 0).stat_score / 14790);
                     }
-                } else {
-                    if !gives_check
-                        && Value(
-                            get_stack(stack, 0).static_eval.0
-                                + capture_piece_value(self.position.captured_piece()).0
-                                + 210 * depth.0,
-                        ) <= alpha
-                    {
-                        r += Depth::ONE_PLY;
-                    }
                 }
-                //else if depth < Depth(8) && move_count > 2 {
-                //    r += Depth::ONE_PLY;
-                //}
                 let d = num::clamp(
                     new_depth - r,
                     Depth::ONE_PLY,
