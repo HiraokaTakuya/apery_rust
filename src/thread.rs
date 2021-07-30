@@ -1028,6 +1028,7 @@ impl Thread {
                             .get(piece_moved_after_move, to, PieceType::new(self.position.captured_piece()))
                             < 3678)
                     || self.tt_hit_average < 432 * TT_HIT_AVERAGE_RESOLUTION * TT_HIT_AVERAGE_WINDOW / 1024)
+                && (!pv_node || get_stack(stack, 0).ply > 1 || self.idx % 4 != 3)
             {
                 let mut r = unsafe { (*self.reductions).get(improving, depth, move_count) };
 
