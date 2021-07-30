@@ -179,7 +179,6 @@ pub fn setoption(
     thread_pool: &mut ThreadPool,
     tt: &mut TranspositionTable,
     #[cfg(feature = "kppt")] ehash: &mut EvalHash,
-    breadcrumbs: &mut Breadcrumbs,
     reductions: &mut Reductions,
     is_ready: &mut bool,
 ) {
@@ -206,7 +205,6 @@ pub fn setoption(
                 tt,
                 #[cfg(feature = "kppt")]
                 ehash,
-                breadcrumbs,
                 reductions,
                 is_ready,
             );
@@ -452,7 +450,6 @@ pub fn cmd_loop() {
     let mut tt = TranspositionTable::new();
     #[cfg(feature = "kppt")]
     let mut ehash = EvalHash::new();
-    let mut breadcrumbs = Breadcrumbs::new();
     let mut reductions = Reductions::new(1);
     let mut thread_pool = ThreadPool::new();
     thread_pool.set(
@@ -460,7 +457,6 @@ pub fn cmd_loop() {
         &mut tt,
         #[cfg(feature = "kppt")]
         &mut ehash,
-        &mut breadcrumbs,
         &mut reductions,
     );
     let mut usi_options = UsiOptions::new();
@@ -546,7 +542,6 @@ pub fn cmd_loop() {
                 &mut tt,
                 #[cfg(feature = "kppt")]
                 &mut ehash,
-                &mut breadcrumbs,
                 &mut reductions,
                 &mut is_ready,
             ),

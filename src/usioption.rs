@@ -124,7 +124,6 @@ impl UsiOptions {
         thread_pool: &mut ThreadPool,
         tt: &mut TranspositionTable,
         #[cfg(feature = "kppt")] ehash: &mut EvalHash,
-        breadcrumbs: &mut Breadcrumbs,
         reductions: &mut Reductions,
         is_ready: &mut bool,
     ) {
@@ -157,7 +156,6 @@ impl UsiOptions {
                             tt,
                             #[cfg(feature = "kppt")]
                             ehash,
-                            breadcrumbs,
                             reductions,
                         ),
                         Self::USI_HASH => tt.resize(n as usize, thread_pool),
