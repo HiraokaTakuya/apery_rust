@@ -434,7 +434,6 @@ impl Thread {
         if excluded_move.is_none() {
             get_stack_mut(stack, 0).tt_pv = pv_node || (get_stack(stack, 0).tt_hit && tte.is_pv());
         }
-        let former_pv = get_stack(stack, 0).tt_pv && !pv_node;
 
         if get_stack(stack, 0).tt_pv
             && depth > Depth(12)
@@ -884,8 +883,8 @@ impl Thread {
                 && tte.bound().include_lower()
                 && tte.depth().0 >= depth.0 - 3
             {
-                let singular_beta = Value(tt_value.0 - ((i32::from(former_pv) + 4) * depth.0) / 2);
-                let singular_depth = Depth((depth.0 - 1 + 3 * i32::from(former_pv)) / 2);
+                let singular_beta = Value(tt_value.0 - 2 * depth.0);
+                let singular_depth = Depth((depth.0 - 1) / 2);
                 get_stack_mut(stack, 0).excluded_move = Some(m);
                 value = self.search::<NonPv>(stack, singular_beta - Value(1), singular_beta, singular_depth, cut_node);
                 get_stack_mut(stack, 0).excluded_move = None;
@@ -928,7 +927,7 @@ impl Thread {
                 && move_count > 1 + 2 * i32::from(root_node)
                 && (!is_capture_or_pawn_promotion
                     || (cut_node && get_stack(stack, -1).move_count > 1)
-                    || (!pv_node && !former_pv))
+                    || !get_stack(stack, 0).tt_pv)
                 && (!pv_node || get_stack(stack, 0).ply > 1 || self.idx % 4 != 3)
             {
                 let mut r = unsafe { (*self.reductions).get(improving, depth, move_count) };
