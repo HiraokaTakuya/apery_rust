@@ -1038,7 +1038,6 @@ impl Thread {
                         alpha = value;
                     } else {
                         debug_assert!(value >= beta); // fail high
-                        get_stack_mut(stack, 0).stat_score = 0;
                         break;
                     }
                 }
