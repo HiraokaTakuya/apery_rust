@@ -278,7 +278,7 @@ impl Rank {
         (0x1c0_0007 & (1 << ((us.0 << 4) + self.0))) != 0
     }
     pub fn is_in_front_of(self, us: Color, rank_as_black: RankAsBlack) -> bool {
-        debug_assert!(File::FILE1.0 < File::FILE9.0);
+        const_assert!(File::FILE1.0 < File::FILE9.0);
         match us {
             Color::BLACK => self.0 < Rank::new_from_color_and_rank_as_black(Color::BLACK, rank_as_black).0,
             Color::WHITE => self.0 > Rank::new_from_color_and_rank_as_black(Color::WHITE, rank_as_black).0,
@@ -617,28 +617,28 @@ impl RelationTable {
                     continue;
                 }
                 if f_from == f_to {
-                    debug_assert!(Rank::RANK1.0 < Rank::RANK2.0);
+                    const_assert!(Rank::RANK1.0 < Rank::RANK2.0);
                     value[from.0 as usize][to.0 as usize] = if r_from.0 < r_to.0 {
                         Relation::FILE_NS
                     } else {
                         Relation::FILE_SN
                     };
                 } else if r_from == r_to {
-                    debug_assert!(File::FILE1.0 < File::FILE2.0);
+                    const_assert!(File::FILE1.0 < File::FILE2.0);
                     value[from.0 as usize][to.0 as usize] = if f_from.0 < f_to.0 {
                         Relation::RANK_EW
                     } else {
                         Relation::RANK_WE
                     };
                 } else if r_from.0 - r_to.0 == f_from.0 - f_to.0 {
-                    debug_assert!(Rank::RANK1.0 < Rank::RANK2.0);
+                    const_assert!(Rank::RANK1.0 < Rank::RANK2.0);
                     value[from.0 as usize][to.0 as usize] = if r_from.0 < r_to.0 {
                         Relation::DIAG_NESW
                     } else {
                         Relation::DIAG_SWNE
                     };
                 } else if r_from.0 - r_to.0 == f_to.0 - f_from.0 {
-                    debug_assert!(Rank::RANK1.0 < Rank::RANK2.0);
+                    const_assert!(Rank::RANK1.0 < Rank::RANK2.0);
                     value[from.0 as usize][to.0 as usize] = if r_from.0 < r_to.0 {
                         Relation::DIAG_NWSE
                     } else {

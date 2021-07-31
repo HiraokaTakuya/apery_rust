@@ -13,6 +13,8 @@ extern crate custom_derive;
 extern crate derive_more;
 #[macro_use]
 extern crate enum_derive;
+#[macro_use]
+extern crate static_assertions;
 mod authors;
 mod bitboard;
 mod book;

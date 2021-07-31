@@ -188,7 +188,7 @@ impl Move {
             self.piece_dropped()
         } else {
             const SHIFT: i32 = 4;
-            debug_assert_eq!(Move::PROMOTE_FLAG >> SHIFT, Piece::PROMOTION as u32);
+            const_assert_eq!(Move::PROMOTE_FLAG >> SHIFT, Piece::PROMOTION as u32);
             Piece(
                 (((self.0.get() & Move::MOVED_PIECE_MASK) >> Move::MOVED_PIECE_SHIFT)
                     | ((self.0.get() & Move::PROMOTE_FLAG) >> SHIFT)) as i32,
