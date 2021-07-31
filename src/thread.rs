@@ -904,6 +904,8 @@ impl Thread {
                         return beta;
                     }
                 }
+            } else if gives_check && depth > Depth(6) && get_stack(stack, 0).static_eval.0.abs() > 100 {
+                extension = Depth::ONE_PLY;
             }
 
             let new_depth = new_depth + extension;
