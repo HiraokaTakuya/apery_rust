@@ -124,6 +124,9 @@ impl Thread {
         for item in stack.iter_mut().take(CURRENT_STACK_INDEX) {
             item.continuation_history = self.continuation_history[0][0].sentinel();
         }
+        for i in 0..=MAX_PLY + 2 {
+            get_stack_mut(&mut stack, i64::from(i)).ply = i;
+        }
         if self.is_main() {
             let best_previous_score = *self.best_previous_score.lock().unwrap();
             if best_previous_score == Value::INFINITE {
@@ -391,7 +394,6 @@ impl Thread {
 
         debug_assert!(0 <= get_stack(stack, 0).ply && get_stack(stack, 0).ply < MAX_PLY);
 
-        get_stack_mut(stack, 1).ply = get_stack(stack, 0).ply + 1;
         get_stack_mut(stack, 1).tt_pv = false;
         let mut best_move: Option<Move> = None;
         get_stack_mut(stack, 1).excluded_move = None;
@@ -1124,7 +1126,6 @@ impl Thread {
         let mut alpha = alpha;
 
         let old_alpha = alpha;
-        get_stack_mut(stack, 1).ply = get_stack(stack, 0).ply + 1;
         get_stack_mut(stack, 0).current_move = None;
         get_stack_mut(stack, 0).continuation_history = self.continuation_history[0][0].sentinel();
         let mut best_move: Option<Move> = None;
