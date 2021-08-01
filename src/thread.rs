@@ -871,8 +871,7 @@ impl Thread {
                     {
                         continue;
                     }
-                    if lmr_depth < Depth(7)
-                        && !get_stack(stack, 0).in_check
+                    if !get_stack(stack, 0).in_check
                         && get_stack(stack, 0).static_eval.0 + 174 + 157 * lmr_depth.0 <= alpha.0
                         && unsafe { (*cont_hists[0]).get(to, piece_moved_after_move) }
                             + unsafe { (*cont_hists[1]).get(to, piece_moved_after_move) }
