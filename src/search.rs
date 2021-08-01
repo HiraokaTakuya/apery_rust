@@ -261,7 +261,7 @@ impl Reductions {
             values: [0; ExtMove::MAX_LEGAL_MOVES],
         };
         for (i, v) in r.values.iter_mut().enumerate().skip(1) {
-            *v = (21.3 * f64::ln(i as f64 + 0.25 * f64::ln(i as f64))) as i32;
+            *v = (21.9 * f64::ln(i as f64)) as i32;
         }
         r
     }
