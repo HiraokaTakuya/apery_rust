@@ -156,6 +156,7 @@ pub struct Stack {
     pub in_check: bool,
     pub tt_pv: bool,
     pub tt_hit: bool,
+    pub double_extensions: i32,
 }
 
 impl Stack {
@@ -174,6 +175,7 @@ impl Stack {
             in_check: false,
             tt_pv: false,
             tt_hit: false,
+            double_extensions: 0,
         }
     }
 }

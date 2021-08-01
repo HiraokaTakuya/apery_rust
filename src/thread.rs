@@ -414,6 +414,7 @@ impl Thread {
         get_stack_mut(stack, 1).excluded_move = None;
         get_stack_mut(stack, 2).killers[0] = None;
         get_stack_mut(stack, 2).killers[1] = None;
+        get_stack_mut(stack, 0).double_extensions = get_stack(stack, -1).double_extensions;
 
         // get_stack(stack, -1).current_move can be None. None => prev_sq: Square(0)
         let prev_sq = get_stack(stack, -1).current_move.non_zero_unwrap_unchecked().to(); // todo: Move::NULL
@@ -906,7 +907,7 @@ impl Thread {
                 if value < singular_beta {
                     extension = Depth::ONE_PLY;
                     singular_quiet_lmr = !tt_capture;
-                    if !pv_node && value < singular_beta - Value(93) {
+                    if !pv_node && value < singular_beta - Value(93) && get_stack(stack, 0).double_extensions < 3 {
                         extension = Depth(2);
                     }
                 } else if singular_beta >= beta {
@@ -926,6 +927,7 @@ impl Thread {
 
             let new_depth = new_depth + extension;
 
+            get_stack_mut(stack, 0).double_extensions = get_stack(stack, -1).double_extensions + i32::from(extension == Depth(2));
             get_stack_mut(stack, 0).current_move = Some(m);
             get_stack_mut(stack, 0).continuation_history = self.continuation_history[usize::from(get_stack(stack, 0).in_check)]
                 [usize::from(is_capture_or_pawn_promotion)]
