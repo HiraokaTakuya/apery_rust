@@ -975,8 +975,8 @@ impl Thread {
                     r -= Depth(1);
                 }
 
-                if cut_node {
-                    r += Depth(1 + i32::from(!is_capture_or_pawn_promotion));
+                if cut_node && Some(m) != get_stack(stack, 0).killers[0] {
+                    r += Depth(2);
                 }
 
                 if !is_capture_or_pawn_promotion {
