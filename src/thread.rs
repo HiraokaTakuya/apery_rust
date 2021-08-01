@@ -594,16 +594,19 @@ impl Thread {
                     eval = -get_stack(stack, -1).static_eval;
                     get_stack_mut(stack, 0).static_eval = eval;
                 }
-                tte.save(
-                    key,
-                    Value::NONE,
-                    get_stack(stack, 0).tt_pv,
-                    Bound::BOUND_NONE,
-                    Depth::NONE,
-                    None,
-                    eval,
-                    unsafe { (*self.tt).generation() },
-                );
+
+                if excluded_move.is_none() {
+                    tte.save(
+                        key,
+                        Value::NONE,
+                        get_stack(stack, 0).tt_pv,
+                        Bound::BOUND_NONE,
+                        Depth::NONE,
+                        None,
+                        eval,
+                        unsafe { (*self.tt).generation() },
+                    );
+                }
             }
 
             if get_stack(stack, -1).current_move.is_normal_move()
