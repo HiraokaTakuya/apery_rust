@@ -947,6 +947,10 @@ impl Thread {
             {
                 let mut r = unsafe { (*self.reductions).get(improving, depth, move_count) };
 
+                if pv_node {
+                    r -= Depth::ONE_PLY;
+                }
+
                 if self.tt_hit_average > 537 * TT_HIT_AVERAGE_RESOLUTION * TT_HIT_AVERAGE_WINDOW / 1024 {
                     r -= Depth::ONE_PLY;
                 }
