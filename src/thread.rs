@@ -805,6 +805,7 @@ impl Thread {
         let mut value = best_value;
         let mut move_count_pruning = false;
         let mut singular_quiet_lmr = false;
+        let mut double_extension = false;
         //let likely_fail_low = pv_node
         //    && tt_move.is_some()
         //    && tte.bound().include_upper()
@@ -909,6 +910,7 @@ impl Thread {
                     singular_quiet_lmr = !tt_capture;
                     if !pv_node && value < singular_beta - Value(93) && get_stack(stack, 0).double_extensions < 3 {
                         extension = Depth(2);
+                        double_extension = true;
                     }
                 } else if singular_beta >= beta {
                     return singular_beta;
@@ -995,7 +997,7 @@ impl Thread {
                 let d = num::clamp(
                     new_depth - r,
                     Depth::ONE_PLY,
-                    new_depth + Depth(i32::from(r.0 < -1 && move_count <= 5)),
+                    new_depth + Depth(i32::from(r.0 < -1 && move_count <= 5 && !double_extension)),
                 );
                 value = -self.search::<NonPvType>(&mut stack[1..], -(alpha + Value(1)), -alpha, d, true);
                 (value > alpha && d < new_depth, true)
