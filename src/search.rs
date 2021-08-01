@@ -9,8 +9,20 @@ use crate::types::*;
 
 pub const COUNTER_MOVE_PRUNE_THRESHOLD: i16 = 0;
 pub const CURRENT_STACK_INDEX: usize = 7;
-pub type Pv = True;
-pub type NonPv = False;
+
+pub const PV: u64 = 0;
+pub const NON_PV: u64 = 1;
+pub trait NodeTypeTrait {
+    const NODE_TYPE: u64;
+}
+pub struct PvType;
+pub struct NonPvType;
+impl NodeTypeTrait for PvType {
+    const NODE_TYPE: u64 = PV;
+}
+impl NodeTypeTrait for NonPvType {
+    const NODE_TYPE: u64 = NON_PV;
+}
 
 pub const TT_HIT_AVERAGE_WINDOW: u64 = 4096;
 pub const TT_HIT_AVERAGE_RESOLUTION: u64 = 1024;

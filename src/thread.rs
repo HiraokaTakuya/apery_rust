@@ -183,7 +183,7 @@ impl Thread {
                         Depth::ONE_PLY,
                         self.root_depth - Depth(failed_high_count + search_again_counter),
                     );
-                    best_value = self.search::<Pv>(&mut stack, alpha, beta, adjusted_depth, false);
+                    best_value = self.search::<PvType>(&mut stack, alpha, beta, adjusted_depth, false);
                     self.root_moves[self.pv_idx..].sort_by(|x, y| y.cmp(x));
                     if self.stop.load(Ordering::Relaxed) {
                         break;
@@ -323,13 +323,20 @@ impl Thread {
 
         self.previous_time_reduction = time_reduction;
     }
-    fn search<IsPv: Bool>(&mut self, stack: &mut [Stack], alpha: Value, beta: Value, mut depth: Depth, cut_node: bool) -> Value {
-        let pv_node: bool = IsPv::BOOL;
+    fn search<NT: NodeTypeTrait>(
+        &mut self,
+        stack: &mut [Stack],
+        alpha: Value,
+        beta: Value,
+        mut depth: Depth,
+        cut_node: bool,
+    ) -> Value {
+        let pv_node = NT::NODE_TYPE == PV;
         let root_node = pv_node && get_stack(stack, 0).ply == 0;
         let max_next_depth = if root_node { depth } else { depth + Depth::ONE_PLY };
 
         if depth < Depth::ONE_PLY {
-            return self.qsearch::<IsPv>(stack, alpha, beta, Depth::ZERO);
+            return self.qsearch::<NT>(stack, alpha, beta, Depth::ZERO);
         }
 
         debug_assert!(-Value::INFINITE <= alpha && alpha < beta && beta <= Value::INFINITE);
@@ -642,7 +649,7 @@ impl Thread {
                     // key is wrong. but it's no problem.
                     get_stack_mut(stack, 1).static_eval_raw = get_stack(stack, 0).static_eval_raw;
                 }
-                let mut null_value = -self.search::<NonPv>(&mut stack[1..], -beta, -beta + Value(1), depth - r, !cut_node);
+                let mut null_value = -self.search::<NonPvType>(&mut stack[1..], -beta, -beta + Value(1), depth - r, !cut_node);
                 self.position.undo_null_move();
 
                 if null_value >= beta {
@@ -658,7 +665,7 @@ impl Thread {
                     self.null_move_pruning_min_ply = get_stack(stack, 0).ply + 3 * (depth.0 - r.0) / 4;
                     self.null_move_pruning_color = us;
 
-                    let v = self.search::<NonPv>(stack, beta - Value(1), beta, depth - r, false);
+                    let v = self.search::<NonPvType>(stack, beta - Value(1), beta, depth - r, false);
 
                     self.null_move_pruning_min_ply = 0;
                     if v >= beta {
@@ -706,9 +713,9 @@ impl Thread {
                         #[cfg(feature = "kppt")]
                         get_stack_mut(stack, 1).static_eval_raw.set_not_evaluated();
                         let mut value =
-                            -self.qsearch::<NonPv>(&mut stack[1..], -prob_cut_beta, -prob_cut_beta + Value(1), Depth::ZERO);
+                            -self.qsearch::<NonPvType>(&mut stack[1..], -prob_cut_beta, -prob_cut_beta + Value(1), Depth::ZERO);
                         if value >= prob_cut_beta {
-                            value = -self.search::<NonPv>(
+                            value = -self.search::<NonPvType>(
                                 &mut stack[1..],
                                 -prob_cut_beta,
                                 -prob_cut_beta + Value(1),
@@ -888,7 +895,7 @@ impl Thread {
                 let singular_beta = Value(tt_value.0 - 2 * depth.0);
                 let singular_depth = Depth((depth.0 - 1) / 2);
                 get_stack_mut(stack, 0).excluded_move = Some(m);
-                value = self.search::<NonPv>(stack, singular_beta - Value(1), singular_beta, singular_depth, cut_node);
+                value = self.search::<NonPvType>(stack, singular_beta - Value(1), singular_beta, singular_depth, cut_node);
                 get_stack_mut(stack, 0).excluded_move = None;
                 if value < singular_beta {
                     extension = Depth::ONE_PLY;
@@ -900,7 +907,7 @@ impl Thread {
                     return singular_beta;
                 } else if tt_value >= beta {
                     get_stack_mut(stack, 0).excluded_move = Some(m);
-                    value = self.search::<NonPv>(stack, beta - Value(1), beta, Depth((depth.0 + 3) / 2), cut_node);
+                    value = self.search::<NonPvType>(stack, beta - Value(1), beta, Depth((depth.0 + 3) / 2), cut_node);
                     get_stack_mut(stack, 0).excluded_move = None;
 
                     if value >= beta {
@@ -978,7 +985,7 @@ impl Thread {
                     Depth::ONE_PLY,
                     new_depth + Depth(i32::from(r.0 < -1 && move_count <= 5)),
                 );
-                value = -self.search::<NonPv>(&mut stack[1..], -(alpha + Value(1)), -alpha, d, true);
+                value = -self.search::<NonPvType>(&mut stack[1..], -(alpha + Value(1)), -alpha, d, true);
                 (value > alpha && d < new_depth, true)
             } else {
                 (!pv_node || move_count > 1, false)
@@ -986,7 +993,7 @@ impl Thread {
 
             // Step 17
             if do_full_depth_search {
-                value = -self.search::<NonPv>(&mut stack[1..], -(alpha + Value(1)), -alpha, new_depth, !cut_node);
+                value = -self.search::<NonPvType>(&mut stack[1..], -(alpha + Value(1)), -alpha, new_depth, !cut_node);
 
                 if did_lmr && !is_capture_or_pawn_promotion {
                     let bonus = if value > alpha {
@@ -998,7 +1005,7 @@ impl Thread {
                 }
             }
             if pv_node && (move_count == 1 || (value > alpha && (root_node || value < beta))) {
-                value = -self.search::<Pv>(
+                value = -self.search::<PvType>(
                     &mut stack[1..],
                     -beta,
                     -alpha,
@@ -1122,8 +1129,8 @@ impl Thread {
 
         best_value
     }
-    fn qsearch<IsPv: Bool>(&mut self, stack: &mut [Stack], alpha: Value, beta: Value, depth: Depth) -> Value {
-        let pv_node: bool = IsPv::BOOL;
+    fn qsearch<NT: NodeTypeTrait>(&mut self, stack: &mut [Stack], alpha: Value, beta: Value, depth: Depth) -> Value {
+        let pv_node = NT::NODE_TYPE == PV;
         let mut alpha = alpha;
 
         let old_alpha = alpha;
@@ -1325,7 +1332,7 @@ impl Thread {
             self.position.do_move(m, gives_check);
             #[cfg(feature = "kppt")]
             get_stack_mut(stack, 1).static_eval_raw.set_not_evaluated();
-            let value = -self.qsearch::<IsPv>(&mut stack[1..], -beta, -alpha, depth - Depth::ONE_PLY);
+            let value = -self.qsearch::<NT>(&mut stack[1..], -beta, -alpha, depth - Depth::ONE_PLY);
             self.position.undo_move(m);
 
             debug_assert!(-Value::INFINITE < value && value < Value::INFINITE);
