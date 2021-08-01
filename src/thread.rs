@@ -183,7 +183,7 @@ impl Thread {
                         Depth::ONE_PLY,
                         self.root_depth - Depth(failed_high_count + search_again_counter),
                     );
-                    best_value = self.search::<PvType>(&mut stack, alpha, beta, adjusted_depth, false);
+                    best_value = self.search::<RootType>(&mut stack, alpha, beta, adjusted_depth, false);
                     self.root_moves[self.pv_idx..].sort_by(|x, y| y.cmp(x));
                     if self.stop.load(Ordering::Relaxed) {
                         break;
@@ -331,12 +331,18 @@ impl Thread {
         mut depth: Depth,
         cut_node: bool,
     ) -> Value {
-        let pv_node = NT::NODE_TYPE == PV;
-        let root_node = pv_node && get_stack(stack, 0).ply == 0;
+        let pv_node = NT::NODE_TYPE != NON_PV;
+        let root_node = NT::NODE_TYPE == ROOT;
         let max_next_depth = if root_node { depth } else { depth + Depth::ONE_PLY };
 
         if depth < Depth::ONE_PLY {
-            return self.qsearch::<NT>(stack, alpha, beta, Depth::ZERO);
+            // Is there a better way?
+            // I want to set a generic parameters in compile-time calculations.
+            return if pv_node {
+                self.qsearch::<PvType>(stack, alpha, beta, Depth::ZERO)
+            } else {
+                self.qsearch::<NonPvType>(stack, alpha, beta, Depth::ZERO)
+            };
         }
 
         debug_assert!(-Value::INFINITE <= alpha && alpha < beta && beta <= Value::INFINITE);
@@ -884,9 +890,9 @@ impl Thread {
             }
 
             // Step 14
-            if depth.0 >= 7
+            if !root_node
+                && depth.0 >= 7
                 && m == tt_move.non_zero_unwrap_unchecked()
-                && !root_node
                 && excluded_move.is_none()
                 && tt_value.0.abs() < Value::KNOWN_WIN.0
                 && tte.bound().include_lower()

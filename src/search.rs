@@ -12,16 +12,21 @@ pub const CURRENT_STACK_INDEX: usize = 7;
 
 pub const PV: u64 = 0;
 pub const NON_PV: u64 = 1;
+pub const ROOT: u64 = 2;
 pub trait NodeTypeTrait {
     const NODE_TYPE: u64;
 }
 pub struct PvType;
 pub struct NonPvType;
+pub struct RootType;
 impl NodeTypeTrait for PvType {
     const NODE_TYPE: u64 = PV;
 }
 impl NodeTypeTrait for NonPvType {
     const NODE_TYPE: u64 = NON_PV;
+}
+impl NodeTypeTrait for RootType {
+    const NODE_TYPE: u64 = ROOT;
 }
 
 pub const TT_HIT_AVERAGE_WINDOW: u64 = 4096;
