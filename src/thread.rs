@@ -1295,6 +1295,11 @@ impl Thread {
         ); // for difference calculation
         while let Some(m) = mp.next_move(&self.position) {
             debug_assert!(m != Move::NULL);
+
+            if !self.position.legal(m) {
+                continue;
+            }
+
             let gives_check = self.position.gives_check(m);
             let is_capture_or_pawn_promotion = m.is_capture_or_pawn_promotion(&self.position);
             move_count += 1;
@@ -1322,11 +1327,6 @@ impl Thread {
             }
 
             if best_value > Value::MATED_IN_MAX_PLY && !self.position.see_ge(m, Value::ZERO) {
-                continue;
-            }
-
-            if !self.position.legal(m) {
-                move_count -= 1;
                 continue;
             }
 
