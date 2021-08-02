@@ -981,19 +981,18 @@ impl Thread {
                     r += Depth(2);
                 }
 
-                if !is_capture_or_pawn_promotion {
-                    if tt_capture {
-                        r += Depth::ONE_PLY;
-                    }
-
-                    get_stack_mut(stack, 0).stat_score = self.main_history.get(us, m)
-                        + unsafe { (*cont_hists[0]).get(to, piece_moved_after_move) }
-                        + unsafe { (*cont_hists[1]).get(to, piece_moved_after_move) }
-                        + unsafe { (*cont_hists[3]).get(to, piece_moved_after_move) }
-                        - 4923;
-
-                    r -= Depth(get_stack(stack, 0).stat_score / 14721);
+                if tt_capture {
+                    r += Depth::ONE_PLY;
                 }
+
+                get_stack_mut(stack, 0).stat_score = self.main_history.get(us, m)
+                    + unsafe { (*cont_hists[0]).get(to, piece_moved_after_move) }
+                    + unsafe { (*cont_hists[1]).get(to, piece_moved_after_move) }
+                    + unsafe { (*cont_hists[3]).get(to, piece_moved_after_move) }
+                    - 4923;
+
+                r -= Depth(get_stack(stack, 0).stat_score / 14721);
+
                 let d = num::clamp(
                     new_depth - r,
                     Depth::ONE_PLY,
