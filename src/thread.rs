@@ -992,9 +992,7 @@ impl Thread {
                         + unsafe { (*cont_hists[3]).get(to, piece_moved_after_move) }
                         - 4923;
 
-                    if !get_stack(stack, 0).in_check {
-                        r -= Depth(get_stack(stack, 0).stat_score / 14721);
-                    }
+                    r -= Depth(get_stack(stack, 0).stat_score / 14721);
                 }
                 let d = num::clamp(
                     new_depth - r,
