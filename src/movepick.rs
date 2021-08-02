@@ -378,7 +378,6 @@ fn score_quiets(
     low_ply_history: *const LowPlyHistory,
     continuation_history: &[*const PieceToHistory],
     ply: i32,
-    depth: Depth,
 ) {
     for ext_move in move_list {
         let m = ext_move.mv;
@@ -391,7 +390,7 @@ fn score_quiets(
             + unsafe { (*continuation_history[3]).get(to, piece_moved) }
             + unsafe { (*continuation_history[5]).get(to, piece_moved) }
             + if ply < LowPlyHistory::MAX_LPH as i32 {
-                std::cmp::min(4, depth.0 / 3) * unsafe { (*low_ply_history).get(ply, m) }
+                6 * unsafe { (*low_ply_history).get(ply, m) }
             } else {
                 0
             }
@@ -527,7 +526,6 @@ impl<'a> MovePickerForMainSearch<'a> {
                             self.low_ply_history,
                             self.continuation_history,
                             self.ply,
-                            self.depth,
                         );
                         partial_insertion_sort(self.move_list.slice_mut(self.cur), -3000 * self.depth.0);
                     }
