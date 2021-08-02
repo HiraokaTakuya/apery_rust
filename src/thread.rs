@@ -868,10 +868,15 @@ impl Thread {
                         continue;
                     }
                 } else {
-                    if lmr_depth.0 < 5
-                        && unsafe { (*cont_hists[0]).get(to, piece_moved_after_move) } < i32::from(COUNTER_MOVE_PRUNE_THRESHOLD)
-                        && unsafe { (*cont_hists[1]).get(to, piece_moved_after_move) } < i32::from(COUNTER_MOVE_PRUNE_THRESHOLD)
-                    {
+                    if lmr_depth.0 < 5 && {
+                        let thresh = if depth == Depth::ONE_PLY {
+                            0
+                        } else {
+                            -stat_bonus(depth - Depth::ONE_PLY)
+                        };
+                        (unsafe { (*cont_hists[0]).get(to, piece_moved_after_move) } < thresh)
+                            && unsafe { (*cont_hists[1]).get(to, piece_moved_after_move) } < thresh
+                    } {
                         continue;
                     }
                     if !get_stack(stack, 0).in_check
