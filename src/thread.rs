@@ -155,6 +155,13 @@ impl Thread {
             && !self.stop.load(Ordering::Relaxed)
             && !(self.limits.depth.is_some() && self.is_main() && self.root_depth.0 > Depth(self.limits.depth.unwrap() as i32).0)
         {
+            if self.idx > 0 {
+                let i = (self.idx - 1) % 20;
+                if ((self.root_depth.0 + SKIP_PHASE[i]) / SKIP_SIZE[i]) % 2 != 0 {
+                    continue;
+                }
+            }
+
             if self.is_main() {
                 total_best_move_changes /= 2.0;
             }
