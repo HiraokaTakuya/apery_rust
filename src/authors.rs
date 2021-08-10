@@ -1,1 +1,1 @@
-pub const AUTHORS: &str = "HiraokaTakuya";
+pub const AUTHORS: &str = env!("CARGO_PKG_AUTHORS");

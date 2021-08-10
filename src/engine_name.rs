@@ -1,1 +1,1 @@
-pub const ENGINE_NAME: &str = "Apery_WCSC30";
+pub const ENGINE_NAME: &str = concat!("Apery_", env!("CARGO_PKG_VERSION"));
