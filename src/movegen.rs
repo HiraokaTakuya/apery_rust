@@ -266,11 +266,11 @@ impl MoveList {
             }
         }
         if hand.except_pawn_exist() {
-            let mut possessions = arrayvec::ArrayVec::<[Piece; 6]>::new();
+            let mut possessions = arrayvec::ArrayVec::<Piece, 6>::new();
             let sgbr_num;
             let sgbrl_num;
             {
-                let f = |c: Color, pt: PieceType, possessions: &mut arrayvec::ArrayVec<[Piece; 6]>| {
+                let f = |c: Color, pt: PieceType, possessions: &mut arrayvec::ArrayVec<Piece, 6>| {
                     if hand.exist(pt) {
                         unsafe {
                             possessions.push_unchecked(Piece::new(c, pt));

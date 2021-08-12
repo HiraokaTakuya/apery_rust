@@ -825,8 +825,8 @@ impl Thread {
         let mut move_count = 0;
         const CAPTURES_SEARCHED_NUM: usize = 32;
         const QUIETS_SEARCHED_NUM: usize = 64;
-        let mut captures_searched = arrayvec::ArrayVec::<[_; CAPTURES_SEARCHED_NUM]>::new();
-        let mut quiets_searched = arrayvec::ArrayVec::<[_; QUIETS_SEARCHED_NUM]>::new();
+        let mut captures_searched = arrayvec::ArrayVec::<_, CAPTURES_SEARCHED_NUM>::new();
+        let mut quiets_searched = arrayvec::ArrayVec::<_, QUIETS_SEARCHED_NUM>::new();
         while let Some(m) = mp.next_move(&self.position, move_count_pruning) {
             debug_assert!(Some(m).is_normal_move());
 
