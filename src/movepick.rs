@@ -486,9 +486,10 @@ impl<'a> MovePickerForMainSearch<'a> {
                     self.stage = self.stage.next_variant().unwrap();
                 }
                 StagesForMainSearch::GoodCapture => {
+                    let size = self.move_list.size;
                     if let Some(m) = select_best_good_capture(
-                        &mut self.move_list.ext_moves,
-                        self.move_list.size,
+                        self.move_list.slice_mut(0),
+                        size,
                         &mut self.cur,
                         &mut self.end_bad_captures,
                         pos,
@@ -774,7 +775,8 @@ fn test_move_list_select_best() {
     score_captures(mlist.slice_mut(0), &pos, &capture_history);
     let mut cur = 0;
     let mut end_bad_captures = 0;
-    let m = select_best_good_capture(&mut mlist.ext_moves, mlist.size, &mut cur, &mut end_bad_captures, &pos, None);
+    let size = mlist.size;
+    let m = select_best_good_capture(mlist.slice_mut(0), size, &mut cur, &mut end_bad_captures, &pos, None);
     assert_eq!(m.unwrap().to_csa_string(&pos), "4645FU");
 
     let sfen = "k8/lpppppp2/rbgsnlp2/+RPPPPPP2/9/9/9/9/K8 b - 1";
@@ -785,7 +787,8 @@ fn test_move_list_select_best() {
     score_captures(mlist.slice_mut(0), &pos, &capture_history);
     let mut cur = 0;
     let mut end_bad_captures = 0;
-    let m = select_best_good_capture(&mut mlist.ext_moves, mlist.size, &mut cur, &mut end_bad_captures, &pos, None);
+    let size = mlist.size;
+    let m = select_best_good_capture(mlist.slice_mut(0), size, &mut cur, &mut end_bad_captures, &pos, None);
     assert_eq!(m.unwrap().to_csa_string(&pos), "8483TO");
 }
 

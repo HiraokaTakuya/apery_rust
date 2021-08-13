@@ -317,7 +317,7 @@ impl Perft {
                 cnt = 1;
                 nodes += 1;
             } else {
-                let m = mlist.ext_moves[i].mv;
+                let m = unsafe { (*mlist.ext_moves[i].as_ptr()).mv };
                 self.position.do_move(m, self.position.gives_check(m));
                 if leaf {
                     let mut leaf_mlist = MoveList::new();
@@ -330,7 +330,7 @@ impl Perft {
                 self.position.undo_move(m);
             }
             if Root::BOOL {
-                println!("{} : {}", mlist.ext_moves[i].mv.to_usi_string(), cnt);
+                println!("{} : {}", unsafe { (*mlist.ext_moves[i].as_ptr()).mv.to_usi_string() }, cnt);
             }
         }
         nodes

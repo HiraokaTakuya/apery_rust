@@ -222,7 +222,7 @@ fn legal_moves(pos: &Position) {
     let mut mlist = MoveList::new();
     mlist.generate::<LegalType>(pos, 0);
     for i in 0..mlist.size {
-        print!("{} ", mlist.ext_moves[i].mv.to_usi_string());
+        print!("{} ", unsafe { (*mlist.ext_moves[i].as_ptr()).mv.to_usi_string() });
     }
     println!();
 }
@@ -231,7 +231,7 @@ fn legal_all_moves(pos: &Position) {
     let mut mlist = MoveList::new();
     mlist.generate::<LegalAllType>(pos, 0);
     for i in 0..mlist.size {
-        print!("{} ", mlist.ext_moves[i].mv.to_usi_string());
+        print!("{} ", unsafe { (*mlist.ext_moves[i].as_ptr()).mv.to_usi_string() });
     }
     println!();
 }

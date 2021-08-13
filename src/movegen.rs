@@ -87,21 +87,34 @@ impl AllowMovesTrait for LegalAllType {
 }
 
 pub struct MoveList {
-    pub ext_moves: [ExtMove; ExtMove::MAX_LEGAL_MOVES],
+    pub ext_moves: [std::mem::MaybeUninit<ExtMove>; ExtMove::MAX_LEGAL_MOVES],
     pub size: usize,
 }
 
 impl MoveList {
-    pub fn new() -> MoveList {
-        let mut mlist: MoveList = unsafe { std::mem::MaybeUninit::uninit().assume_init() };
-        mlist.size = 0;
-        mlist
+    pub fn new() -> Self {
+        unsafe {
+            Self {
+                ext_moves: std::mem::MaybeUninit::uninit().assume_init(),
+                size: 0,
+            }
+        }
     }
     pub fn slice(&self, begin: usize) -> &[ExtMove] {
-        &self.ext_moves[begin..self.size]
+        unsafe {
+            std::slice::from_raw_parts(
+                self.ext_moves.get_unchecked(begin).as_ptr() as *const ExtMove,
+                self.size - begin,
+            )
+        }
     }
     pub fn slice_mut(&mut self, begin: usize) -> &mut [ExtMove] {
-        &mut self.ext_moves[begin..self.size]
+        unsafe {
+            std::slice::from_raw_parts_mut(
+                self.ext_moves.get_unchecked_mut(begin).as_ptr() as *mut ExtMove,
+                self.size - begin,
+            )
+        }
     }
     #[allow(dead_code)]
     fn contains(&self, m: Move) -> bool {
@@ -111,7 +124,7 @@ impl MoveList {
     pub fn push(&mut self, m: Move) {
         debug_assert!(self.size < self.ext_moves.len());
         unsafe {
-            self.ext_moves.get_unchecked_mut(self.size).mv = m;
+            (*self.ext_moves.get_unchecked_mut(self.size).as_mut_ptr()).mv = m;
         }
         self.size += 1;
     }
@@ -707,12 +720,14 @@ impl MoveList {
 
         let mut i = 0;
         while i != self.size {
-            let m = self.ext_moves[i].mv;
+            let m = unsafe { (*self.ext_moves[i].as_ptr()).mv };
             if pos.legal(m) {
                 i += 1;
             } else {
                 self.size -= 1;
-                self.ext_moves[i].mv = self.ext_moves[self.size].mv;
+                unsafe {
+                    (*self.ext_moves[i].as_mut_ptr()).mv = (*self.ext_moves[self.size].as_ptr()).mv;
+                }
             }
         }
     }
