@@ -678,7 +678,7 @@ impl EvalSum {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy)] // Copy is needed for MaybeUninit
 pub struct ChangedEvalIndex {
     pub new_index: EvalIndex,
     pub old_index: EvalIndex,

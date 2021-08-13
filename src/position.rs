@@ -37,7 +37,7 @@ pub enum Repetition {
     Inferior,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy)] // Copy is needed for MaybeUninit
 pub struct CheckInfo {
     blockers_and_pinners_for_king: [(Bitboard, Bitboard); Color::NUM], // color is color_of_king
     check_squares: [Bitboard; PieceType::NUM],
@@ -242,16 +242,16 @@ pub struct StateInfo {
     material: Value,
     plies_from_null: i32,
     continuous_checks: [i32; Color::NUM],
-    board_key: Key,
-    hand_key: Key,
-    hand_of_side_to_move: Hand,
-    checkers_bb: Bitboard,
-    captured_piece: Piece,
-    check_info: CheckInfo,
+    board_key: std::mem::MaybeUninit<Key>,
+    hand_key: std::mem::MaybeUninit<Key>,
+    hand_of_side_to_move: std::mem::MaybeUninit<Hand>,
+    checkers_bb: std::mem::MaybeUninit<Bitboard>,
+    captured_piece: std::mem::MaybeUninit<Piece>,
+    check_info: std::mem::MaybeUninit<CheckInfo>,
     #[cfg(feature = "kppt")]
-    changed_eval_index: ChangedEvalIndex,
+    changed_eval_index: std::mem::MaybeUninit<ChangedEvalIndex>,
     #[cfg(feature = "kppt")]
-    changed_eval_index_captured: ChangedEvalIndex,
+    changed_eval_index_captured: std::mem::MaybeUninit<ChangedEvalIndex>,
 }
 
 impl StateInfo {
@@ -260,16 +260,16 @@ impl StateInfo {
             material: Value(0),
             plies_from_null: 0,
             continuous_checks: [0, 0],
-            board_key: Key(0),
-            hand_key: Key(0),
-            hand_of_side_to_move: Hand(0),
-            checkers_bb: Bitboard::ZERO,
-            captured_piece: Piece::EMPTY,
-            check_info: CheckInfo::ZERO,
+            board_key: std::mem::MaybeUninit::new(Key(0)),
+            hand_key: std::mem::MaybeUninit::new(Key(0)),
+            hand_of_side_to_move: std::mem::MaybeUninit::new(Hand(0)),
+            checkers_bb: std::mem::MaybeUninit::new(Bitboard::ZERO),
+            captured_piece: std::mem::MaybeUninit::new(Piece::EMPTY),
+            check_info: std::mem::MaybeUninit::new(CheckInfo::ZERO),
             #[cfg(feature = "kppt")]
-            changed_eval_index: ChangedEvalIndex::ZERO,
+            changed_eval_index: std::mem::MaybeUninit::new(ChangedEvalIndex::ZERO),
             #[cfg(feature = "kppt")]
-            changed_eval_index_captured: ChangedEvalIndex::ZERO,
+            changed_eval_index_captured: std::mem::MaybeUninit::new(ChangedEvalIndex::ZERO),
         }
     }
     unsafe fn new_from_old_state(old_state: &StateInfo) -> StateInfo {
@@ -277,16 +277,16 @@ impl StateInfo {
             material: old_state.material,
             plies_from_null: old_state.plies_from_null,
             continuous_checks: old_state.continuous_checks,
-            board_key: std::mem::MaybeUninit::uninit().assume_init(),
-            hand_key: std::mem::MaybeUninit::uninit().assume_init(),
-            hand_of_side_to_move: std::mem::MaybeUninit::uninit().assume_init(),
-            checkers_bb: std::mem::MaybeUninit::uninit().assume_init(),
-            captured_piece: std::mem::MaybeUninit::uninit().assume_init(),
-            check_info: std::mem::MaybeUninit::uninit().assume_init(),
+            board_key: std::mem::MaybeUninit::uninit(),
+            hand_key: std::mem::MaybeUninit::uninit(),
+            hand_of_side_to_move: std::mem::MaybeUninit::uninit(),
+            checkers_bb: std::mem::MaybeUninit::uninit(),
+            captured_piece: std::mem::MaybeUninit::uninit(),
+            check_info: std::mem::MaybeUninit::uninit(),
             #[cfg(feature = "kppt")]
-            changed_eval_index: std::mem::MaybeUninit::uninit().assume_init(),
+            changed_eval_index: std::mem::MaybeUninit::uninit(),
             #[cfg(feature = "kppt")]
-            changed_eval_index_captured: std::mem::MaybeUninit::uninit().assume_init(),
+            changed_eval_index_captured: std::mem::MaybeUninit::uninit(),
         }
     }
     fn new_from_position(pos: &PositionBase) -> StateInfo {
@@ -297,16 +297,16 @@ impl StateInfo {
             material: StateInfo::new_material(pos),
             plies_from_null: 0,
             continuous_checks: [0, 0],
-            board_key: StateInfo::new_board_key(pos),
-            hand_key: StateInfo::new_hand_key(pos),
-            hand_of_side_to_move: pos.hand(us),
-            checkers_bb: pos.attackers_to_except_king(them, king_sq, &pos.occupied_bb()),
-            captured_piece: Piece::EMPTY,
-            check_info: CheckInfo::new(pos),
+            board_key: std::mem::MaybeUninit::new(StateInfo::new_board_key(pos)),
+            hand_key: std::mem::MaybeUninit::new(StateInfo::new_hand_key(pos)),
+            hand_of_side_to_move: std::mem::MaybeUninit::new(pos.hand(us)),
+            checkers_bb: std::mem::MaybeUninit::new(pos.attackers_to_except_king(them, king_sq, &pos.occupied_bb())),
+            captured_piece: std::mem::MaybeUninit::new(Piece::EMPTY),
+            check_info: std::mem::MaybeUninit::new(CheckInfo::new(pos)),
             #[cfg(feature = "kppt")]
-            changed_eval_index: ChangedEvalIndex::ZERO,
+            changed_eval_index: std::mem::MaybeUninit::new(ChangedEvalIndex::ZERO),
             #[cfg(feature = "kppt")]
-            changed_eval_index_captured: ChangedEvalIndex::ZERO,
+            changed_eval_index_captured: std::mem::MaybeUninit::new(ChangedEvalIndex::ZERO),
         }
     }
     fn new_material(pos: &PositionBase) -> Value {
@@ -362,33 +362,33 @@ impl StateInfo {
     }
     #[allow(dead_code)]
     fn ci(&self) -> &CheckInfo {
-        &self.check_info
+        unsafe { &*self.check_info.as_ptr() }
     }
     fn key(&self) -> Key {
-        self.board_key ^ self.hand_key
+        unsafe { self.board_key.assume_init() ^ self.hand_key.assume_init() }
     }
     fn continuous_check(&self, c: Color) -> i32 {
         debug_assert!(0 <= c.0 && (c.0 as usize) < self.continuous_checks.len());
         unsafe { *self.continuous_checks.get_unchecked(c.0 as usize) }
     }
     fn is_capture_move(&self) -> bool {
-        self.captured_piece != Piece::EMPTY
+        unsafe { self.captured_piece.assume_init() != Piece::EMPTY }
     }
     #[allow(dead_code)]
     pub const ZERO: StateInfo = StateInfo {
         material: Value(0),
         plies_from_null: 0,
         continuous_checks: [0, 0],
-        board_key: Key(0),
-        hand_key: Key(0),
-        hand_of_side_to_move: Hand(0),
-        checkers_bb: Bitboard::ZERO,
-        captured_piece: Piece::EMPTY,
-        check_info: CheckInfo::ZERO,
+        board_key: std::mem::MaybeUninit::new(Key(0)),
+        hand_key: std::mem::MaybeUninit::new(Key(0)),
+        hand_of_side_to_move: std::mem::MaybeUninit::new(Hand(0)),
+        checkers_bb: std::mem::MaybeUninit::new(Bitboard::ZERO),
+        captured_piece: std::mem::MaybeUninit::new(Piece::EMPTY),
+        check_info: std::mem::MaybeUninit::new(CheckInfo::ZERO),
         #[cfg(feature = "kppt")]
-        changed_eval_index: ChangedEvalIndex::ZERO,
+        changed_eval_index: std::mem::MaybeUninit::new(ChangedEvalIndex::ZERO),
         #[cfg(feature = "kppt")]
-        changed_eval_index_captured: ChangedEvalIndex::ZERO,
+        changed_eval_index_captured: std::mem::MaybeUninit::new(ChangedEvalIndex::ZERO),
     };
 }
 
@@ -1120,10 +1120,10 @@ impl Position {
         self.base.slider_blockers_and_pinners(sliders, color_of_sliders, sq)
     }
     pub fn blockers_for_king(&self, color_of_king: Color) -> Bitboard {
-        self.st().check_info.blockers_for_king(color_of_king)
+        unsafe { (*self.st().check_info.as_ptr()).blockers_for_king(color_of_king) }
     }
     pub fn pinners_for_king(&self, color_of_king: Color) -> Bitboard {
-        self.st().check_info.pinners_for_king(color_of_king)
+        unsafe { (*self.st().check_info.as_ptr()).pinners_for_king(color_of_king) }
     }
     pub fn pseudo_legal<T: IsSearchingTrait>(&self, m: Move) -> bool {
         let us = self.side_to_move();
@@ -1489,11 +1489,20 @@ impl Position {
                     return Repetition::Win;
                 }
                 return Repetition::Draw;
-            } else if self.st().board_key == st.board_key {
-                if self.st().hand_of_side_to_move.is_equal_or_superior(st.hand_of_side_to_move) {
+            } else if unsafe { self.st().board_key.assume_init() == st.board_key.assume_init() } {
+                if unsafe {
+                    self.st()
+                        .hand_of_side_to_move
+                        .assume_init()
+                        .is_equal_or_superior(st.hand_of_side_to_move.assume_init())
+                } {
                     return Repetition::Superior;
                 }
-                if st.hand_of_side_to_move.is_equal_or_superior(self.st().hand_of_side_to_move) {
+                if unsafe {
+                    st.hand_of_side_to_move
+                        .assume_init()
+                        .is_equal_or_superior(self.st().hand_of_side_to_move.assume_init())
+                } {
                     return Repetition::Inferior;
                 }
             }
@@ -1552,11 +1561,11 @@ impl Position {
     }
     #[inline]
     fn board_key(&self) -> Key {
-        self.st().board_key
+        unsafe { self.st().board_key.assume_init() }
     }
     #[inline]
     fn hand_key(&self) -> Key {
-        self.st().hand_key
+        unsafe { self.st().hand_key.assume_init() }
     }
     #[inline]
     pub fn material(&self) -> Value {
@@ -1566,7 +1575,7 @@ impl Position {
         self.st().material - self.states[self.states.len() - 2].material
     }
     pub fn captured_piece(&self) -> Piece {
-        self.st().captured_piece
+        unsafe { self.st().captured_piece.assume_init() }
     }
     #[allow(dead_code)]
     #[inline]
@@ -1586,7 +1595,7 @@ impl Position {
     }
     #[inline]
     pub fn checkers(&self) -> Bitboard {
-        self.st().checkers_bb
+        unsafe { self.st().checkers_bb.assume_init() }
     }
     #[inline]
     pub fn in_check(&self) -> bool {
@@ -1600,7 +1609,7 @@ impl Position {
         let to = m.to();
         if m.is_drop() {
             let pt_to = m.piece_type_dropped();
-            if self.st().check_info.check_squares[pt_to.0 as usize].is_set(to) {
+            if unsafe { (*self.st().check_info.as_ptr()).check_squares[pt_to.0 as usize].is_set(to) } {
                 return true;
             }
         } else {
@@ -1609,13 +1618,13 @@ impl Position {
             let pc_to = if m.is_promotion() { pc_from.to_promote() } else { pc_from };
             let pt_to = PieceType::new(pc_to);
             // direct check
-            if self.st().check_info.check_squares[pt_to.0 as usize].is_set(to) {
+            if unsafe { (*self.st().check_info.as_ptr()).check_squares[pt_to.0 as usize].is_set(to) } {
                 return true;
             }
             let us = self.side_to_move();
             let them = us.inverse();
             // discovered check
-            if self.st().check_info.blockers_for_king(them).is_set(from)
+            if unsafe { (*self.st().check_info.as_ptr()).blockers_for_king(them).is_set(from) }
                 && !is_aligned_and_sq2_is_not_between_sq0_and_sq1(from, to, self.king_square(them))
             {
                 return true;
@@ -1648,8 +1657,8 @@ impl Position {
             {
                 let old_eval_index = EvalIndex(EvalIndex::new_hand(pc_to).0 + hand_num as usize);
                 let new_eval_index = EvalIndex(EvalIndex::new_board(pc_to).0 + to.0 as usize);
-                self.st_mut().changed_eval_index.old_index = old_eval_index;
-                self.st_mut().changed_eval_index.new_index = new_eval_index;
+                unsafe { (*self.st_mut().changed_eval_index.as_mut_ptr()).old_index = old_eval_index };
+                unsafe { (*self.st_mut().changed_eval_index.as_mut_ptr()).new_index = new_eval_index };
                 let eval_list_index = self.eval_index_to_eval_list_index.get(old_eval_index);
                 self.eval_index_to_eval_list_index.set(new_eval_index, eval_list_index);
                 self.eval_list.set(eval_list_index, Color::BLACK, new_eval_index);
@@ -1664,10 +1673,10 @@ impl Position {
             self.base.set_golds_bb();
             if gives_check {
                 // only one direct check.
-                self.st_mut().checkers_bb = Bitboard::square_mask(to);
+                self.st_mut().checkers_bb = std::mem::MaybeUninit::new(Bitboard::square_mask(to));
                 self.st_mut().continuous_checks[us.0 as usize] += 2;
             } else {
-                self.st_mut().checkers_bb = Bitboard::ZERO;
+                self.st_mut().checkers_bb = std::mem::MaybeUninit::new(Bitboard::ZERO);
                 self.st_mut().continuous_checks[us.0 as usize] = 0;
             }
             captured_piece = Piece::EMPTY;
@@ -1690,8 +1699,8 @@ impl Position {
                     let old_eval_index = EvalIndex(EvalIndex::new_board(captured_piece).0 + to.0 as usize);
                     let new_eval_index =
                         EvalIndex(EvalIndex::new_hand(Piece::new(us, pt_captured_demoted)).0 + hand_num as usize);
-                    self.st_mut().changed_eval_index_captured.old_index = old_eval_index;
-                    self.st_mut().changed_eval_index_captured.new_index = new_eval_index;
+                    unsafe { (*self.st_mut().changed_eval_index_captured.as_mut_ptr()).old_index = old_eval_index };
+                    unsafe { (*self.st_mut().changed_eval_index_captured.as_mut_ptr()).new_index = new_eval_index };
                     let eval_list_index = self.eval_index_to_eval_list_index.get(old_eval_index);
                     self.eval_index_to_eval_list_index.set(new_eval_index, eval_list_index);
                     self.eval_list.set(eval_list_index, Color::BLACK, new_eval_index);
@@ -1730,8 +1739,8 @@ impl Position {
                 {
                     let old_eval_index = EvalIndex(EvalIndex::new_board(pc_from).0 + from.0 as usize);
                     let new_eval_index = EvalIndex(EvalIndex::new_board(pc_to).0 + to.0 as usize);
-                    self.st_mut().changed_eval_index.old_index = old_eval_index;
-                    self.st_mut().changed_eval_index.new_index = new_eval_index;
+                    unsafe { (*self.st_mut().changed_eval_index.as_mut_ptr()).old_index = old_eval_index };
+                    unsafe { (*self.st_mut().changed_eval_index.as_mut_ptr()).new_index = new_eval_index };
                     let eval_list_index = self.eval_index_to_eval_list_index.get(old_eval_index);
                     self.eval_index_to_eval_list_index.set(new_eval_index, eval_list_index);
                     self.eval_list.set(eval_list_index, Color::BLACK, new_eval_index);
@@ -1746,20 +1755,21 @@ impl Position {
             self.base.set_golds_bb();
 
             if gives_check {
-                self.st_mut().checkers_bb =
-                    self.attackers_to_except_king(us, self.king_square(them), &self.occupied_bb()) & self.pieces_c(us);
+                self.st_mut().checkers_bb = std::mem::MaybeUninit::new(
+                    self.attackers_to_except_king(us, self.king_square(them), &self.occupied_bb()) & self.pieces_c(us),
+                );
                 self.st_mut().continuous_checks[us.0 as usize] += 2;
             } else {
-                self.st_mut().checkers_bb = Bitboard::ZERO;
+                self.st_mut().checkers_bb = std::mem::MaybeUninit::new(Bitboard::ZERO);
                 self.st_mut().continuous_checks[us.0 as usize] = 0;
             };
         }
         self.base.side_to_move = them;
-        self.st_mut().board_key = board_key;
-        self.st_mut().hand_key = hand_key;
-        self.st_mut().hand_of_side_to_move = self.hand(them);
-        self.st_mut().captured_piece = captured_piece;
-        self.st_mut().check_info = CheckInfo::new(&self.base);
+        self.st_mut().board_key = std::mem::MaybeUninit::new(board_key);
+        self.st_mut().hand_key = std::mem::MaybeUninit::new(hand_key);
+        self.st_mut().hand_of_side_to_move = std::mem::MaybeUninit::new(self.hand(them));
+        self.st_mut().captured_piece = std::mem::MaybeUninit::new(captured_piece);
+        self.st_mut().check_info = std::mem::MaybeUninit::new(CheckInfo::new(&self.base));
         debug_assert!(self.is_ok());
     }
     pub fn undo_move(&mut self, m: Move) {
@@ -1786,7 +1796,7 @@ impl Position {
         } else {
             let pc_to = self.piece_on(to);
             if self.st().is_capture_move() {
-                let pc_captured = self.st().captured_piece;
+                let pc_captured = unsafe { self.st().captured_piece.assume_init() };
                 let pt_captured = PieceType::new(pc_captured);
                 let pt_captured_demoted = pt_captured.to_demote_if_possible();
 
@@ -1817,8 +1827,8 @@ impl Position {
                 {
                     let old_eval_index = EvalIndex(EvalIndex::new_board(pc_to).0 + to.0 as usize);
                     let new_eval_index = EvalIndex(EvalIndex::new_board(pc_from).0 + from.0 as usize);
-                    self.st_mut().changed_eval_index.old_index = old_eval_index;
-                    self.st_mut().changed_eval_index.new_index = new_eval_index;
+                    unsafe { (*self.st_mut().changed_eval_index.as_mut_ptr()).old_index = old_eval_index };
+                    unsafe { (*self.st_mut().changed_eval_index.as_mut_ptr()).new_index = new_eval_index };
                     let eval_list_index = self.eval_index_to_eval_list_index.get(old_eval_index);
                     self.eval_index_to_eval_list_index.set(new_eval_index, eval_list_index);
                     self.eval_list.set(eval_list_index, Color::BLACK, new_eval_index);
@@ -1842,10 +1852,10 @@ impl Position {
         self.base.side_to_move = them;
         self.st_mut().plies_from_null = 0;
         self.st_mut().continuous_checks = [0, 0];
-        self.st_mut().board_key ^= Zobrist::COLOR;
-        self.st_mut().hand_of_side_to_move = self.hand(them);
-        self.st_mut().captured_piece = Piece::EMPTY;
-        self.st_mut().check_info = CheckInfo::new(&self.base);
+        unsafe { *self.st_mut().board_key.as_mut_ptr() ^= Zobrist::COLOR };
+        self.st_mut().hand_of_side_to_move = std::mem::MaybeUninit::new(self.hand(them));
+        self.st_mut().captured_piece = std::mem::MaybeUninit::new(Piece::EMPTY);
+        self.st_mut().check_info = std::mem::MaybeUninit::new(CheckInfo::new(&self.base));
         debug_assert!(self.is_ok());
     }
     pub fn undo_null_move(&mut self) {
@@ -2280,11 +2290,11 @@ impl Position {
     }
     #[cfg(feature = "kppt")]
     pub fn changed_eval_index(&self) -> ChangedEvalIndex {
-        self.st().changed_eval_index.clone()
+        unsafe { self.st().changed_eval_index.assume_init() }
     }
     #[cfg(feature = "kppt")]
     pub fn changed_eval_index_captured(&self) -> ChangedEvalIndex {
-        self.st().changed_eval_index_captured.clone()
+        unsafe { self.st().changed_eval_index_captured.assume_init() }
     }
     #[cfg(feature = "kppt")]
     pub fn eval_list_index(&self, eval_index: EvalIndex) -> usize {
