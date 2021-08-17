@@ -452,7 +452,10 @@ impl<'a> MovePickerForMainSearch<'a> {
             StagesForMainSearch::MainTt
         };
         match ttm {
-            Some(ttm_inner) if pos.pseudo_legal::<SearchingType>(ttm_inner) => {}
+            Some(ttm_inner) => {
+                // This move has already been checked for Position::pseudo_legal.
+                debug_assert!(pos.pseudo_legal::<SearchingType>(ttm_inner));
+            }
             _ => {
                 stage = stage.next_variant().unwrap();
             }
@@ -591,9 +594,10 @@ impl<'a> MovePickerForQSearch<'a> {
             StagesForQSearch::QRecaptureTt
         };
         match ttm {
-            Some(ttm_inner)
-                if (in_check || depth > Depth::QS_RECAPTURES || ttm_inner.to() == recapture_square)
-                    && pos.pseudo_legal::<SearchingType>(ttm_inner) => {}
+            Some(ttm_inner) if (in_check || depth > Depth::QS_RECAPTURES || ttm_inner.to() == recapture_square) => {
+                // This move has already been checked for Position::pseudo_legal.
+                debug_assert!(pos.pseudo_legal::<SearchingType>(ttm_inner));
+            }
             _ => {
                 stage = stage.next_variant().unwrap();
             }
@@ -672,8 +676,11 @@ impl MovePickerForProbCut {
         let mut stage = StagesForProbCut::Tt;
         match ttm {
             Some(ttm_inner)
-                if ttm_inner.is_capture(pos) && pos.pseudo_legal::<SearchingType>(ttm_inner) && pos.see_ge(ttm_inner, thresh) => {
-            }
+                if ttm_inner.is_capture(pos) && {
+                    // This move has already been checked for Position::pseudo_legal.
+                    debug_assert!(pos.pseudo_legal::<SearchingType>(ttm_inner));
+                    pos.see_ge(ttm_inner, thresh)
+                } => {}
             _ => {
                 stage = stage.next_variant().unwrap();
             }
