@@ -46,7 +46,7 @@ cargo build --release --no-default-features --features "material"
 ## Install
 
 ```bash
-cargo install --path .
+cargo install --git https://github.com/HiraokaTakuya/apery_rust.git
 ```
 
 ## Uninstall
