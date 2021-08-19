@@ -1,8 +1,8 @@
 # Apery
 
-Apery is a free USI shogi engine derived from Stockfish and Apery(C++ version).
+Apery is a free USI shogi engine derived from [Stockfish](https://github.com/official-stockfish/Stockfish) and [Apery(C++ version)](https://github.com/HiraokaTakuya/apery).
 Apery was rewritten in Rust.
-Apery requires a USI-compatible GUI (e.g. Shogidokoro, ShogiGUI, MyShogi).
+Apery requires a USI-compatible GUI (e.g. [Shogidokoro](http://shogidokoro.starfree.jp/), [ShogiGUI](http://shogigui.siganus.com/), [MyShogi](https://github.com/yaneurao/MyShogi)).
 
 ## Usage
 
