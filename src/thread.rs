@@ -887,7 +887,7 @@ impl Thread {
                     }
                     if !self
                         .position
-                        .see_ge(m, Value(-(30 - std::cmp::min(lmr_depth.0, 18)) * lmr_depth.0 * lmr_depth.0))
+                        .see_ge(m, Value(-21 * lmr_depth.0 * lmr_depth.0 - 21 * lmr_depth.0))
                     {
                         continue;
                     }
