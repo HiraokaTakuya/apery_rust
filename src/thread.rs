@@ -886,14 +886,7 @@ impl Thread {
                     } {
                         continue;
                     }
-                    if !get_stack(stack, 0).in_check
-                        && get_stack(stack, 0).static_eval.0 + 174 + 157 * lmr_depth.0 <= alpha.0
-                        && unsafe { (*cont_hists[0]).get(to, piece_moved_after_move) }
-                            + unsafe { (*cont_hists[1]).get(to, piece_moved_after_move) }
-                            + unsafe { (*cont_hists[3]).get(to, piece_moved_after_move) }
-                            + unsafe { (*cont_hists[5]).get(to, piece_moved_after_move) } / 3
-                            < 28255
-                    {
+                    if !get_stack(stack, 0).in_check && get_stack(stack, 0).static_eval.0 + 174 + 157 * lmr_depth.0 <= alpha.0 {
                         continue;
                     }
                     if !self
