@@ -876,11 +876,7 @@ impl Thread {
                     }
                 } else {
                     if lmr_depth.0 < 5 && {
-                        let thresh = if depth == Depth::ONE_PLY {
-                            0
-                        } else {
-                            -stat_bonus(depth - Depth::ONE_PLY)
-                        };
+                        let thresh = 23 - 23 * depth.0 * depth.0;
                         (unsafe { (*cont_hists[0]).get(to, piece_moved_after_move) } < thresh)
                             && unsafe { (*cont_hists[1]).get(to, piece_moved_after_move) } < thresh
                     } {
