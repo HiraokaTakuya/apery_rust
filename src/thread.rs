@@ -1000,7 +1000,10 @@ impl Thread {
                 let d = num::clamp(
                     new_depth - r,
                     Depth::ONE_PLY,
-                    new_depth + Depth(i32::from(r.0 < -1 && move_count <= 5 && !double_extension)),
+                    new_depth
+                        + Depth(i32::from(
+                            r.0 < -1 && (move_count <= 5 || (depth.0 > 6 && pv_node)) && !double_extension,
+                        )),
                 );
                 value = -self.search::<NonPvType>(&mut stack[1..], -(alpha + Value(1)), -alpha, d, true);
                 (value > alpha && d < new_depth, true)
