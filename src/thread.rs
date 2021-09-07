@@ -656,7 +656,7 @@ impl Thread {
                 && (get_stack(stack, 0).ply >= self.null_move_pruning_min_ply || us != self.null_move_pruning_color)
             {
                 debug_assert!(eval - beta >= Value(0));
-                let r = Depth((1090 + 81 * depth.0) / 256 + std::cmp::min((eval.0 - beta.0) / 205, 3));
+                let r = Depth(std::cmp::min((eval.0 - beta.0) / 205, 3) + depth.0 / 3 + 4);
                 get_stack_mut(stack, 0).current_move = Some(Move::NULL);
                 get_stack_mut(stack, 0).continuation_history = self.continuation_history[0][0].sentinel();
 
