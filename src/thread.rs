@@ -875,11 +875,12 @@ impl Thread {
                         continue;
                     }
                 } else {
-                    if lmr_depth.0 < 5 && {
-                        let thresh = 23 - 23 * depth.0 * depth.0;
-                        (unsafe { (*cont_hists[0]).get(to, piece_moved_after_move) } < thresh)
-                            && unsafe { (*cont_hists[1]).get(to, piece_moved_after_move) } < thresh
-                    } {
+                    if lmr_depth.0 < 5
+                        && unsafe { (*cont_hists[0]).get(to, piece_moved_after_move) }
+                            + unsafe { (*cont_hists[1]).get(to, piece_moved_after_move) }
+                            + unsafe { (*cont_hists[3]).get(to, piece_moved_after_move) }
+                            < -3000 * depth.0 + 3000
+                    {
                         continue;
                     }
                     if !get_stack(stack, 0).in_check
