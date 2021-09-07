@@ -1116,7 +1116,12 @@ impl Thread {
                 depth,
             );
         } else if (pv_node || depth.0 >= 3) && prior_capture == Piece::EMPTY {
-            update_continuation_histories(stack, self.position.piece_on(prev_sq), prev_sq, stat_bonus(depth));
+            update_continuation_histories(
+                stack,
+                self.position.piece_on(prev_sq),
+                prev_sq,
+                stat_bonus(Depth(depth.0 + i32::from(pv_node || cut_node))),
+            );
         }
 
         if pv_node {
