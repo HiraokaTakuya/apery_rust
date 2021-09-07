@@ -640,7 +640,7 @@ impl Thread {
             };
 
             // Step 7
-            if !pv_node && eval - futility_margin(depth) >= beta && eval < Value::KNOWN_WIN {
+            if !pv_node && depth.0 < 9 && eval - futility_margin(depth) >= beta && eval < Value::KNOWN_WIN {
                 return eval;
             }
 
@@ -882,7 +882,10 @@ impl Thread {
                     } {
                         continue;
                     }
-                    if !get_stack(stack, 0).in_check && get_stack(stack, 0).static_eval.0 + 174 + 157 * lmr_depth.0 <= alpha.0 {
+                    if !get_stack(stack, 0).in_check
+                        && lmr_depth.0 < 7
+                        && get_stack(stack, 0).static_eval.0 + 174 + 157 * lmr_depth.0 <= alpha.0
+                    {
                         continue;
                     }
                     if !self
