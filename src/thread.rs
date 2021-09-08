@@ -1120,7 +1120,7 @@ impl Thread {
                 stack,
                 self.position.piece_on(prev_sq),
                 prev_sq,
-                stat_bonus(Depth(depth.0 + i32::from(pv_node || cut_node))),
+                stat_bonus(depth) * (1 + i32::from(pv_node || cut_node)),
             );
         }
 
