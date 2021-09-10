@@ -723,35 +723,36 @@ impl MovePickerForProbCut {
 
 #[test]
 fn test_partial_insertion_sort() {
-    let mut ext_moves = vec![];
-    ext_moves.push(ExtMove {
-        mv: Move::NULL,
-        score: 0,
-    });
-    ext_moves.push(ExtMove {
-        mv: Move::NULL,
-        score: 9,
-    });
-    ext_moves.push(ExtMove {
-        mv: Move::NULL,
-        score: 11,
-    });
-    ext_moves.push(ExtMove {
-        mv: Move::NULL,
-        score: 15,
-    });
-    ext_moves.push(ExtMove {
-        mv: Move::NULL,
-        score: 3,
-    });
-    ext_moves.push(ExtMove {
-        mv: Move::NULL,
-        score: 13,
-    });
-    ext_moves.push(ExtMove {
-        mv: Move::NULL,
-        score: 6,
-    });
+    let mut ext_moves = vec![
+        ExtMove {
+            mv: Move::NULL,
+            score: 0,
+        },
+        ExtMove {
+            mv: Move::NULL,
+            score: 9,
+        },
+        ExtMove {
+            mv: Move::NULL,
+            score: 11,
+        },
+        ExtMove {
+            mv: Move::NULL,
+            score: 15,
+        },
+        ExtMove {
+            mv: Move::NULL,
+            score: 3,
+        },
+        ExtMove {
+            mv: Move::NULL,
+            score: 13,
+        },
+        ExtMove {
+            mv: Move::NULL,
+            score: 6,
+        },
+    ];
     partial_insertion_sort(ext_moves.as_mut_slice(), 10);
     assert_eq!(ext_moves[0].score, 15);
     assert_eq!(ext_moves[1].score, 13);
@@ -761,8 +762,7 @@ fn test_partial_insertion_sort() {
 #[test]
 fn test_butterfly_history() {
     unsafe {
-        let mut vec: Vec<ButterflyHistory> = Vec::with_capacity(1);
-        vec.push(ButterflyHistory { v: [[0; 0xffff]; 2] });
+        let mut vec: Vec<ButterflyHistory> = vec![ButterflyHistory { v: [[0; 0xffff]; 2] }];
         let history = vec.as_mut_ptr();
         let bonus = 3;
         let m = Move::new_unpromote(Square::SQ77, Square::SQ76, Piece::B_PAWN);

@@ -1343,21 +1343,21 @@ fn test_piece_inverse() {
 
 #[test]
 fn test_is_slider() {
-    assert_eq!(PieceType::OCCUPIED.is_slider(), false);
-    assert_eq!(PieceType::PAWN.is_slider(), false);
-    assert_eq!(PieceType::LANCE.is_slider(), true);
-    assert_eq!(PieceType::KNIGHT.is_slider(), false);
-    assert_eq!(PieceType::SILVER.is_slider(), false);
-    assert_eq!(PieceType::GOLD.is_slider(), false);
-    assert_eq!(PieceType::BISHOP.is_slider(), true);
-    assert_eq!(PieceType::ROOK.is_slider(), true);
-    assert_eq!(PieceType::KING.is_slider(), false);
-    assert_eq!(PieceType::PRO_PAWN.is_slider(), false);
-    assert_eq!(PieceType::PRO_LANCE.is_slider(), false);
-    assert_eq!(PieceType::PRO_KNIGHT.is_slider(), false);
-    assert_eq!(PieceType::PRO_SILVER.is_slider(), false);
-    assert_eq!(PieceType::HORSE.is_slider(), true);
-    assert_eq!(PieceType::DRAGON.is_slider(), true);
+    assert!(!PieceType::OCCUPIED.is_slider());
+    assert!(!PieceType::PAWN.is_slider());
+    assert!(PieceType::LANCE.is_slider());
+    assert!(!PieceType::KNIGHT.is_slider());
+    assert!(!PieceType::SILVER.is_slider());
+    assert!(!PieceType::GOLD.is_slider());
+    assert!(PieceType::BISHOP.is_slider());
+    assert!(PieceType::ROOK.is_slider());
+    assert!(!PieceType::KING.is_slider());
+    assert!(!PieceType::PRO_PAWN.is_slider());
+    assert!(!PieceType::PRO_LANCE.is_slider());
+    assert!(!PieceType::PRO_KNIGHT.is_slider());
+    assert!(!PieceType::PRO_SILVER.is_slider());
+    assert!(PieceType::HORSE.is_slider());
+    assert!(PieceType::DRAGON.is_slider());
 }
 
 #[test]
@@ -1411,24 +1411,24 @@ fn test_square_to_csa_string() {
 
 #[test]
 fn test_is_opponent_field() {
-    assert_eq!(Rank::RANK1.is_opponent_field(Color::BLACK), true);
-    assert_eq!(Rank::RANK2.is_opponent_field(Color::BLACK), true);
-    assert_eq!(Rank::RANK3.is_opponent_field(Color::BLACK), true);
-    assert_eq!(Rank::RANK4.is_opponent_field(Color::BLACK), false);
-    assert_eq!(Rank::RANK5.is_opponent_field(Color::BLACK), false);
-    assert_eq!(Rank::RANK6.is_opponent_field(Color::BLACK), false);
-    assert_eq!(Rank::RANK7.is_opponent_field(Color::BLACK), false);
-    assert_eq!(Rank::RANK8.is_opponent_field(Color::BLACK), false);
-    assert_eq!(Rank::RANK9.is_opponent_field(Color::BLACK), false);
-    assert_eq!(Rank::RANK1.is_opponent_field(Color::WHITE), false);
-    assert_eq!(Rank::RANK2.is_opponent_field(Color::WHITE), false);
-    assert_eq!(Rank::RANK3.is_opponent_field(Color::WHITE), false);
-    assert_eq!(Rank::RANK4.is_opponent_field(Color::WHITE), false);
-    assert_eq!(Rank::RANK5.is_opponent_field(Color::WHITE), false);
-    assert_eq!(Rank::RANK6.is_opponent_field(Color::WHITE), false);
-    assert_eq!(Rank::RANK7.is_opponent_field(Color::WHITE), true);
-    assert_eq!(Rank::RANK8.is_opponent_field(Color::WHITE), true);
-    assert_eq!(Rank::RANK9.is_opponent_field(Color::WHITE), true);
+    assert!(Rank::RANK1.is_opponent_field(Color::BLACK));
+    assert!(Rank::RANK2.is_opponent_field(Color::BLACK));
+    assert!(Rank::RANK3.is_opponent_field(Color::BLACK));
+    assert!(!Rank::RANK4.is_opponent_field(Color::BLACK));
+    assert!(!Rank::RANK5.is_opponent_field(Color::BLACK));
+    assert!(!Rank::RANK6.is_opponent_field(Color::BLACK));
+    assert!(!Rank::RANK7.is_opponent_field(Color::BLACK));
+    assert!(!Rank::RANK8.is_opponent_field(Color::BLACK));
+    assert!(!Rank::RANK9.is_opponent_field(Color::BLACK));
+    assert!(!Rank::RANK1.is_opponent_field(Color::WHITE));
+    assert!(!Rank::RANK2.is_opponent_field(Color::WHITE));
+    assert!(!Rank::RANK3.is_opponent_field(Color::WHITE));
+    assert!(!Rank::RANK4.is_opponent_field(Color::WHITE));
+    assert!(!Rank::RANK5.is_opponent_field(Color::WHITE));
+    assert!(!Rank::RANK6.is_opponent_field(Color::WHITE));
+    assert!(Rank::RANK7.is_opponent_field(Color::WHITE));
+    assert!(Rank::RANK8.is_opponent_field(Color::WHITE));
+    assert!(Rank::RANK9.is_opponent_field(Color::WHITE));
 }
 
 #[test]

@@ -2338,7 +2338,7 @@ fn test_position_set() {
                 SfenError::SameHandPieceTwice { pt } => {
                     assert_eq!(pt, pt_twice);
                 }
-                _ => assert!(false),
+                _ => panic!(),
             },
         }
     }
@@ -2360,7 +2360,7 @@ fn test_position_set() {
                 SfenError::KingIsNothing { c } => {
                     assert_eq!(c, color_of_king_nothing);
                 }
-                _ => assert!(false),
+                _ => panic!(),
             },
         }
     }
@@ -2522,13 +2522,13 @@ fn test_position_see_ge() {
             let pos = Position::new_from_sfen(sfen).unwrap();
             let to = Square::SQ45;
             let m = Move::new_unpromote(Square::SQ46, to, Piece::B_PAWN);
-            assert_eq!(pos.see_ge(m, Value(0)), true);
+            assert!(pos.see_ge(m, Value(0)));
 
             let sfen = "k8/9/9/9/9/l8/p8/1B7/1K7 b - 1";
             let pos = Position::new_from_sfen(sfen).unwrap();
             let to = Square::SQ97;
             let m = Move::new_unpromote(Square::SQ88, to, Piece::B_BISHOP);
-            assert_eq!(pos.see_ge(m, Value(0)), false);
+            assert!(!pos.see_ge(m, Value(0)));
         })
         .unwrap()
         .join()
@@ -2635,7 +2635,7 @@ fn test_huffman_code() {
             assert_eq!(START_SFEN, &sfen);
         }
         Err(_err) => {
-            assert!(false);
+            panic!();
         }
     }
 }

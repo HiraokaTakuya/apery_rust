@@ -1903,34 +1903,30 @@ fn test_start_thinking() {
             #[cfg(feature = "kppt")]
             ehash.resize(16, &mut thread_pool);
             #[cfg(feature = "kppt")]
-            match load_evaluate_files(&usi_options.get_string(UsiOptions::EVAL_DIR)) {
-                Ok(_) => {
-                    let limits = {
-                        let mut limits = LimitsType::new();
-                        limits.depth = Some(1);
-                        limits.start_time = Some(std::time::Instant::now());
-                        limits
-                    };
-                    let mut reductions = Reductions::new();
-                    thread_pool.set(
-                        3,
-                        &mut tt,
-                        #[cfg(feature = "kppt")]
-                        &mut ehash,
-                        &mut reductions,
-                    );
-                    let ponder_mode = false;
-                    let hide_all_output = false;
-                    thread_pool.start_thinking(&Position::new(), &mut tt, limits, &usi_options, ponder_mode, hide_all_output);
-                    thread_pool.wait_for_search_finished();
-                }
-                Err(_) => {
-                    // No evaluation funciton binaries.
-                    // We want to do "cargo test" without evaluation function binaries.
-                    // Then we do nothing and pass this test.
-                    // todo: Is there a more better way?
-                }
-            }
+            if let Ok(_) = load_evaluate_files(&usi_options.get_string(UsiOptions::EVAL_DIR)) {
+                let limits = {
+                    let mut limits = LimitsType::new();
+                    limits.depth = Some(1);
+                    limits.start_time = Some(std::time::Instant::now());
+                    limits
+                };
+                let mut reductions = Reductions::new();
+                thread_pool.set(
+                    3,
+                    &mut tt,
+                    #[cfg(feature = "kppt")]
+                    &mut ehash,
+                    &mut reductions,
+                );
+                let ponder_mode = false;
+                let hide_all_output = false;
+                thread_pool.start_thinking(&Position::new(), &mut tt, limits, &usi_options, ponder_mode, hide_all_output);
+                thread_pool.wait_for_search_finished();
+            };
+            // No evaluation funciton binaries.
+            // We want to do "cargo test" without evaluation function binaries.
+            // Then we do nothing and pass this test.
+            // todo: Is there a more better way?
         })
         .unwrap()
         .join()

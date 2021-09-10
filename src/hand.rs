@@ -177,12 +177,12 @@ fn test_hand_is_equal_or_superior() {
     hand.set(PieceType::SILVER, 3);
     hand.set(PieceType::ROOK, 2);
     let mut hand2 = hand;
-    assert_eq!(hand.is_equal_or_superior(hand2), true);
-    assert_eq!(hand2.is_equal_or_superior(hand), true);
+    assert!(hand.is_equal_or_superior(hand2));
+    assert!(hand2.is_equal_or_superior(hand));
     hand2.minus_one(PieceType::PAWN);
-    assert_eq!(hand.is_equal_or_superior(hand2), true);
-    assert_eq!(hand2.is_equal_or_superior(hand), false);
+    assert!(hand.is_equal_or_superior(hand2));
+    assert!(!hand2.is_equal_or_superior(hand));
     hand2.plus_one(PieceType::BISHOP);
-    assert_eq!(hand.is_equal_or_superior(hand2), false);
-    assert_eq!(hand2.is_equal_or_superior(hand), false);
+    assert!(!hand.is_equal_or_superior(hand2));
+    assert!(!hand2.is_equal_or_superior(hand));
 }

@@ -977,11 +977,9 @@ pub static ATTACK_TABLE: once_cell::sync::Lazy<AttackTable<'static>> = once_cell
 fn test_bitboard_eq() {
     let bb0 = Bitboard::ZERO;
     let mut bb1 = Bitboard::ZERO;
-    assert_eq!(bb0 == bb1, true);
-    assert_eq!(bb0 != bb1, false);
+    assert!(bb0 == bb1);
     bb1.set(Square::SQ13);
-    assert_eq!(bb0 == bb1, false);
-    assert_eq!(bb0 != bb1, true);
+    assert!(bb0 != bb1);
 }
 
 #[test]
@@ -998,29 +996,29 @@ fn test_sliding_attacks() {
     let mut occupied = Bitboard::ZERO;
     occupied.set(Square::SQ46);
     let bb = sliding_attacks(&v, Square::SQ44, &occupied);
-    assert_eq!(bb.is_set(Square::SQ46), true);
-    assert_eq!(bb.is_set(Square::SQ47), false);
-    assert_eq!(bb.is_set(Square::SQ44), false);
-    assert_eq!(bb.is_set(Square::SQ14), true);
-    assert_eq!(bb.is_set(Square::SQ94), true);
-    assert_eq!(bb.is_set(Square::SQ41), true);
-    assert_eq!(bb.is_set(Square::SQ22), false);
-    assert_eq!(bb.is_set(Square::SQ71), false);
-    assert_eq!(bb.is_set(Square::SQ17), false);
+    assert!(bb.is_set(Square::SQ46));
+    assert!(!bb.is_set(Square::SQ47));
+    assert!(!bb.is_set(Square::SQ44));
+    assert!(bb.is_set(Square::SQ14));
+    assert!(bb.is_set(Square::SQ94));
+    assert!(bb.is_set(Square::SQ41));
+    assert!(!bb.is_set(Square::SQ22));
+    assert!(!bb.is_set(Square::SQ71));
+    assert!(!bb.is_set(Square::SQ17));
 
     let v = vec![Square::DELTA_NE, Square::DELTA_SE, Square::DELTA_SW, Square::DELTA_NW];
     let mut occupied = Bitboard::ZERO;
     occupied.set(Square::SQ66);
     let bb = sliding_attacks(&v, Square::SQ44, &occupied);
-    assert_eq!(bb.is_set(Square::SQ66), true);
-    assert_eq!(bb.is_set(Square::SQ77), false);
-    assert_eq!(bb.is_set(Square::SQ44), false);
-    assert_eq!(bb.is_set(Square::SQ22), true);
-    assert_eq!(bb.is_set(Square::SQ71), true);
-    assert_eq!(bb.is_set(Square::SQ17), true);
-    assert_eq!(bb.is_set(Square::SQ14), false);
-    assert_eq!(bb.is_set(Square::SQ94), false);
-    assert_eq!(bb.is_set(Square::SQ41), false);
+    assert!(bb.is_set(Square::SQ66));
+    assert!(!bb.is_set(Square::SQ77));
+    assert!(!bb.is_set(Square::SQ44));
+    assert!(bb.is_set(Square::SQ22));
+    assert!(bb.is_set(Square::SQ71));
+    assert!(bb.is_set(Square::SQ17));
+    assert!(!bb.is_set(Square::SQ14));
+    assert!(!bb.is_set(Square::SQ94));
+    assert!(!bb.is_set(Square::SQ41));
 }
 
 #[test]
@@ -1093,18 +1091,18 @@ fn test_lance_attack() {
             let mut occupied = Bitboard::ZERO;
             occupied.set(Square::SQ52);
             let attack = ATTACK_TABLE.lance.attack(Color::BLACK, Square::SQ55, &occupied);
-            assert_eq!(attack.is_set(Square::SQ55), false);
-            assert_eq!(attack.is_set(Square::SQ54), true);
-            assert_eq!(attack.is_set(Square::SQ52), true);
-            assert_eq!(attack.is_set(Square::SQ51), false);
+            assert!(!attack.is_set(Square::SQ55));
+            assert!(attack.is_set(Square::SQ54));
+            assert!(attack.is_set(Square::SQ52));
+            assert!(!attack.is_set(Square::SQ51));
 
             let mut occupied = Bitboard::ZERO;
             occupied.set(Square::SQ58);
             let attack = ATTACK_TABLE.lance.attack(Color::WHITE, Square::SQ55, &occupied);
-            assert_eq!(attack.is_set(Square::SQ55), false);
-            assert_eq!(attack.is_set(Square::SQ56), true);
-            assert_eq!(attack.is_set(Square::SQ58), true);
-            assert_eq!(attack.is_set(Square::SQ59), false);
+            assert!(!attack.is_set(Square::SQ55));
+            assert!(attack.is_set(Square::SQ56));
+            assert!(attack.is_set(Square::SQ58));
+            assert!(!attack.is_set(Square::SQ59));
         })
         .unwrap()
         .join()
