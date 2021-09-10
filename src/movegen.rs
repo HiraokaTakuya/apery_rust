@@ -1092,63 +1092,47 @@ fn test_generate_recaptures() {
     assert!(mlist
         .slice(0)
         .iter()
-        .find(|&x| x.mv.to_csa_string(&pos) == "4453KI")
-        .is_some());
+        .any(|x| x.mv.to_csa_string(&pos) == "4453KI"));
     assert!(mlist
         .slice(0)
         .iter()
-        .find(|&x| x.mv.to_csa_string(&pos) == "5453TO")
-        .is_some());
+        .any(|x| x.mv.to_csa_string(&pos) == "5453TO"));
     assert!(mlist
         .slice(0)
         .iter()
-        .find(|&x| x.mv.to_csa_string(&pos) == "6453NG")
-        .is_some());
+        .any(|x| x.mv.to_csa_string(&pos) == "6453NG"));
     assert!(mlist
         .slice(0)
         .iter()
-        .find(|&x| x.mv.to_csa_string(&pos) == "6553NK")
-        .is_some());
+        .any(|x| x.mv.to_csa_string(&pos) == "6553NK"));
     assert!(mlist
         .slice(0)
         .iter()
-        .find(|&x| x.mv.to_csa_string(&pos) == "7153UM")
-        .is_some());
+        .any(|x| x.mv.to_csa_string(&pos) == "7153UM"));
     assert!(mlist
         .slice(0)
         .iter()
-        .find(|&x| x.mv.to_csa_string(&pos) == "5153RY")
-        .is_some());
+        .any(|x| x.mv.to_csa_string(&pos) == "5153RY"));
     assert!(mlist
         .slice(0)
         .iter()
-        .find(|&x| x.mv.to_csa_string(&pos) == "4353RY")
-        .is_some());
+        .any(|x| x.mv.to_csa_string(&pos) == "4353RY"));
     assert!(mlist
         .slice(0)
         .iter()
-        .find(|&x| x.mv.to_csa_string(&pos) == "3153UM")
-        .is_some());
-    assert!(mlist
+        .any(|x| x.mv.to_csa_string(&pos) == "3153UM"));
+    assert!(!mlist
         .slice(0)
-        .iter()
-        .find(|&x| x.mv.to_csa_string(&pos) == "7153KA")
-        .is_none());
-    assert!(mlist
+        .iter().any(|x| x.mv.to_csa_string(&pos) == "7153KA"));
+    assert!(!mlist
         .slice(0)
-        .iter()
-        .find(|&x| x.mv.to_csa_string(&pos) == "6553KE")
-        .is_none());
-    assert!(mlist
+        .iter().any(|x| x.mv.to_csa_string(&pos) == "6553KE"));
+    assert!(!mlist
         .slice(0)
-        .iter()
-        .find(|&x| x.mv.to_csa_string(&pos) == "5453FU")
-        .is_none());
-    assert!(mlist
+        .iter().any(|x| x.mv.to_csa_string(&pos) == "5453FU"));
+    assert!(!mlist
         .slice(0)
-        .iter()
-        .find(|&x| x.mv.to_csa_string(&pos) == "6453GI")
-        .is_none());
+        .iter().any(|x| x.mv.to_csa_string(&pos) == "6453GI"));
 }
 #[test]
 fn test_generate_drop() {
@@ -1167,9 +1151,8 @@ fn test_generate_drop() {
     assert!(mlist
         .slice(0)
         .iter()
-        .find(|&x| x.mv.to_csa_string(&pos) == "0081FU")
-        .is_some());
-    assert!(Move::new_from_csa_str(&"0081FU", &pos).is_some());
+        .any(|x| x.mv.to_csa_string(&pos) == "0081FU"));
+    assert!(Move::new_from_csa_str("0081FU", &pos).is_some());
 
     let sfen = "ln3G2l/7k1/3pgsn2/2p2bpp1/p4p3/3sSbn1P/P2P1GPP1/2+r3S1K/L3RG1NL w P6p 106";
     let pos = Position::new_from_sfen(sfen).unwrap();
@@ -1179,9 +1162,8 @@ fn test_generate_drop() {
     assert!(mlist
         .slice(0)
         .iter()
-        .find(|&x| x.mv.to_csa_string(&pos) == "0017FU")
-        .is_some());
-    assert!(Move::new_from_csa_str(&"0017FU", &pos).is_some());
+        .any(|x| x.mv.to_csa_string(&pos) == "0017FU"));
+    assert!(Move::new_from_csa_str("0017FU", &pos).is_some());
 }
 #[test]
 fn test_generate_evasion() {
@@ -1257,11 +1239,9 @@ fn test_pawn_drop_mate() {
     let pos = Position::new_from_sfen(sfen).unwrap();
     let mut mlist = MoveList::new();
     mlist.generate_all::<NonEvasionsType>(&pos, 0);
-    assert!(mlist
+    assert!(!mlist
         .slice(0)
-        .iter()
-        .find(|&x| x.mv.to_csa_string(&pos) == "0092FU")
-        .is_none());
+        .iter().any(|x| x.mv.to_csa_string(&pos) == "0092FU"));
 }
 
 #[test]
