@@ -1903,7 +1903,7 @@ fn test_start_thinking() {
             #[cfg(feature = "kppt")]
             ehash.resize(16, &mut thread_pool);
             #[cfg(feature = "kppt")]
-            if let Ok(_) = load_evaluate_files(&usi_options.get_string(UsiOptions::EVAL_DIR)) {
+            if load_evaluate_files(&usi_options.get_string(UsiOptions::EVAL_DIR)).is_ok() {
                 let limits = {
                     let mut limits = LimitsType::new();
                     limits.depth = Some(1);
