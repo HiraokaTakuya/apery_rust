@@ -766,6 +766,10 @@ impl Thread {
             if pv_node && depth >= Depth(6) && tt_move.is_none() {
                 depth -= Depth(2);
             }
+
+            if cut_node && depth >= Depth(9) && tt_move.is_none() {
+                depth -= Depth::ONE_PLY;
+            }
         }
 
         let tt_capture = tt_move.is_some()
