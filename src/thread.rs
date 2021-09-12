@@ -651,7 +651,7 @@ impl Thread {
                 && eval >= beta
                 && eval >= get_stack(stack, 0).static_eval
                 && get_stack(stack, 0).static_eval.0
-                    >= beta.0 - 20 * depth.0 - 22 * i32::from(improving) + 168 * i32::from(get_stack(stack, 0).tt_pv) + 159
+                    >= beta.0 - 20 * depth.0 - 22 * i32::from(improving) + 168 * i32::from(get_stack(stack, 0).tt_pv) + 177
                 && excluded_move.is_none()
                 && (get_stack(stack, 0).ply >= self.null_move_pruning_min_ply || us != self.null_move_pruning_color)
             {
@@ -889,7 +889,7 @@ impl Thread {
                     }
                     if !get_stack(stack, 0).in_check
                         && lmr_depth.0 < 7
-                        && get_stack(stack, 0).static_eval.0 + 174 + 157 * lmr_depth.0 <= alpha.0
+                        && get_stack(stack, 0).static_eval.0 + 172 + 157 * lmr_depth.0 <= alpha.0
                     {
                         continue;
                     }
