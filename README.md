@@ -45,6 +45,17 @@ cargo build --release --no-default-features --features "material"
 
 ## Install
 
+1. Install rustup and cargo
+
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
+See detail.
+[https://www.rust-lang.org/tools/install](https://www.rust-lang.org/tools/install)
+
+2. Install apery
+
 ```bash
 cargo install --git https://github.com/HiraokaTakuya/apery_rust.git
 ```
