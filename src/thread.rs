@@ -890,6 +890,7 @@ impl Thread {
                     if !get_stack(stack, 0).in_check
                         && lmr_depth.0 < 7
                         && get_stack(stack, 0).static_eval.0 + 172 + 157 * lmr_depth.0 <= alpha.0
+                        // This process is not done by Stockfish.
                         && unsafe { (*cont_hists[0]).get(to, piece_moved_after_move) }
                             + unsafe { (*cont_hists[1]).get(to, piece_moved_after_move) }
                             + unsafe { (*cont_hists[3]).get(to, piece_moved_after_move) }
