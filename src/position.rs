@@ -1606,6 +1606,11 @@ impl Position {
     pub fn nodes_searched(&self) -> i64 {
         (*self.nodes).load(Ordering::Relaxed)
     }
+    pub fn is_pinned_illegal(&self, color_of_king: Color, from: Square, to: Square) -> bool {
+        debug_assert_eq!(Color::new(self.piece_on(from)), color_of_king);
+        (unsafe { (*self.st().check_info.as_ptr()).blockers_for_king(color_of_king).is_set(from) })
+            && !is_aligned_and_sq2_is_not_between_sq0_and_sq1(from, to, self.king_square(color_of_king))
+    }
     pub fn gives_check(&self, m: Move) -> bool {
         let to = m.to();
         if m.is_drop() {
@@ -2118,7 +2123,8 @@ impl Position {
         }
         None
     }
-    pub fn mate_move_in_1ply(&self) -> Option<Move> {
+    #[allow(dead_code)]
+    pub fn mate_move_in_1ply_slow(&self) -> Option<Move> {
         let us = self.side_to_move();
         let hand = self.hand(us);
         if hand.exist(PieceType::GOLD) {
@@ -2150,6 +2156,150 @@ impl Position {
                 return Some(m);
             }
         }
+        if let Some(m) = self.mate_non_drop_move_in_1ply::<False>(us) {
+            return Some(m);
+        }
+        if let Some(m) = self.mate_non_drop_move_in_1ply::<True>(us) {
+            return Some(m);
+        }
+        None
+    }
+    pub fn mate_move_in_1ply(&self) -> Option<Move> {
+        let us = self.side_to_move();
+        let them = us.inverse();
+        let ksq = self.king_square(them);
+
+        // drop
+        let drop_target = self.empty_bb();
+        let hand = self.hand(us);
+
+        fn is_king_escapable(
+            pos: &Position,
+            color_of_attacker: Color,
+            attacker_sq: Square,
+            effect_of_attacker: &Bitboard,
+        ) -> bool {
+            let color_of_king = color_of_attacker.inverse();
+            let ksq = pos.king_square(color_of_king);
+            let mut king_escape_candidates = ATTACK_TABLE.king.attack(ksq) & !pos.pieces_c(color_of_king) & !*effect_of_attacker;
+            king_escape_candidates.clear(attacker_sq);
+            if king_escape_candidates.to_bool() {
+                let mut occupied = pos.occupied_bb();
+                occupied.set(attacker_sq);
+                occupied.clear(ksq);
+                loop {
+                    let to = king_escape_candidates.pop_lsb_unchecked();
+                    if !pos.attackers_to(color_of_attacker, to, &occupied).to_bool() {
+                        return true;
+                    }
+                    if !king_escape_candidates.to_bool() {
+                        break;
+                    }
+                }
+            }
+            false
+        }
+
+        fn is_attacker_capturable(pos: &Position, color_of_attacker: Color, attacker_sq: Square) -> bool {
+            let color_of_king = color_of_attacker.inverse();
+            for from in pos.attackers_to_except_king(color_of_king, attacker_sq, &pos.occupied_bb()) {
+                if !pos.is_pinned_illegal(color_of_king, from, attacker_sq) {
+                    return true;
+                }
+            }
+            false
+        }
+
+        if hand.exist(PieceType::ROOK) {
+            // king neighbor
+            let to_bb = drop_target & ATTACK_TABLE.rook.magic(ksq).attack(&Bitboard::ALL);
+            for to in to_bb {
+                if self.attackers_to(us, to, &self.occupied_bb()).to_bool()
+                    && !is_king_escapable(self, us, to, &ATTACK_TABLE.rook.magic(to).pseudo_attack())
+                    && !is_attacker_capturable(self, us, to)
+                {
+                    return Some(Move::new_drop(Piece::new(us, PieceType::ROOK), to));
+                }
+            }
+        } else if hand.exist(PieceType::LANCE) && Rank::new(ksq).is_in_front_of(us, RankAsBlack::RANK9) {
+            let delta = if us == Color::BLACK {
+                Square::DELTA_S
+            } else {
+                Square::DELTA_N
+            };
+            let to = ksq.add_unchecked(delta);
+            if self.piece_on(to) == Piece::EMPTY
+                && self.attackers_to(us, to, &self.occupied_bb()).to_bool()
+                && !is_king_escapable(self, us, to, &Bitboard::file_mask(File::new(to)))
+                && !is_attacker_capturable(self, us, to)
+            {
+                return Some(Move::new_drop(Piece::new(us, PieceType::LANCE), to));
+            }
+        }
+
+        if hand.exist(PieceType::BISHOP) {
+            let to_bb = drop_target & ATTACK_TABLE.bishop.magic(ksq).attack(&Bitboard::ALL);
+            for to in to_bb {
+                if self.attackers_to(us, to, &self.occupied_bb()).to_bool()
+                    && !is_king_escapable(self, us, to, &ATTACK_TABLE.bishop.magic(to).pseudo_attack())
+                    && !is_attacker_capturable(self, us, to)
+                {
+                    return Some(Move::new_drop(Piece::new(us, PieceType::BISHOP), to));
+                }
+            }
+        }
+
+        if hand.exist(PieceType::GOLD) {
+            let to_bb = if hand.exist(PieceType::ROOK) {
+                drop_target & (ATTACK_TABLE.gold.attack(them, ksq) ^ ATTACK_TABLE.pawn.attack(us, ksq))
+            } else {
+                drop_target & ATTACK_TABLE.gold.attack(them, ksq)
+            };
+            for to in to_bb {
+                if self.attackers_to(us, to, &self.occupied_bb()).to_bool()
+                    && !is_king_escapable(self, us, to, &ATTACK_TABLE.gold.attack(us, to))
+                    && !is_attacker_capturable(self, us, to)
+                {
+                    return Some(Move::new_drop(Piece::new(us, PieceType::GOLD), to));
+                }
+            }
+        }
+
+        #[allow(clippy::never_loop)] // pseudo goto.
+        loop {
+            if hand.exist(PieceType::SILVER) {
+                let to_bb = if hand.exist(PieceType::GOLD) {
+                    if hand.exist(PieceType::BISHOP) {
+                        // no need to check drop silver.
+                        break;
+                    }
+                    drop_target & (ATTACK_TABLE.silver.attack(them, ksq) & Bitboard::in_front_mask(us, Rank::new(ksq)))
+                } else if hand.exist(PieceType::BISHOP) {
+                    drop_target & (ATTACK_TABLE.silver.attack(them, ksq) & ATTACK_TABLE.gold.attack(them, ksq))
+                } else {
+                    drop_target & ATTACK_TABLE.silver.attack(them, ksq)
+                };
+                for to in to_bb {
+                    if self.attackers_to(us, to, &self.occupied_bb()).to_bool()
+                        && !is_king_escapable(self, us, to, &ATTACK_TABLE.silver.attack(us, to))
+                        && !is_attacker_capturable(self, us, to)
+                    {
+                        return Some(Move::new_drop(Piece::new(us, PieceType::SILVER), to));
+                    }
+                }
+            }
+            break;
+        }
+
+        if hand.exist(PieceType::KNIGHT) {
+            let to_bb = drop_target & ATTACK_TABLE.knight.attack(them, ksq);
+            for to in to_bb {
+                if !is_king_escapable(self, us, to, &Bitboard::ZERO) && !is_attacker_capturable(self, us, to) {
+                    return Some(Move::new_drop(Piece::new(us, PieceType::KNIGHT), to));
+                }
+            }
+        }
+
         if let Some(m) = self.mate_non_drop_move_in_1ply::<False>(us) {
             return Some(m);
         }
