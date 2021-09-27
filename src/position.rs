@@ -811,20 +811,21 @@ impl PositionBase {
     }
     // sliders can be self.pieces_c(Color)
     // return (blockers of both colors, pinners)
-    pub fn slider_blockers_and_pinners(&self, sliders: &Bitboard, color_of_sliders: Color, sq: Square) -> (Bitboard, Bitboard) {
+    pub fn slider_blockers_and_pinners(&self, sliders: &Bitboard, color_of_sliders: Color, ksq: Square) -> (Bitboard, Bitboard) {
         let opp_of_sliders = color_of_sliders.inverse();
+        debug_assert_eq!(opp_of_sliders, Color::new(self.piece_on(ksq)));
         let mut blockers = Bitboard::ZERO;
         let mut pinners = Bitboard::ZERO;
-        let snipers = ((ATTACK_TABLE.lance.pseudo_attack(opp_of_sliders, sq) & self.pieces_p(PieceType::LANCE))
-            | (ATTACK_TABLE.bishop.magic(sq).pseudo_attack() & self.pieces_pp(PieceType::BISHOP, PieceType::HORSE))
-            | (ATTACK_TABLE.rook.magic(sq).pseudo_attack() & self.pieces_pp(PieceType::ROOK, PieceType::DRAGON)))
+        let snipers = ((ATTACK_TABLE.lance.pseudo_attack(opp_of_sliders, ksq) & self.pieces_p(PieceType::LANCE))
+            | (ATTACK_TABLE.bishop.magic(ksq).pseudo_attack() & self.pieces_pp(PieceType::BISHOP, PieceType::HORSE))
+            | (ATTACK_TABLE.rook.magic(ksq).pseudo_attack() & self.pieces_pp(PieceType::ROOK, PieceType::DRAGON)))
             & *sliders;
 
         for sq_of_sniper in snipers {
-            let pseudo_blockers = Bitboard::between_mask(sq, sq_of_sniper) & self.occupied_bb();
+            let pseudo_blockers = Bitboard::between_mask(ksq, sq_of_sniper) & self.occupied_bb();
             if pseudo_blockers.count_ones() == 1 {
                 blockers |= pseudo_blockers;
-                if (pseudo_blockers & self.pieces_c(Color::new(self.piece_on(sq)))).to_bool() {
+                if (pseudo_blockers & self.pieces_c(opp_of_sliders)).to_bool() {
                     pinners.set(sq_of_sniper);
                 }
             }
@@ -1116,8 +1117,8 @@ impl Position {
     }
     #[allow(dead_code)]
     #[inline]
-    pub fn slider_blockers_and_pinners(&self, sliders: &Bitboard, color_of_sliders: Color, sq: Square) -> (Bitboard, Bitboard) {
-        self.base.slider_blockers_and_pinners(sliders, color_of_sliders, sq)
+    pub fn slider_blockers_and_pinners(&self, sliders: &Bitboard, color_of_sliders: Color, ksq: Square) -> (Bitboard, Bitboard) {
+        self.base.slider_blockers_and_pinners(sliders, color_of_sliders, ksq)
     }
     pub fn blockers_for_king(&self, color_of_king: Color) -> Bitboard {
         unsafe { (*self.st().check_info.as_ptr()).blockers_for_king(color_of_king) }
