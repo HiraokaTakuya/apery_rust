@@ -1442,22 +1442,22 @@ impl Position {
         if !self.attackers_to(color_of_pawn, sq_of_pawn, &self.occupied_bb()).to_bool() {
             return false; // The pawn has no followers. king can capture the pawn.
         }
-        let color_of_difence = color_of_pawn.inverse();
+        let color_of_defense = color_of_pawn.inverse();
         // other piece's capture.
         // king: NG (recapture)
         // pawn: NG (can not capture)
         // lance: NG (can not capture)
-        let capture_candidates = self.attackers_to_except_king_lance_pawn(color_of_difence, sq_of_pawn, &self.occupied_bb());
+        let capture_candidates = self.attackers_to_except_king_lance_pawn(color_of_defense, sq_of_pawn, &self.occupied_bb());
         let pawn_file = File::new(sq_of_pawn);
-        let pinned = self.blockers_for_king(color_of_difence);
+        let pinned = self.blockers_for_king(color_of_defense);
         let not_pinned_for_pawn_capture = !pinned | Bitboard::file_mask(pawn_file);
         let can_captures = capture_candidates & not_pinned_for_pawn_capture;
         if can_captures.to_bool() {
             return false;
         }
         // king escapes
-        let ksq = self.king_square(color_of_difence);
-        let mut king_escape_candidates = ATTACK_TABLE.king.attack(ksq) & !self.pieces_c(color_of_difence);
+        let ksq = self.king_square(color_of_defense);
+        let mut king_escape_candidates = ATTACK_TABLE.king.attack(ksq) & !self.pieces_c(color_of_defense);
         debug_assert!(king_escape_candidates.is_set(sq_of_pawn));
         king_escape_candidates ^= Bitboard::square_mask(sq_of_pawn); // more faster than Bitboard::clear()
         let occupied_after_drop_pawn = self.occupied_bb() ^ Bitboard::square_mask(sq_of_pawn);
