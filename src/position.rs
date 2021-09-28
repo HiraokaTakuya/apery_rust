@@ -57,8 +57,8 @@ impl CheckInfo {
         let gold_check_squares = ATTACK_TABLE.gold.attack(them, ksq);
         CheckInfo {
             blockers_and_pinners_for_king: [
-                pos.slider_blockers_and_pinners(&pos.pieces_c(Color::WHITE), Color::WHITE, pos.king_square(Color::BLACK)),
-                pos.slider_blockers_and_pinners(&pos.pieces_c(Color::BLACK), Color::BLACK, pos.king_square(Color::WHITE)),
+                pos.slider_blockers_and_pinners(Color::WHITE, pos.king_square(Color::BLACK)),
+                pos.slider_blockers_and_pinners(Color::BLACK, pos.king_square(Color::WHITE)),
             ],
             check_squares: [
                 Bitboard::ZERO,                                           // PieceType::OCCUPIED
@@ -811,7 +811,7 @@ impl PositionBase {
     }
     // sliders can be self.pieces_c(Color)
     // return (blockers of both colors, pinners)
-    pub fn slider_blockers_and_pinners(&self, sliders: &Bitboard, color_of_sliders: Color, ksq: Square) -> (Bitboard, Bitboard) {
+    pub fn slider_blockers_and_pinners(&self, color_of_sliders: Color, ksq: Square) -> (Bitboard, Bitboard) {
         let opp_of_sliders = color_of_sliders.inverse();
         debug_assert_eq!(opp_of_sliders, Color::new(self.piece_on(ksq)));
         let mut blockers = Bitboard::ZERO;
@@ -819,7 +819,7 @@ impl PositionBase {
         let snipers = ((ATTACK_TABLE.lance.pseudo_attack(opp_of_sliders, ksq) & self.pieces_p(PieceType::LANCE))
             | (ATTACK_TABLE.bishop.magic(ksq).pseudo_attack() & self.pieces_pp(PieceType::BISHOP, PieceType::HORSE))
             | (ATTACK_TABLE.rook.magic(ksq).pseudo_attack() & self.pieces_pp(PieceType::ROOK, PieceType::DRAGON)))
-            & *sliders;
+            & self.pieces_c(color_of_sliders);
 
         for sq_of_sniper in snipers {
             let pseudo_blockers = Bitboard::between_mask(ksq, sq_of_sniper) & self.occupied_bb();
@@ -1117,8 +1117,8 @@ impl Position {
     }
     #[allow(dead_code)]
     #[inline]
-    pub fn slider_blockers_and_pinners(&self, sliders: &Bitboard, color_of_sliders: Color, ksq: Square) -> (Bitboard, Bitboard) {
-        self.base.slider_blockers_and_pinners(sliders, color_of_sliders, ksq)
+    pub fn slider_blockers_and_pinners(&self, color_of_sliders: Color, ksq: Square) -> (Bitboard, Bitboard) {
+        self.base.slider_blockers_and_pinners(color_of_sliders, ksq)
     }
     pub fn blockers_for_king(&self, color_of_king: Color) -> Bitboard {
         unsafe { (*self.st().check_info.as_ptr()).blockers_for_king(color_of_king) }
@@ -1972,7 +1972,7 @@ impl Position {
                         pos_base.exchange_pieces(pc, to);
                     }
                     pos_base.set_golds_bb();
-                    let (blockers, _pinners) = pos_base.slider_blockers_and_pinners(&pos_base.pieces_c(us), us, ksq);
+                    let (blockers, _pinners) = pos_base.slider_blockers_and_pinners(us, ksq);
                     let king_escape_candidates = ATTACK_TABLE.king.attack(ksq) & !pos_base.pieces_c(them);
                     for escape_sq in king_escape_candidates {
                         if !pos_base
@@ -2015,7 +2015,7 @@ impl Position {
                         pos_base.exchange_pieces(pc, to);
                     }
                     pos_base.set_golds_bb();
-                    let (blockers, _pinners) = pos_base.slider_blockers_and_pinners(&pos_base.pieces_c(us), us, ksq);
+                    let (blockers, _pinners) = pos_base.slider_blockers_and_pinners(us, ksq);
                     let pt = PieceType::new(pc);
                     let rank_from = Rank::new(from);
                     let rank_to = Rank::new(to);
@@ -2557,8 +2557,7 @@ fn test_position_slider_blockers() {
     match Position::new_from_sfen(sfen) {
         Ok(pos) => {
             assert_eq!(pos.to_sfen(), sfen.to_string());
-            let blockers_and_pinners_for_king =
-                pos.slider_blockers_and_pinners(&pos.pieces_c(Color::WHITE), Color::WHITE, pos.king_square(Color::BLACK));
+            let blockers_and_pinners_for_king = pos.slider_blockers_and_pinners(Color::WHITE, pos.king_square(Color::BLACK));
             assert_eq!(blockers_and_pinners_for_king.0, Bitboard::square_mask(Square::SQ53));
             assert_eq!(blockers_and_pinners_for_king.1, Bitboard::square_mask(Square::SQ52));
         }
