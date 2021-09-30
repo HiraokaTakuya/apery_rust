@@ -809,11 +809,17 @@ impl PositionBase {
             | (ATTACK_TABLE.rook.magic(to).attack(occupied) & (self.pieces_pp(PieceType::ROOK, PieceType::DRAGON)))
             | (ATTACK_TABLE.king.attack(to) & (self.pieces_ppp(PieceType::KING, PieceType::HORSE, PieceType::DRAGON)))
     }
-    // sliders can be self.pieces_c(Color)
-    // return (blockers of both colors, pinners)
+    /// "sliders" have long effect. For example, rook, bishop, lance, dragon, horse.  
+    /// "ksq" is the king position.  
+    /// "snipers" are pieces on the other side of the king in the ksq position and have long effect to ksq regardless of whether there are pieces between snipers and ksq.  
+    /// Each "blocker" is the only piece between each sniper and ksq.  
+    /// "pin" is a condition in which a piece on the ksq side prevents the snipers from getting to ksq, and the pinned piece is restricted in its direction of movement.  
+    /// "pinners" are the snipers who are creating the pin state.  
+    /// This function returns blockers and pinners.
     pub fn slider_blockers_and_pinners(&self, color_of_sliders: Color, ksq: Square) -> (Bitboard, Bitboard) {
+        debug_assert_ne!(color_of_sliders, Color::new(self.piece_on(ksq)));
+
         let opp_of_sliders = color_of_sliders.inverse();
-        debug_assert_eq!(opp_of_sliders, Color::new(self.piece_on(ksq)));
         let mut blockers = Bitboard::ZERO;
         let mut pinners = Bitboard::ZERO;
         let snipers = ((ATTACK_TABLE.lance.pseudo_attack(opp_of_sliders, ksq) & self.pieces_p(PieceType::LANCE))
