@@ -823,8 +823,8 @@ impl PositionBase {
         let mut blockers = Bitboard::ZERO;
         let mut pinners = Bitboard::ZERO;
         let snipers = ((ATTACK_TABLE.lance.pseudo_attack(opp_of_sliders, ksq) & self.pieces_p(PieceType::LANCE))
-            | (ATTACK_TABLE.bishop.magic(ksq).pseudo_attack() & self.pieces_pp(PieceType::BISHOP, PieceType::HORSE))
-            | (ATTACK_TABLE.rook.magic(ksq).pseudo_attack() & self.pieces_pp(PieceType::ROOK, PieceType::DRAGON)))
+            | (ATTACK_TABLE.bishop_pseudo_attack(ksq) & self.pieces_pp(PieceType::BISHOP, PieceType::HORSE))
+            | (ATTACK_TABLE.rook_pseudo_attack(ksq) & self.pieces_pp(PieceType::ROOK, PieceType::DRAGON)))
             & self.pieces_c(color_of_sliders);
 
         for sq_of_sniper in snipers {
@@ -1893,16 +1893,16 @@ impl Position {
             PieceType::GOLD | PieceType::PRO_PAWN | PieceType::PRO_LANCE | PieceType::PRO_KNIGHT | PieceType::PRO_SILVER => {
                 ATTACK_TABLE.gold.attack(checker_color, checker_sq)
             }
-            PieceType::BISHOP => ATTACK_TABLE.bishop.magic(checker_sq).pseudo_attack(),
-            PieceType::HORSE => ATTACK_TABLE.bishop.magic(checker_sq).pseudo_attack() | ATTACK_TABLE.king.attack(checker_sq),
-            PieceType::ROOK => ATTACK_TABLE.rook.magic(checker_sq).pseudo_attack(),
+            PieceType::BISHOP => ATTACK_TABLE.bishop_pseudo_attack(checker_sq),
+            PieceType::HORSE => ATTACK_TABLE.horse_pseudo_attack(checker_sq),
+            PieceType::ROOK => ATTACK_TABLE.rook_pseudo_attack(checker_sq),
             PieceType::DRAGON => {
                 let opp_king_color = checker_color.inverse();
                 let opp_king_sq = self.king_square(opp_king_color);
                 if Relation::new(opp_king_sq, checker_sq).is_diag() {
-                    ATTACK_TABLE.rook.magic(checker_sq).attack(occupied) | ATTACK_TABLE.king.attack(checker_sq)
+                    ATTACK_TABLE.dragon_attack(checker_sq, occupied)
                 } else {
-                    ATTACK_TABLE.rook.magic(checker_sq).pseudo_attack() | ATTACK_TABLE.king.attack(checker_sq)
+                    ATTACK_TABLE.dragon_pseudo_attack(checker_sq)
                 }
             }
             _ => unreachable!(),
@@ -1920,8 +1920,8 @@ impl Position {
                 PieceType::KNIGHT => Bitboard::ZERO,
                 PieceType::SILVER => ATTACK_TABLE.silver.attack(dropped_color, dropped_sq),
                 PieceType::GOLD => ATTACK_TABLE.gold.attack(dropped_color, dropped_sq),
-                PieceType::BISHOP => ATTACK_TABLE.bishop.magic(dropped_sq).pseudo_attack(),
-                PieceType::ROOK => ATTACK_TABLE.rook.magic(dropped_sq).pseudo_attack(),
+                PieceType::BISHOP => ATTACK_TABLE.bishop_pseudo_attack(dropped_sq),
+                PieceType::ROOK => ATTACK_TABLE.rook_pseudo_attack(dropped_sq),
                 _ => unreachable!(),
             }
         }
@@ -2221,7 +2221,7 @@ impl Position {
             let to_bb = drop_target & ATTACK_TABLE.rook.magic(ksq).attack(&Bitboard::ALL);
             for to in to_bb {
                 if self.attackers_to(us, to, &self.occupied_bb()).to_bool()
-                    && !is_king_escapable(self, us, to, &ATTACK_TABLE.rook.magic(to).pseudo_attack())
+                    && !is_king_escapable(self, us, to, &ATTACK_TABLE.rook_pseudo_attack(to))
                     && !is_attacker_capturable(self, us, to)
                 {
                     return Some(Move::new_drop(Piece::new(us, PieceType::ROOK), to));
@@ -2247,7 +2247,7 @@ impl Position {
             let to_bb = drop_target & ATTACK_TABLE.bishop.magic(ksq).attack(&Bitboard::ALL);
             for to in to_bb {
                 if self.attackers_to(us, to, &self.occupied_bb()).to_bool()
-                    && !is_king_escapable(self, us, to, &ATTACK_TABLE.bishop.magic(to).pseudo_attack())
+                    && !is_king_escapable(self, us, to, &ATTACK_TABLE.bishop_pseudo_attack(to))
                     && !is_attacker_capturable(self, us, to)
                 {
                     return Some(Move::new_drop(Piece::new(us, PieceType::BISHOP), to));

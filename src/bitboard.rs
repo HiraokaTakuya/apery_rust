@@ -594,7 +594,7 @@ impl<'a> Magic<'a> {
         }
     }
 
-    pub fn pseudo_attack(&self) -> Bitboard {
+    fn pseudo_attack(&self) -> Bitboard {
         debug_assert!(!self.attacks.is_empty());
         unsafe { *self.attacks.get_unchecked(0) }
     }
@@ -932,10 +932,34 @@ impl<'a> AttackTable<'a> {
                 self.gold.attack(c, sq)
             }
             PieceType::KING => self.king.attack(sq),
-            PieceType::HORSE => self.bishop.magic(sq).attack(occupied) | self.king.attack(sq),
-            PieceType::DRAGON => self.rook.magic(sq).attack(occupied) | self.king.attack(sq),
+            PieceType::HORSE => self.horse_attack(sq, occupied),
+            PieceType::DRAGON => self.dragon_attack(sq, occupied),
             _ => unreachable!(),
         }
+    }
+    #[inline]
+    pub fn horse_attack(&self, sq: Square, occupied: &Bitboard) -> Bitboard {
+        self.bishop.magic(sq).attack(occupied) | self.king.attack(sq)
+    }
+    #[inline]
+    pub fn dragon_attack(&self, sq: Square, occupied: &Bitboard) -> Bitboard {
+        self.rook.magic(sq).attack(occupied) | self.king.attack(sq)
+    }
+    #[inline]
+    pub fn bishop_pseudo_attack(&self, sq: Square) -> Bitboard {
+        self.bishop.magic(sq).pseudo_attack()
+    }
+    #[inline]
+    pub fn rook_pseudo_attack(&self, sq: Square) -> Bitboard {
+        self.rook.magic(sq).pseudo_attack()
+    }
+    #[inline]
+    pub fn horse_pseudo_attack(&self, sq: Square) -> Bitboard {
+        self.bishop_pseudo_attack(sq) | self.king.attack(sq)
+    }
+    #[inline]
+    pub fn dragon_pseudo_attack(&self, sq: Square) -> Bitboard {
+        self.rook_pseudo_attack(sq) | self.king.attack(sq)
     }
 }
 
