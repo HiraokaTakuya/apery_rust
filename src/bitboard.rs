@@ -141,6 +141,10 @@ impl Bitboard {
     pub fn notand(self, other: Bitboard) -> Bitboard {
         (!self) & other
     }
+    #[allow(dead_code)]
+    pub fn and_equal_not(&mut self, other: Bitboard) {
+        *self &= !other;
+    }
     pub fn to_bool(self) -> bool {
         self.merge() != 0
     }
@@ -944,6 +948,14 @@ impl<'a> AttackTable<'a> {
     #[inline]
     pub fn dragon_attack(&self, sq: Square, occupied: &Bitboard) -> Bitboard {
         self.rook.magic(sq).attack(occupied) | self.king.attack(sq)
+    }
+    #[inline]
+    pub fn bishop_step_attack(&self, sq: Square) -> Bitboard {
+        self.silver.attack(Color::BLACK, sq) & self.silver.attack(Color::WHITE, sq)
+    }
+    #[inline]
+    pub fn rook_step_attack(&self, sq: Square) -> Bitboard {
+        self.gold.attack(Color::BLACK, sq) & self.gold.attack(Color::WHITE, sq)
     }
     #[inline]
     pub fn bishop_pseudo_attack(&self, sq: Square) -> Bitboard {

@@ -1081,6 +1081,10 @@ impl Position {
         self.base.king_square(c)
     }
     #[inline]
+    fn xor_bbs(&mut self, c: Color, pt: PieceType, sq: Square) {
+        self.base.xor_bbs(c, pt, sq)
+    }
+    #[inline]
     pub fn attackers_to(&self, color_of_attackers: Color, to: Square, occupied: &Bitboard) -> Bitboard {
         self.base.attackers_to(color_of_attackers, to, occupied)
     }
@@ -1613,9 +1617,11 @@ impl Position {
         (*self.nodes).load(Ordering::Relaxed)
     }
     pub fn is_pinned_illegal(&self, color_of_king: Color, from: Square, to: Square) -> bool {
-        debug_assert_eq!(Color::new(self.piece_on(from)), color_of_king);
         (unsafe { (*self.st().check_info.as_ptr()).blockers_for_king(color_of_king).is_set(from) })
             && !is_aligned_and_sq2_is_not_between_sq0_and_sq1(from, to, self.king_square(color_of_king))
+    }
+    pub fn is_pinned_illegal_for_knight(&self, color_of_king: Color, from: Square) -> bool {
+        unsafe { (*self.st().check_info.as_ptr()).blockers_for_king(color_of_king).is_set(from) }
     }
     pub fn gives_check(&self, m: Move) -> bool {
         let to = m.to();
@@ -2170,7 +2176,7 @@ impl Position {
         }
         None
     }
-    pub fn mate_move_in_1ply(&self) -> Option<Move> {
+    pub fn mate_move_in_1ply(&mut self) -> Option<Move> {
         let us = self.side_to_move();
         let them = us.inverse();
         let ksq = self.king_square(them);
@@ -2187,7 +2193,8 @@ impl Position {
         ) -> bool {
             let color_of_king = color_of_attacker.inverse();
             let ksq = pos.king_square(color_of_king);
-            let mut king_escape_candidates = ATTACK_TABLE.king.attack(ksq) & !pos.pieces_c(color_of_king) & !*effect_of_attacker;
+            let mut king_escape_candidates =
+                effect_of_attacker.notand(pos.pieces_c(color_of_king).notand(ATTACK_TABLE.king.attack(ksq)));
             king_escape_candidates.clear(attacker_sq);
             if king_escape_candidates.to_bool() {
                 let mut occupied = pos.occupied_bb();
@@ -2210,6 +2217,24 @@ impl Position {
             let color_of_king = color_of_attacker.inverse();
             for from in pos.attackers_to_except_king(color_of_king, attacker_sq, &pos.occupied_bb()) {
                 if !pos.is_pinned_illegal(color_of_king, from, attacker_sq) {
+                    return true;
+                }
+            }
+            false
+        }
+
+        fn is_attacker_capturable_with_pinned_bitboard(
+            pos: &Position,
+            color_of_attacker: Color,
+            attacker_sq: Square,
+            pinned: &Bitboard,
+        ) -> bool {
+            fn is_pinned_illegal(from: Square, to: Square, ksq: Square, pinned: &Bitboard) -> bool {
+                pinned.is_set(from) && !is_aligned_and_sq2_is_not_between_sq0_and_sq1(from, to, ksq)
+            }
+            let color_of_king = color_of_attacker.inverse();
+            for from in pos.attackers_to_except_king(color_of_king, attacker_sq, &pos.occupied_bb()) {
+                if !is_pinned_illegal(from, attacker_sq, pos.king_square(color_of_king), pinned) {
                     return true;
                 }
             }
@@ -2306,12 +2331,639 @@ impl Position {
             }
         }
 
-        if let Some(m) = self.mate_non_drop_move_in_1ply::<False>(us) {
-            return Some(m);
+        fn is_discovered_check(blockers_of_checkers_side: &Bitboard, from: Square, to: Square, ksq: Square) -> bool {
+            let is_blocker = (*blockers_of_checkers_side & Bitboard::square_mask(from)).to_bool();
+            is_blocker && !is_aligned_and_sq2_is_not_between_sq0_and_sq1(from, to, ksq)
         }
-        if let Some(m) = self.mate_non_drop_move_in_1ply::<True>(us) {
-            return Some(m);
+
+        let move_target = self.pieces_c(us).notand(ATTACK_TABLE.king.attack(ksq));
+        let blockers_of_checkers_side = self.blockers_for_king(them) & self.pieces_c(us);
+
+        // dragon
+        for from in self.pieces_cp(us, PieceType::DRAGON) {
+            let to_bb = move_target & ATTACK_TABLE.dragon_attack(from, &self.occupied_bb());
+            if !to_bb.to_bool() {
+                continue;
+            }
+            self.xor_bbs(us, PieceType::DRAGON, from);
+            let them_pinned = self.slider_blockers_and_pinners(us, ksq).0;
+            for to in to_bb {
+                let is_checker_supported = self.attackers_to(us, to, &self.occupied_bb()).to_bool();
+                if !is_checker_supported {
+                    continue;
+                }
+                if is_king_escapable(
+                    &self,
+                    us,
+                    to,
+                    &(ATTACK_TABLE.dragon_attack(to, &(self.occupied_bb() ^ Bitboard::square_mask(ksq)))),
+                ) {
+                    continue;
+                }
+                if !is_discovered_check(&blockers_of_checkers_side, from, to, ksq)
+                    && is_attacker_capturable_with_pinned_bitboard(self, us, to, &them_pinned)
+                {
+                    continue;
+                }
+                if self.is_pinned_illegal(us, from, to) {
+                    continue;
+                }
+
+                self.xor_bbs(us, PieceType::DRAGON, from);
+                return Some(Move::new_unpromote(from, to, Piece::new(us, PieceType::DRAGON)));
+            }
+            self.xor_bbs(us, PieceType::DRAGON, from);
         }
+
+        let rank_as_black_123 = {
+            let rank = Rank::new_from_color_and_rank_as_black(us, RankAsBlack::RANK4);
+            Bitboard::in_front_mask(us, rank)
+        };
+
+        // rook
+        {
+            let mut from_bb = self.pieces_cp(us, PieceType::ROOK);
+            let from_bb_rank_as_black_123 = from_bb & rank_as_black_123;
+            for from in from_bb_rank_as_black_123 {
+                let to_bb = move_target & ATTACK_TABLE.rook.magic(from).attack(&self.occupied_bb());
+                if !to_bb.to_bool() {
+                    continue;
+                }
+                self.xor_bbs(us, PieceType::ROOK, from);
+                let them_pinned = self.slider_blockers_and_pinners(us, ksq).0;
+                for to in to_bb {
+                    let is_checker_supported = self.attackers_to(us, to, &self.occupied_bb()).to_bool();
+                    if !is_checker_supported {
+                        continue;
+                    }
+                    if is_king_escapable(
+                        &self,
+                        us,
+                        to,
+                        &(ATTACK_TABLE.dragon_attack(to, &(self.occupied_bb() ^ Bitboard::square_mask(ksq)))),
+                    ) {
+                        continue;
+                    }
+                    if !is_discovered_check(&blockers_of_checkers_side, from, to, ksq)
+                        && is_attacker_capturable_with_pinned_bitboard(self, us, to, &them_pinned)
+                    {
+                        continue;
+                    }
+                    if self.is_pinned_illegal(us, from, to) {
+                        continue;
+                    }
+
+                    self.xor_bbs(us, PieceType::ROOK, from);
+                    return Some(Move::new_promote(from, to, Piece::new(us, PieceType::ROOK)));
+                }
+                self.xor_bbs(us, PieceType::ROOK, from);
+            }
+
+            // rank 4-9 as black.
+            from_bb.and_equal_not(from_bb_rank_as_black_123);
+            for from in from_bb {
+                let mut to_bb = move_target
+                    & ATTACK_TABLE.rook.magic(from).attack(&self.occupied_bb())
+                    & (ATTACK_TABLE.rook_step_attack(ksq) | rank_as_black_123);
+                if !to_bb.to_bool() {
+                    continue;
+                }
+                self.xor_bbs(us, PieceType::ROOK, from);
+                let them_pinned = self.slider_blockers_and_pinners(us, ksq).0;
+                let to_bb_rank_as_black_123 = to_bb & rank_as_black_123;
+                for to in to_bb_rank_as_black_123 {
+                    let is_checker_supported = self.attackers_to(us, to, &self.occupied_bb()).to_bool();
+                    if !is_checker_supported {
+                        continue;
+                    }
+                    if is_king_escapable(
+                        &self,
+                        us,
+                        to,
+                        &(ATTACK_TABLE.dragon_attack(to, &(self.occupied_bb() ^ Bitboard::square_mask(ksq)))),
+                    ) {
+                        continue;
+                    }
+                    if !is_discovered_check(&blockers_of_checkers_side, from, to, ksq)
+                        && is_attacker_capturable_with_pinned_bitboard(self, us, to, &them_pinned)
+                    {
+                        continue;
+                    }
+                    if self.is_pinned_illegal(us, from, to) {
+                        continue;
+                    }
+
+                    self.xor_bbs(us, PieceType::ROOK, from);
+                    return Some(Move::new_promote(from, to, Piece::new(us, PieceType::ROOK)));
+                }
+                to_bb.and_equal_not(rank_as_black_123);
+                for to in to_bb {
+                    let is_checker_supported = self.attackers_to(us, to, &self.occupied_bb()).to_bool();
+                    if !is_checker_supported {
+                        continue;
+                    }
+                    if is_king_escapable(&self, us, to, &(ATTACK_TABLE.rook_pseudo_attack(to))) {
+                        continue;
+                    }
+                    if !is_discovered_check(&blockers_of_checkers_side, from, to, ksq)
+                        && is_attacker_capturable_with_pinned_bitboard(self, us, to, &them_pinned)
+                    {
+                        continue;
+                    }
+                    if self.is_pinned_illegal(us, from, to) {
+                        continue;
+                    }
+
+                    self.xor_bbs(us, PieceType::ROOK, from);
+                    return Some(Move::new_unpromote(from, to, Piece::new(us, PieceType::ROOK)));
+                }
+                self.xor_bbs(us, PieceType::ROOK, from);
+            }
+        }
+
+        // horse
+        for from in self.pieces_cp(us, PieceType::HORSE) {
+            let to_bb = move_target & ATTACK_TABLE.horse_attack(from, &self.occupied_bb());
+            if !to_bb.to_bool() {
+                continue;
+            }
+            self.xor_bbs(us, PieceType::HORSE, from);
+            let them_pinned = self.slider_blockers_and_pinners(us, ksq).0;
+            for to in to_bb {
+                let is_checker_supported = self.attackers_to(us, to, &self.occupied_bb()).to_bool();
+                if !is_checker_supported {
+                    continue;
+                }
+                if is_king_escapable(&self, us, to, &(ATTACK_TABLE.horse_pseudo_attack(to))) {
+                    continue;
+                }
+                if !is_discovered_check(&blockers_of_checkers_side, from, to, ksq)
+                    && is_attacker_capturable_with_pinned_bitboard(self, us, to, &them_pinned)
+                {
+                    continue;
+                }
+                if self.is_pinned_illegal(us, from, to) {
+                    continue;
+                }
+
+                self.xor_bbs(us, PieceType::HORSE, from);
+                return Some(Move::new_unpromote(from, to, Piece::new(us, PieceType::HORSE)));
+            }
+            self.xor_bbs(us, PieceType::HORSE, from);
+        }
+
+        // bishop
+        {
+            let mut from_bb = self.pieces_cp(us, PieceType::BISHOP);
+            let from_bb_rank_as_black_123 = from_bb & rank_as_black_123;
+            for from in from_bb_rank_as_black_123 {
+                let to_bb = move_target & ATTACK_TABLE.bishop.magic(from).attack(&self.occupied_bb());
+                if !to_bb.to_bool() {
+                    continue;
+                }
+                self.xor_bbs(us, PieceType::BISHOP, from);
+                let them_pinned = self.slider_blockers_and_pinners(us, ksq).0;
+                for to in to_bb {
+                    let is_checker_supported = self.attackers_to(us, to, &self.occupied_bb()).to_bool();
+                    if !is_checker_supported {
+                        continue;
+                    }
+                    if is_king_escapable(&self, us, to, &ATTACK_TABLE.horse_pseudo_attack(to)) {
+                        continue;
+                    }
+                    if !is_discovered_check(&blockers_of_checkers_side, from, to, ksq)
+                        && is_attacker_capturable_with_pinned_bitboard(self, us, to, &them_pinned)
+                    {
+                        continue;
+                    }
+                    if self.is_pinned_illegal(us, from, to) {
+                        continue;
+                    }
+
+                    self.xor_bbs(us, PieceType::BISHOP, from);
+                    return Some(Move::new_promote(from, to, Piece::new(us, PieceType::BISHOP)));
+                }
+                self.xor_bbs(us, PieceType::BISHOP, from);
+            }
+
+            // rank 4-9 as black.
+            from_bb.and_equal_not(from_bb_rank_as_black_123);
+            for from in from_bb {
+                let mut to_bb = move_target
+                    & ATTACK_TABLE.bishop.magic(from).attack(&self.occupied_bb())
+                    & (ATTACK_TABLE.bishop_step_attack(ksq) | rank_as_black_123);
+                if !to_bb.to_bool() {
+                    continue;
+                }
+                self.xor_bbs(us, PieceType::BISHOP, from);
+                let them_pinned = self.slider_blockers_and_pinners(us, ksq).0;
+                let to_bb_rank_as_black_123 = to_bb & rank_as_black_123;
+                for to in to_bb_rank_as_black_123 {
+                    let is_checker_supported = self.attackers_to(us, to, &self.occupied_bb()).to_bool();
+                    if !is_checker_supported {
+                        continue;
+                    }
+                    if is_king_escapable(&self, us, to, &ATTACK_TABLE.horse_pseudo_attack(to)) {
+                        continue;
+                    }
+                    if !is_discovered_check(&blockers_of_checkers_side, from, to, ksq)
+                        && is_attacker_capturable_with_pinned_bitboard(self, us, to, &them_pinned)
+                    {
+                        continue;
+                    }
+                    if self.is_pinned_illegal(us, from, to) {
+                        continue;
+                    }
+
+                    self.xor_bbs(us, PieceType::BISHOP, from);
+                    return Some(Move::new_promote(from, to, Piece::new(us, PieceType::BISHOP)));
+                }
+                to_bb.and_equal_not(rank_as_black_123);
+                for to in to_bb {
+                    let is_checker_supported = self.attackers_to(us, to, &self.occupied_bb()).to_bool();
+                    if !is_checker_supported {
+                        continue;
+                    }
+                    if is_king_escapable(&self, us, to, &(ATTACK_TABLE.bishop_pseudo_attack(to))) {
+                        continue;
+                    }
+                    if !is_discovered_check(&blockers_of_checkers_side, from, to, ksq)
+                        && is_attacker_capturable_with_pinned_bitboard(self, us, to, &them_pinned)
+                    {
+                        continue;
+                    }
+                    if self.is_pinned_illegal(us, from, to) {
+                        continue;
+                    }
+
+                    self.xor_bbs(us, PieceType::BISHOP, from);
+                    return Some(Move::new_unpromote(from, to, Piece::new(us, PieceType::BISHOP)));
+                }
+                self.xor_bbs(us, PieceType::BISHOP, from);
+            }
+        }
+
+        // gold and promoted-(pawn, lance, knight, silver).
+        for from in self.pieces_golds() & self.pieces_c(us) & Bitboard::proximity_check_mask(Piece::new(us, PieceType::GOLD), ksq)
+        {
+            let to_bb = move_target & ATTACK_TABLE.gold.attack(us, from) & ATTACK_TABLE.gold.attack(them, ksq);
+            if !to_bb.to_bool() {
+                continue;
+            }
+            let pt = PieceType::new(self.piece_on(from));
+            self.xor_bbs(us, pt, from);
+            self.base.golds_bb.xor(from);
+            let them_pinned = self.slider_blockers_and_pinners(us, ksq).0;
+            for to in to_bb {
+                let is_checker_supported = self.attackers_to(us, to, &self.occupied_bb()).to_bool();
+                if !is_checker_supported {
+                    continue;
+                }
+                if is_king_escapable(&self, us, to, &ATTACK_TABLE.gold.attack(us, to)) {
+                    continue;
+                }
+                if !is_discovered_check(&blockers_of_checkers_side, from, to, ksq)
+                    && is_attacker_capturable_with_pinned_bitboard(self, us, to, &them_pinned)
+                {
+                    continue;
+                }
+                if self.is_pinned_illegal(us, from, to) {
+                    continue;
+                }
+
+                self.xor_bbs(us, pt, from);
+                self.base.golds_bb.xor(from);
+                return Some(Move::new_unpromote(from, to, Piece::new(us, PieceType::GOLD)));
+            }
+            self.xor_bbs(us, pt, from);
+            self.base.golds_bb.xor(from);
+        }
+
+        // silver
+        {
+            let from_bb =
+                self.pieces_cp(us, PieceType::SILVER) & Bitboard::proximity_check_mask(Piece::new(us, PieceType::SILVER), ksq);
+            if from_bb.to_bool() {
+                let from_bb_rank_as_black_123 = from_bb & rank_as_black_123;
+                let target_unpromote = ATTACK_TABLE.silver.attack(them, ksq);
+                let target_promote = ATTACK_TABLE.gold.attack(them, ksq);
+                for from in from_bb_rank_as_black_123 {
+                    let to_bb = move_target & ATTACK_TABLE.silver.attack(us, from);
+                    let to_bb_promote = to_bb & target_promote;
+                    // Q. Why is Bitboard::in_front_mask(them, Rank::new(ksq)) used?
+                    // A. In the case of moving to the front of the king,
+                    //    if the king isn't mated with silver-promote,
+                    //    it is also not mated with silver-unpromote.
+                    let to_bb_unpromote = to_bb & Bitboard::in_front_mask(them, Rank::new(ksq)).notand(target_unpromote);
+                    if !(to_bb_promote | to_bb_unpromote).to_bool() {
+                        continue;
+                    }
+                    self.xor_bbs(us, PieceType::SILVER, from);
+                    let them_pinned = self.slider_blockers_and_pinners(us, ksq).0;
+                    for to in to_bb_promote {
+                        let is_checker_supported = self.attackers_to(us, to, &self.occupied_bb()).to_bool();
+                        if !is_checker_supported {
+                            continue;
+                        }
+                        if is_king_escapable(&self, us, to, &ATTACK_TABLE.gold.attack(us, to)) {
+                            continue;
+                        }
+                        if !is_discovered_check(&blockers_of_checkers_side, from, to, ksq)
+                            && is_attacker_capturable_with_pinned_bitboard(self, us, to, &them_pinned)
+                        {
+                            continue;
+                        }
+                        if self.is_pinned_illegal(us, from, to) {
+                            continue;
+                        }
+
+                        self.xor_bbs(us, PieceType::SILVER, from);
+                        return Some(Move::new_promote(from, to, Piece::new(us, PieceType::SILVER)));
+                    }
+                    for to in to_bb_unpromote {
+                        let is_checker_supported = self.attackers_to(us, to, &self.occupied_bb()).to_bool();
+                        if !is_checker_supported {
+                            continue;
+                        }
+                        if is_king_escapable(&self, us, to, &Bitboard::ZERO) {
+                            continue;
+                        }
+                        if !is_discovered_check(&blockers_of_checkers_side, from, to, ksq)
+                            && is_attacker_capturable_with_pinned_bitboard(self, us, to, &them_pinned)
+                        {
+                            continue;
+                        }
+                        if self.is_pinned_illegal(us, from, to) {
+                            continue;
+                        }
+
+                        self.xor_bbs(us, PieceType::SILVER, from);
+                        return Some(Move::new_unpromote(from, to, Piece::new(us, PieceType::SILVER)));
+                    }
+                    self.xor_bbs(us, PieceType::SILVER, from);
+                }
+
+                // rank 5-9 as black.
+                let rank_as_black_5_9 = {
+                    let rank = Rank::new_from_color_and_rank_as_black(us, RankAsBlack::RANK4);
+                    Bitboard::in_front_mask(them, rank)
+                };
+                for from in from_bb & rank_as_black_5_9 {
+                    let to_bb = move_target & ATTACK_TABLE.silver.attack(us, from) & target_unpromote;
+                    if !to_bb.to_bool() {
+                        continue;
+                    }
+                    self.xor_bbs(us, PieceType::SILVER, from);
+                    let them_pinned = self.slider_blockers_and_pinners(us, ksq).0;
+                    for to in to_bb {
+                        let is_checker_supported = self.attackers_to(us, to, &self.occupied_bb()).to_bool();
+                        if !is_checker_supported {
+                            continue;
+                        }
+                        if is_king_escapable(&self, us, to, &ATTACK_TABLE.silver.attack(us, to)) {
+                            continue;
+                        }
+                        if !is_discovered_check(&blockers_of_checkers_side, from, to, ksq)
+                            && is_attacker_capturable_with_pinned_bitboard(self, us, to, &them_pinned)
+                        {
+                            continue;
+                        }
+                        if self.is_pinned_illegal(us, from, to) {
+                            continue;
+                        }
+
+                        self.xor_bbs(us, PieceType::SILVER, from);
+                        return Some(Move::new_unpromote(from, to, Piece::new(us, PieceType::SILVER)));
+                    }
+                    self.xor_bbs(us, PieceType::SILVER, from);
+                }
+
+                // rank 4 as black.
+                let rank_as_black_4 = {
+                    let rank = Rank::new_from_color_and_rank_as_black(us, RankAsBlack::RANK4);
+                    Bitboard::rank_mask(rank)
+                };
+                for from in from_bb & rank_as_black_4 {
+                    let to_bb = move_target & ATTACK_TABLE.silver.attack(us, from);
+                    let to_bb_unpromote = to_bb & target_unpromote;
+                    let to_bb_promote = to_bb & target_promote & rank_as_black_123;
+                    if !(to_bb_unpromote | to_bb_promote).to_bool() {
+                        continue;
+                    }
+                    self.xor_bbs(us, PieceType::SILVER, from);
+                    let them_pinned = self.slider_blockers_and_pinners(us, ksq).0;
+                    for to in to_bb_promote {
+                        let is_checker_supported = self.attackers_to(us, to, &self.occupied_bb()).to_bool();
+                        if !is_checker_supported {
+                            continue;
+                        }
+                        if is_king_escapable(&self, us, to, &ATTACK_TABLE.gold.attack(us, to)) {
+                            continue;
+                        }
+                        if !is_discovered_check(&blockers_of_checkers_side, from, to, ksq)
+                            && is_attacker_capturable_with_pinned_bitboard(self, us, to, &them_pinned)
+                        {
+                            continue;
+                        }
+                        if self.is_pinned_illegal(us, from, to) {
+                            continue;
+                        }
+
+                        self.xor_bbs(us, PieceType::SILVER, from);
+                        return Some(Move::new_promote(from, to, Piece::new(us, PieceType::SILVER)));
+                    }
+                    for to in to_bb_unpromote {
+                        let is_checker_supported = self.attackers_to(us, to, &self.occupied_bb()).to_bool();
+                        if !is_checker_supported {
+                            continue;
+                        }
+                        if is_king_escapable(&self, us, to, &ATTACK_TABLE.silver.attack(us, to)) {
+                            continue;
+                        }
+                        if !is_discovered_check(&blockers_of_checkers_side, from, to, ksq)
+                            && is_attacker_capturable_with_pinned_bitboard(self, us, to, &them_pinned)
+                        {
+                            continue;
+                        }
+                        if self.is_pinned_illegal(us, from, to) {
+                            continue;
+                        }
+
+                        self.xor_bbs(us, PieceType::SILVER, from);
+                        return Some(Move::new_unpromote(from, to, Piece::new(us, PieceType::SILVER)));
+                    }
+                    self.xor_bbs(us, PieceType::SILVER, from);
+                }
+            }
+        }
+
+        // knight
+        {
+            let from_bb =
+                self.pieces_cp(us, PieceType::KNIGHT) & Bitboard::proximity_check_mask(Piece::new(us, PieceType::KNIGHT), ksq);
+            let target_unpromote = self.pieces_c(us).notand(ATTACK_TABLE.knight.attack(them, ksq));
+            let target_promote = self
+                .pieces_c(us)
+                .notand(ATTACK_TABLE.gold.attack(them, ksq) & rank_as_black_123);
+            for from in from_bb {
+                let (to_bb_unpromote, to_bb_promote) = {
+                    let attack = ATTACK_TABLE.knight.attack(us, from);
+                    (attack & target_unpromote, attack & target_promote)
+                };
+                if !(to_bb_unpromote | to_bb_promote).to_bool() {
+                    continue;
+                }
+                self.xor_bbs(us, PieceType::KNIGHT, from);
+                let them_pinned = self.slider_blockers_and_pinners(us, ksq).0;
+                for to in to_bb_promote {
+                    let is_checker_supported = self.attackers_to(us, to, &self.occupied_bb()).to_bool();
+                    if !is_checker_supported {
+                        continue;
+                    }
+                    if is_king_escapable(&self, us, to, &ATTACK_TABLE.gold.attack(us, to)) {
+                        continue;
+                    }
+                    if !is_discovered_check(&blockers_of_checkers_side, from, to, ksq)
+                        && is_attacker_capturable_with_pinned_bitboard(self, us, to, &them_pinned)
+                    {
+                        continue;
+                    }
+                    if self.is_pinned_illegal(us, from, to) {
+                        continue;
+                    }
+
+                    self.xor_bbs(us, PieceType::KNIGHT, from);
+                    return Some(Move::new_promote(from, to, Piece::new(us, PieceType::KNIGHT)));
+                }
+                for to in to_bb_unpromote {
+                    if is_king_escapable(&self, us, to, &Bitboard::ZERO) {
+                        continue;
+                    }
+                    if !is_discovered_check(&blockers_of_checkers_side, from, to, ksq)
+                        && is_attacker_capturable_with_pinned_bitboard(self, us, to, &them_pinned)
+                    {
+                        continue;
+                    }
+                    if self.is_pinned_illegal_for_knight(us, from) {
+                        continue;
+                    }
+
+                    self.xor_bbs(us, PieceType::KNIGHT, from);
+                    return Some(Move::new_unpromote(from, to, Piece::new(us, PieceType::KNIGHT)));
+                }
+                self.xor_bbs(us, PieceType::KNIGHT, from);
+            }
+        }
+
+        // lance
+        {
+            let from_bb =
+                self.pieces_cp(us, PieceType::LANCE) & Bitboard::proximity_check_mask(Piece::new(us, PieceType::LANCE), ksq);
+            let rank_as_black_3_9 = {
+                let rank = Rank::new_from_color_and_rank_as_black(us, RankAsBlack::RANK2);
+                Bitboard::in_front_mask(them, rank)
+            };
+            let target_unpromote = ATTACK_TABLE.pawn.attack(them, ksq) & rank_as_black_3_9;
+            let target_promote = ATTACK_TABLE.gold.attack(them, ksq) & rank_as_black_123;
+            for from in from_bb {
+                let attack = move_target & ATTACK_TABLE.lance.attack(us, from, &self.occupied_bb());
+                let to_bb_unpromote = attack & target_unpromote;
+                let to_bb_promote = attack & target_promote;
+                if !(to_bb_unpromote | to_bb_promote).to_bool() {
+                    continue;
+                }
+                self.xor_bbs(us, PieceType::LANCE, from);
+                let them_pinned = self.slider_blockers_and_pinners(us, ksq).0;
+                for to in to_bb_promote {
+                    let is_checker_supported = self.attackers_to(us, to, &self.occupied_bb()).to_bool();
+                    if !is_checker_supported {
+                        continue;
+                    }
+                    if is_king_escapable(&self, us, to, &ATTACK_TABLE.gold.attack(us, to)) {
+                        continue;
+                    }
+                    if !is_discovered_check(&blockers_of_checkers_side, from, to, ksq)
+                        && is_attacker_capturable_with_pinned_bitboard(self, us, to, &them_pinned)
+                    {
+                        continue;
+                    }
+                    if self.is_pinned_illegal(us, from, to) {
+                        continue;
+                    }
+
+                    self.xor_bbs(us, PieceType::LANCE, from);
+                    return Some(Move::new_promote(from, to, Piece::new(us, PieceType::LANCE)));
+                }
+                if let Some(to) = to_bb_unpromote.into_iter().next() {
+                    #[allow(clippy::never_loop)] // pseudo goto.
+                    loop {
+                        let is_checker_supported = self.attackers_to(us, to, &self.occupied_bb()).to_bool();
+                        if !is_checker_supported {
+                            break;
+                        }
+                        if is_king_escapable(&self, us, to, &ATTACK_TABLE.lance.pseudo_attack(us, to)) {
+                            break;
+                        }
+                        if is_attacker_capturable_with_pinned_bitboard(self, us, to, &them_pinned) {
+                            break;
+                        }
+                        if self.is_pinned_illegal(us, from, to) {
+                            break;
+                        }
+
+                        self.xor_bbs(us, PieceType::LANCE, from);
+                        return Some(Move::new_unpromote(from, to, Piece::new(us, PieceType::LANCE)));
+                    }
+                }
+                self.xor_bbs(us, PieceType::LANCE, from);
+            }
+        }
+
+        // pawn
+        {
+            let from_bb =
+                self.pieces_cp(us, PieceType::PAWN) & Bitboard::proximity_check_mask(Piece::new(us, PieceType::PAWN), ksq);
+            for from in from_bb {
+                let to_bb = move_target & ATTACK_TABLE.pawn.attack(us, from);
+                if let Some(to) = to_bb.into_iter().next() {
+                    self.xor_bbs(us, PieceType::PAWN, from);
+                    #[allow(clippy::never_loop)] // pseudo goto.
+                    loop {
+                        let is_checker_supported = self.attackers_to(us, to, &self.occupied_bb()).to_bool();
+                        if !is_checker_supported {
+                            break;
+                        }
+                        let to_is_opponent_field = Rank::new(to).is_opponent_field(us);
+                        let attack = if to_is_opponent_field {
+                            ATTACK_TABLE.gold.attack(us, to)
+                        } else {
+                            ATTACK_TABLE.pawn.attack(us, to)
+                        };
+                        if is_king_escapable(&self, us, to, &attack) {
+                            break;
+                        }
+                        if !is_discovered_check(&blockers_of_checkers_side, from, to, ksq) && {
+                            let them_pinned = self.slider_blockers_and_pinners(us, ksq).0;
+                            is_attacker_capturable_with_pinned_bitboard(self, us, to, &them_pinned)
+                        } {
+                            break;
+                        }
+                        if self.is_pinned_illegal(us, from, to) {
+                            break;
+                        }
+
+                        self.xor_bbs(us, PieceType::PAWN, from);
+                        return Some(if to_is_opponent_field {
+                            Move::new_promote(from, to, Piece::new(us, PieceType::PAWN))
+                        } else {
+                            Move::new_unpromote(from, to, Piece::new(us, PieceType::PAWN))
+                        });
+                    }
+                    self.xor_bbs(us, PieceType::PAWN, from);
+                }
+            }
+        }
+
         None
     }
     #[allow(dead_code)]
