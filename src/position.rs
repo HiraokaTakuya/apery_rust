@@ -2911,158 +2911,59 @@ fn test_mate_move_in_1ply() {
     std::thread::Builder::new()
         .stack_size(crate::stack_size::STACK_SIZE)
         .spawn(|| {
-            let sfen = "8k/9/8P/9/9/9/9/9/8K b G 1";
-            let pos = Position::new_from_sfen(sfen).unwrap();
-            let m = pos.mate_move_in_1ply();
-            assert!(m.is_some());
-            assert_eq!(&m.unwrap().to_usi_string(), "G*1b");
-
-            let sfen = "8k/9/9/9/9/9/9/9/8K b G 1";
-            let pos = Position::new_from_sfen(sfen).unwrap();
-            let m = pos.mate_move_in_1ply();
-            assert!(m.is_none());
-
-            let sfen = "7bk/9/8P/9/9/9/9/9/8K b G 1";
-            let pos = Position::new_from_sfen(sfen).unwrap();
-            let m = pos.mate_move_in_1ply();
-            assert!(m.is_none());
-
-            let sfen = "6Rbk/9/8P/9/9/9/9/9/8K b G 1";
-            let pos = Position::new_from_sfen(sfen).unwrap();
-            let m = pos.mate_move_in_1ply();
-            assert!(m.is_some());
-            assert_eq!(&m.unwrap().to_usi_string(), "G*1b");
-
-            let sfen = "8k/9/8P/9/9/9/9/9/8K b L 1";
-            let pos = Position::new_from_sfen(sfen).unwrap();
-            let m = pos.mate_move_in_1ply();
-            assert!(m.is_none());
-
-            let sfen = "7nk/7n1/8P/9/9/9/9/9/8K b L 1";
-            let pos = Position::new_from_sfen(sfen).unwrap();
-            let m = pos.mate_move_in_1ply();
-            assert!(m.is_some());
-            assert_eq!(&m.unwrap().to_usi_string(), "L*1b");
-
-            let sfen = "7nk/7n1/8P/9/9/9/9/9/8K b RL 1";
-            let pos = Position::new_from_sfen(sfen).unwrap();
-            let m = pos.mate_move_in_1ply();
-            assert!(m.is_some());
-            assert_eq!(&m.unwrap().to_usi_string(), "R*1b"); // Rook is checked before Lance.
-
-            let sfen = "7k1/R8/9/9/9/9/9/9/8K b S 1";
-            let pos = Position::new_from_sfen(sfen).unwrap();
-            let m = pos.mate_move_in_1ply();
-            assert!(m.is_none());
-
-            let sfen = "7pk/7bp/9/9/9/9/9/9/8K b N 1";
-            let pos = Position::new_from_sfen(sfen).unwrap();
-            let m = pos.mate_move_in_1ply();
-            assert!(m.is_some());
-            assert_eq!(&m.unwrap().to_usi_string(), "N*2c");
-
-            let sfen = "7pk/7bs/9/9/9/9/9/8L/8K b N 1";
-            let pos = Position::new_from_sfen(sfen).unwrap();
-            let m = pos.mate_move_in_1ply();
-            assert!(m.is_some());
-            assert_eq!(&m.unwrap().to_usi_string(), "N*2c");
-
-            let sfen = "7pk/7bs/9/9/9/9/9/9/8K b N 1";
-            let pos = Position::new_from_sfen(sfen).unwrap();
-            let m = pos.mate_move_in_1ply();
-            assert!(m.is_none());
-
-            let sfen = "7pk/7nn/9/9/8N/9/9/9/8K b - 1";
-            let pos = Position::new_from_sfen(sfen).unwrap();
-            let m = pos.mate_move_in_1ply();
-            assert!(m.is_some());
-            assert_eq!(&m.unwrap().to_usi_string(), "1e2c");
-
-            let sfen = "7pk/7nn/9/8s/8N/9/9/9/8K b - 1";
-            let pos = Position::new_from_sfen(sfen).unwrap();
-            let m = pos.mate_move_in_1ply();
-            assert!(m.is_none());
-
-            let sfen = "7pk/7nn/9/8l/8N/9/9/9/8K b - 1";
-            let pos = Position::new_from_sfen(sfen).unwrap();
-            let m = pos.mate_move_in_1ply();
-            assert!(m.is_none());
-
-            let sfen = "8k/7nn/9/9/8N/9/9/9/8K b - 1";
-            let pos = Position::new_from_sfen(sfen).unwrap();
-            let m = pos.mate_move_in_1ply();
-            assert!(m.is_none());
-
-            let sfen = "7nk/7pn/9/9/8N/9/9/9/B7K b - 1";
-            let pos = Position::new_from_sfen(sfen).unwrap();
-            let m = pos.mate_move_in_1ply();
-            assert!(m.is_some());
-            assert_eq!(&m.unwrap().to_usi_string(), "1e2c");
-
-            let sfen = "8k/9/8P/8L/9/9/9/9/8K b - 1";
-            let pos = Position::new_from_sfen(sfen).unwrap();
-            let m = pos.mate_move_in_1ply();
-            assert!(m.is_some());
-            assert_eq!(&m.unwrap().to_usi_string(), "1c1b+");
-
-            let sfen = "7k1/9/7P1/7L1/9/9/9/9/1K7 b - 1";
-            let pos = Position::new_from_sfen(sfen).unwrap();
-            let m = pos.mate_move_in_1ply();
-            assert!(m.is_some());
-            assert_eq!(&m.unwrap().to_usi_string(), "2c2b+");
-
-            let sfen = "7k1/8g/7P1/7L1/9/9/9/9/1K7 b - 1";
-            let pos = Position::new_from_sfen(sfen).unwrap();
-            let m = pos.mate_move_in_1ply();
-            assert!(m.is_none());
-
-            let sfen = "7k1/8b/7P1/7L1/9/9/9/9/1K7 b - 1";
-            let pos = Position::new_from_sfen(sfen).unwrap();
-            let m = pos.mate_move_in_1ply();
-            assert!(m.is_none());
-
-            let sfen = "7p1/7lk/7ll/8L/9/9/9/9/8K b - 1";
-            let pos = Position::new_from_sfen(sfen).unwrap();
-            let m = pos.mate_move_in_1ply();
-            assert!(m.is_none());
-
-            let sfen = "7p1/7lk/7ll/7BL/9/9/9/9/8K b - 1";
-            let pos = Position::new_from_sfen(sfen).unwrap();
-            let m = pos.mate_move_in_1ply();
-            assert!(m.is_some());
-            assert_eq!(&m.unwrap().to_usi_string(), "1d1c");
-
-            let sfen = "ln5nl/4g2G1/pr1p1skpp/2P2psR1/1SpPp3B/Pp4G1P/N3PbN2/2G6/L3K3L b Ps4p 1";
-            let pos = Position::new_from_sfen(sfen).unwrap();
-            let m = pos.mate_move_in_1ply();
-            assert!(m.is_some());
-            assert_eq!(&m.unwrap().to_usi_string(), "2d2c+");
-
-            let sfen = "+L7R/3pp4/1bSk5/+B2+n3n1/1K1L1s3/1PG6/2+ng1+n2P/2+p6/1+pL2+p1+p1 b R3P2g2sl7p 1";
-            let pos = Position::new_from_sfen(sfen).unwrap();
-            let m = pos.mate_move_in_1ply();
-            assert!(m.is_none());
-
-            let sfen = "3+rn4/RP6+S/2p2+Pp1p/4P2k1/4K+P3/p1P+p2PP1/+p4+pB2/S+p1+p+n+b2P/4S3+p w 3G2N2Lgs2l 1";
-            let pos = Position::new_from_sfen(sfen).unwrap();
-            let m = pos.mate_move_in_1ply();
-            assert!(m.is_none());
-
-            let sfen = "4l1l1p/G+P2+L4/2+P1+PpS+S+S/l3p1K2/1G+p3+P1k/+p+bp1+p2P+p/5g2+p/G2+BP2S1/1+p1+p1PN2 w RNr2n 1";
-            let pos = Position::new_from_sfen(sfen).unwrap();
-            let m = pos.mate_move_in_1ply();
-            assert!(m.is_none());
-
-            let sfen = "2g1+Pp3/+P2+Pn1g2/1gkLK1n2/9/+P1+PS1P3/pl1P2+p2/1LP1N+s+pp1/PP2P2SL/N2S2PPg b 2R2B 1";
-            let pos = Position::new_from_sfen(sfen).unwrap();
-            let m = pos.mate_move_in_1ply();
-            assert!(m.is_none());
-
-            let sfen = "5pp2/prp1l2+Pl/1SSpnk3/1K7/3+P+p2+P1/1P7/P1g+lpNR2/1p2PL2P/3+p1P1P1 b G2SN2b2gn 1";
-            let pos = Position::new_from_sfen(sfen).unwrap();
-            let m = pos.mate_move_in_1ply();
-            assert!(m.is_some());
-            assert_eq!(&m.unwrap().to_usi_string(), "4g5e");
+            fn f(sfen: &str, expected: Option<&str>) {
+                let mut pos = Position::new_from_sfen(sfen).unwrap();
+                let m = pos.mate_move_in_1ply();
+                let m = m.map(|m| m.to_usi_string());
+                let m = m.as_ref().map(|m| m.as_str());
+                assert_eq!((sfen, m), (sfen, expected));
+            }
+            f("8k/9/8P/9/9/9/9/9/8K b G 1", Some("G*1b"));
+            f("8k/9/9/9/9/9/9/9/8K b G 1", None);
+            f("7bk/9/8P/9/9/9/9/9/8K b G 1", None);
+            f("6Rbk/9/8P/9/9/9/9/9/8K b G 1", Some("G*1b"));
+            f("8k/9/8P/9/9/9/9/9/8K b L 1", None);
+            f("7nk/7n1/8P/9/9/9/9/9/8K b L 1", Some("L*1b"));
+            f("7nk/7n1/8P/9/9/9/9/9/8K b RL 1", Some("R*1b")); // Rook is checked before Lance.
+            f("7k1/R8/9/9/9/9/9/9/8K b S 1", None);
+            f("7pk/7bp/9/9/9/9/9/9/8K b N 1", Some("N*2c"));
+            f("7pk/7bs/9/9/9/9/9/8L/8K b N 1", Some("N*2c"));
+            f("7pk/7bs/9/9/9/9/9/9/8K b N 1", None);
+            f("7pk/7nn/9/9/8N/9/9/9/8K b - 1", Some("1e2c"));
+            f("7pk/7nn/9/8s/8N/9/9/9/8K b - 1", None);
+            f("7pk/7nn/9/8l/8N/9/9/9/8K b - 1", None);
+            f("8k/7nn/9/9/8N/9/9/9/8K b - 1", None);
+            f("7nk/7pn/9/9/8N/9/9/9/B7K b - 1", Some("1e2c"));
+            f("8k/9/8P/8L/9/9/9/9/8K b - 1", Some("1c1b+"));
+            f("7k1/9/7P1/7L1/9/9/9/9/1K7 b - 1", Some("2c2b+"));
+            f("7k1/8g/7P1/7L1/9/9/9/9/1K7 b - 1", None);
+            f("7k1/8b/7P1/7L1/9/9/9/9/1K7 b - 1", None);
+            f("7p1/7lk/7ll/8L/9/9/9/9/8K b - 1", None);
+            f("7p1/7lk/7ll/7BL/9/9/9/9/8K b - 1", Some("1d1c"));
+            f(
+                "ln5nl/4g2G1/pr1p1skpp/2P2psR1/1SpPp3B/Pp4G1P/N3PbN2/2G6/L3K3L b Ps4p 1",
+                Some("2d2c+"),
+            );
+            f(
+                "+L7R/3pp4/1bSk5/+B2+n3n1/1K1L1s3/1PG6/2+ng1+n2P/2+p6/1+pL2+p1+p1 b R3P2g2sl7p 1",
+                None,
+            );
+            f(
+                "3+rn4/RP6+S/2p2+Pp1p/4P2k1/4K+P3/p1P+p2PP1/+p4+pB2/S+p1+p+n+b2P/4S3+p w 3G2N2Lgs2l 1",
+                None,
+            );
+            f(
+                "4l1l1p/G+P2+L4/2+P1+PpS+S+S/l3p1K2/1G+p3+P1k/+p+bp1+p2P+p/5g2+p/G2+BP2S1/1+p1+p1PN2 w RNr2n 1",
+                None,
+            );
+            f(
+                "2g1+Pp3/+P2+Pn1g2/1gkLK1n2/9/+P1+PS1P3/pl1P2+p2/1LP1N+s+pp1/PP2P2SL/N2S2PPg b 2R2B 1",
+                None,
+            );
+            f(
+                "5pp2/prp1l2+Pl/1SSpnk3/1K7/3+P+p2+P1/1P7/P1g+lpNR2/1p2PL2P/3+p1P1P1 b G2SN2b2gn 1",
+                Some("4g5e"),
+            );
         })
         .unwrap()
         .join()
