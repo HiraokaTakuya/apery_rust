@@ -2353,7 +2353,7 @@ impl Position {
                     continue;
                 }
                 if is_king_escapable(
-                    &self,
+                    self,
                     us,
                     to,
                     &(ATTACK_TABLE.dragon_attack(to, &(self.occupied_bb() ^ Bitboard::square_mask(ksq)))),
@@ -2397,7 +2397,7 @@ impl Position {
                         continue;
                     }
                     if is_king_escapable(
-                        &self,
+                        self,
                         us,
                         to,
                         &(ATTACK_TABLE.dragon_attack(to, &(self.occupied_bb() ^ Bitboard::square_mask(ksq)))),
@@ -2437,7 +2437,7 @@ impl Position {
                         continue;
                     }
                     if is_king_escapable(
-                        &self,
+                        self,
                         us,
                         to,
                         &(ATTACK_TABLE.dragon_attack(to, &(self.occupied_bb() ^ Bitboard::square_mask(ksq)))),
@@ -2462,7 +2462,7 @@ impl Position {
                     if !is_checker_supported {
                         continue;
                     }
-                    if is_king_escapable(&self, us, to, &(ATTACK_TABLE.rook_pseudo_attack(to))) {
+                    if is_king_escapable(self, us, to, &(ATTACK_TABLE.rook_pseudo_attack(to))) {
                         continue;
                     }
                     if !is_discovered_check(&blockers_of_checkers_side, from, to, ksq)
@@ -2494,7 +2494,7 @@ impl Position {
                 if !is_checker_supported {
                     continue;
                 }
-                if is_king_escapable(&self, us, to, &(ATTACK_TABLE.horse_pseudo_attack(to))) {
+                if is_king_escapable(self, us, to, &(ATTACK_TABLE.horse_pseudo_attack(to))) {
                     continue;
                 }
                 if !is_discovered_check(&blockers_of_checkers_side, from, to, ksq)
@@ -2528,7 +2528,7 @@ impl Position {
                     if !is_checker_supported {
                         continue;
                     }
-                    if is_king_escapable(&self, us, to, &ATTACK_TABLE.horse_pseudo_attack(to)) {
+                    if is_king_escapable(self, us, to, &ATTACK_TABLE.horse_pseudo_attack(to)) {
                         continue;
                     }
                     if !is_discovered_check(&blockers_of_checkers_side, from, to, ksq)
@@ -2563,7 +2563,7 @@ impl Position {
                     if !is_checker_supported {
                         continue;
                     }
-                    if is_king_escapable(&self, us, to, &ATTACK_TABLE.horse_pseudo_attack(to)) {
+                    if is_king_escapable(self, us, to, &ATTACK_TABLE.horse_pseudo_attack(to)) {
                         continue;
                     }
                     if !is_discovered_check(&blockers_of_checkers_side, from, to, ksq)
@@ -2584,7 +2584,7 @@ impl Position {
                     if !is_checker_supported {
                         continue;
                     }
-                    if is_king_escapable(&self, us, to, &(ATTACK_TABLE.bishop_pseudo_attack(to))) {
+                    if is_king_escapable(self, us, to, &(ATTACK_TABLE.bishop_pseudo_attack(to))) {
                         continue;
                     }
                     if !is_discovered_check(&blockers_of_checkers_side, from, to, ksq)
@@ -2619,7 +2619,7 @@ impl Position {
                 if !is_checker_supported {
                     continue;
                 }
-                if is_king_escapable(&self, us, to, &ATTACK_TABLE.gold.attack(us, to)) {
+                if is_king_escapable(self, us, to, &ATTACK_TABLE.gold.attack(us, to)) {
                     continue;
                 }
                 if !is_discovered_check(&blockers_of_checkers_side, from, to, ksq)
@@ -2665,7 +2665,7 @@ impl Position {
                         if !is_checker_supported {
                             continue;
                         }
-                        if is_king_escapable(&self, us, to, &ATTACK_TABLE.gold.attack(us, to)) {
+                        if is_king_escapable(self, us, to, &ATTACK_TABLE.gold.attack(us, to)) {
                             continue;
                         }
                         if !is_discovered_check(&blockers_of_checkers_side, from, to, ksq)
@@ -2685,7 +2685,7 @@ impl Position {
                         if !is_checker_supported {
                             continue;
                         }
-                        if is_king_escapable(&self, us, to, &Bitboard::ZERO) {
+                        if is_king_escapable(self, us, to, &Bitboard::ZERO) {
                             continue;
                         }
                         if !is_discovered_check(&blockers_of_checkers_side, from, to, ksq)
@@ -2720,7 +2720,7 @@ impl Position {
                         if !is_checker_supported {
                             continue;
                         }
-                        if is_king_escapable(&self, us, to, &ATTACK_TABLE.silver.attack(us, to)) {
+                        if is_king_escapable(self, us, to, &ATTACK_TABLE.silver.attack(us, to)) {
                             continue;
                         }
                         if !is_discovered_check(&blockers_of_checkers_side, from, to, ksq)
@@ -2757,7 +2757,7 @@ impl Position {
                         if !is_checker_supported {
                             continue;
                         }
-                        if is_king_escapable(&self, us, to, &ATTACK_TABLE.gold.attack(us, to)) {
+                        if is_king_escapable(self, us, to, &ATTACK_TABLE.gold.attack(us, to)) {
                             continue;
                         }
                         if !is_discovered_check(&blockers_of_checkers_side, from, to, ksq)
@@ -2777,7 +2777,7 @@ impl Position {
                         if !is_checker_supported {
                             continue;
                         }
-                        if is_king_escapable(&self, us, to, &ATTACK_TABLE.silver.attack(us, to)) {
+                        if is_king_escapable(self, us, to, &ATTACK_TABLE.silver.attack(us, to)) {
                             continue;
                         }
                         if !is_discovered_check(&blockers_of_checkers_side, from, to, ksq)
@@ -2820,7 +2820,7 @@ impl Position {
                     if !is_checker_supported {
                         continue;
                     }
-                    if is_king_escapable(&self, us, to, &ATTACK_TABLE.gold.attack(us, to)) {
+                    if is_king_escapable(self, us, to, &ATTACK_TABLE.gold.attack(us, to)) {
                         continue;
                     }
                     if !is_discovered_check(&blockers_of_checkers_side, from, to, ksq)
@@ -2836,7 +2836,7 @@ impl Position {
                     return Some(Move::new_promote(from, to, Piece::new(us, PieceType::KNIGHT)));
                 }
                 for to in to_bb_unpromote {
-                    if is_king_escapable(&self, us, to, &Bitboard::ZERO) {
+                    if is_king_escapable(self, us, to, &Bitboard::ZERO) {
                         continue;
                     }
                     if !is_discovered_check(&blockers_of_checkers_side, from, to, ksq)
@@ -2879,7 +2879,7 @@ impl Position {
                     if !is_checker_supported {
                         continue;
                     }
-                    if is_king_escapable(&self, us, to, &ATTACK_TABLE.gold.attack(us, to)) {
+                    if is_king_escapable(self, us, to, &ATTACK_TABLE.gold.attack(us, to)) {
                         continue;
                     }
                     if !is_discovered_check(&blockers_of_checkers_side, from, to, ksq)
@@ -2901,7 +2901,7 @@ impl Position {
                         if !is_checker_supported {
                             break;
                         }
-                        if is_king_escapable(&self, us, to, &ATTACK_TABLE.lance.pseudo_attack(us, to)) {
+                        if is_king_escapable(self, us, to, &ATTACK_TABLE.lance.pseudo_attack(us, to)) {
                             break;
                         }
                         if is_attacker_capturable_with_pinned_bitboard(self, us, to, &them_pinned) {
@@ -2939,7 +2939,7 @@ impl Position {
                         } else {
                             ATTACK_TABLE.pawn.attack(us, to)
                         };
-                        if is_king_escapable(&self, us, to, &attack) {
+                        if is_king_escapable(self, us, to, &attack) {
                             break;
                         }
                         if !is_discovered_check(&blockers_of_checkers_side, from, to, ksq) && {
@@ -3567,7 +3567,7 @@ fn test_mate_move_in_1ply() {
                 let mut pos = Position::new_from_sfen(sfen).unwrap();
                 let m = pos.mate_move_in_1ply();
                 let m = m.map(|m| m.to_usi_string());
-                let m = m.as_ref().map(|m| m.as_str());
+                let m = m.as_deref();
                 assert_eq!((sfen, m), (sfen, expected));
             }
             f("8k/9/8P/9/9/9/9/9/8K b G 1", Some("G*1b"));
