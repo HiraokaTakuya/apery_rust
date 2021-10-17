@@ -367,12 +367,9 @@ fn read_csa_dirs_and_output_sfen(dir_paths: &[&str]) {
 }
 
 fn csa_record_to_sfen(csa: &[u8]) -> Result<String, String> {
-    custom_derive! {
-        #[derive(Debug, NextVariant)]
-        enum Phase {
-            InitialPositionAndOptionalInformation,
-            Moves,
-        }
+    enum Phase {
+        InitialPositionAndOptionalInformation,
+        Moves,
     }
     let mut phase = Phase::InitialPositionAndOptionalInformation;
     let mut _version = None;
