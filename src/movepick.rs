@@ -5,20 +5,24 @@ use crate::position::*;
 use crate::types::*;
 
 fn partial_insertion_sort(move_list: &mut [ExtMove], limit: i32) {
-    let mut sorted_end = 0;
-    for p in 1..move_list.len() {
-        unsafe {
-            if move_list.get_unchecked(p).score >= limit {
-                let tmp = move_list.get_unchecked(p).clone();
-                sorted_end += 1;
-                *move_list.get_unchecked_mut(p) = move_list.get_unchecked(sorted_end).clone();
+    unsafe {
+        let begin = move_list.as_mut_ptr();
+        let end = begin.add(move_list.len());
+        let mut sorted_end = begin;
+        let mut p = begin.add(1);
+        while p < end {
+            if (*p).score >= limit {
+                let tmp: ExtMove = (*p).clone();
+                sorted_end = sorted_end.add(1);
+                *p = (*sorted_end).clone();
                 let mut q = sorted_end;
-                while q != 0 && move_list.get_unchecked(q - 1).score < tmp.score {
-                    *move_list.get_unchecked_mut(q) = move_list.get_unchecked(q - 1).clone();
-                    q -= 1;
+                while q != begin && (*q.sub(1)).score < tmp.score {
+                    *q = (*q.sub(1)).clone();
+                    q = q.sub(1);
                 }
-                *move_list.get_unchecked_mut(q) = tmp;
+                *q = tmp;
             }
+            p = p.add(1);
         }
     }
 }
