@@ -38,7 +38,8 @@ impl ButterflyHistory {
         }
     }
     pub fn get(&self, c: Color, m: Move) -> i32 {
-        i32::from(self.v[c.0 as usize][m.0.get() as u16 as usize])
+        debug_assert!((c.0 as usize) < Color::NUM);
+        i32::from(unsafe { *self.v.get_unchecked(c.0 as usize).get_unchecked(m.0.get() as u16 as usize) })
     }
     pub fn update(&mut self, c: Color, m: Move, bonus: i32) {
         let entry = &mut self.v[c.0 as usize][m.0.get() as u16 as usize];
@@ -67,7 +68,8 @@ impl LowPlyHistory {
         }
     }
     pub fn get(&self, ply: i32, m: Move) -> i32 {
-        i32::from(self.v[ply as usize][m.0.get() as u16 as usize])
+        debug_assert!((ply as usize) < Self::MAX_LPH);
+        i32::from(unsafe { *self.v.get_unchecked(ply as usize).get_unchecked(m.0.get() as u16 as usize) })
     }
     pub fn update(&mut self, ply: i32, m: Move, bonus: i32) {
         let entry = &mut self.v[ply as usize][m.0.get() as u16 as usize];
@@ -103,7 +105,9 @@ impl CounterMoveHistory {
         }
     }
     pub fn get(&self, to: Square, pc: Piece) -> Option<Move> {
-        self.v[to.0 as usize][pc.0 as usize]
+        debug_assert!((to.0 as usize) < Square::NUM);
+        debug_assert!((pc.0 as usize) < Piece::NUM);
+        unsafe { *self.v.get_unchecked(to.0 as usize).get_unchecked(pc.0 as usize) }
     }
     pub fn set(&mut self, to: Square, pc: Piece, m: Move) {
         self.v[to.0 as usize][pc.0 as usize] = Some(m);
@@ -128,7 +132,16 @@ impl CapturePieceToHistory {
         }
     }
     pub fn get(&self, pc: Piece, to: Square, captured: PieceType) -> i32 {
-        i32::from(self.v[pc.0 as usize][to.0 as usize][captured.0 as usize])
+        debug_assert!((pc.0 as usize) < Piece::NUM);
+        debug_assert!((to.0 as usize) < Square::NUM);
+        debug_assert!((captured.0 as usize) < PieceType::NUM);
+        i32::from(unsafe {
+            *self
+                .v
+                .get_unchecked(pc.0 as usize)
+                .get_unchecked(to.0 as usize)
+                .get_unchecked(captured.0 as usize)
+        })
     }
     pub fn update(&mut self, pc: Piece, to: Square, captured: PieceType, bonus: i32) {
         let entry = &mut self.v[pc.0 as usize][to.0 as usize][captured.0 as usize];
@@ -160,7 +173,9 @@ impl PieceToHistory {
         }
     }
     pub fn get(&self, to: Square, pc: Piece) -> i32 {
-        i32::from(self.v[to.0 as usize][pc.0 as usize])
+        debug_assert!((to.0 as usize) < Square::NUM);
+        debug_assert!((pc.0 as usize) < Piece::NUM);
+        i32::from(unsafe { *self.v.get_unchecked(to.0 as usize).get_unchecked(pc.0 as usize) })
     }
     pub fn update(&mut self, to: Square, pc: Piece, bonus: i32) {
         let entry = &mut self.v[to.0 as usize][pc.0 as usize];
@@ -189,7 +204,9 @@ impl ContinuationHistory {
     }
     #[allow(dead_code)]
     pub fn get(&self, pc: Piece, to: Square) -> &PieceToHistory {
-        &self.v[pc.0 as usize][to.0 as usize]
+        debug_assert!((pc.0 as usize) < Piece::NUM);
+        debug_assert!((to.0 as usize) < Square::NUM);
+        unsafe { self.v.get_unchecked(pc.0 as usize).get_unchecked(to.0 as usize) }
     }
     pub fn get_mut(&mut self, pc: Piece, to: Square) -> &mut PieceToHistory {
         &mut self.v[pc.0 as usize][to.0 as usize]
