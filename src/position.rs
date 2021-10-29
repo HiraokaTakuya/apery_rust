@@ -831,7 +831,7 @@ impl PositionBase {
             let pseudo_blockers = Bitboard::between_mask(ksq, sq_of_sniper) & self.occupied_bb();
             if pseudo_blockers.count_ones() == 1 {
                 blockers |= pseudo_blockers;
-                if (pseudo_blockers & self.pieces_c(opp_of_sliders)).to_bool() {
+                if pseudo_blockers.and_to_bool(self.pieces_c(opp_of_sliders)) {
                     pinners.set(sq_of_sniper);
                 }
             }
@@ -1166,7 +1166,10 @@ impl Position {
                 _ => unreachable!(),
             }
             if pt_dropped == PieceType::PAWN {
-                if (self.pieces_cp(us, PieceType::PAWN) & Bitboard::file_mask(File::new(to))).to_bool() {
+                if self
+                    .pieces_cp(us, PieceType::PAWN)
+                    .and_to_bool(Bitboard::file_mask(File::new(to)))
+                {
                     // two pawns
                     return false;
                 }
@@ -1328,8 +1331,8 @@ impl Position {
         loop {
             side_to_move = side_to_move.inverse();
             let mut side_to_move_attackers = attackers & self.pieces_c(side_to_move);
-            if !(self.pinners_for_king(side_to_move.inverse()) & !occupied).to_bool() {
-                side_to_move_attackers &= !self.blockers_for_king(side_to_move);
+            if !occupied.notand(self.pinners_for_king(side_to_move.inverse())).to_bool() {
+                side_to_move_attackers.and_equal_not(self.blockers_for_king(side_to_move));
             }
             if !side_to_move_attackers.to_bool() {
                 break;
@@ -1407,7 +1410,7 @@ impl Position {
                     break;
                 }
             } else {
-                if (attackers & !self.pieces_c(side_to_move)).to_bool() {
+                if self.pieces_c(side_to_move).notand(attackers).to_bool() {
                     res.0 ^= 1;
                 }
                 return res != Value::ZERO;
@@ -2070,7 +2073,7 @@ impl Position {
         }
 
         fn is_discovered_check(blockers_of_checkers_side: &Bitboard, from: Square, to: Square, ksq: Square) -> bool {
-            let is_blocker = (*blockers_of_checkers_side & Bitboard::square_mask(from)).to_bool();
+            let is_blocker = blockers_of_checkers_side.and_to_bool(Bitboard::square_mask(from));
             is_blocker && !is_aligned_and_sq2_is_not_between_sq0_and_sq1(from, to, ksq)
         }
 
@@ -2706,7 +2709,7 @@ impl Position {
     }
     #[allow(dead_code)]
     fn is_ok(&self) -> bool {
-        if (self.pieces_c(Color::BLACK) & self.pieces_c(Color::WHITE)).to_bool() {
+        if self.pieces_c(Color::BLACK).and_to_bool(self.pieces_c(Color::WHITE)) {
             panic!("position is ng, line: {}", line!());
         }
         if (self.pieces_c(Color::BLACK) | self.pieces_c(Color::WHITE)) != self.occupied_bb() {
@@ -2734,7 +2737,7 @@ impl Position {
             let pt0 = PieceType(i as i32);
             for j in i + 1..PieceType::NUM {
                 let pt1 = PieceType(j as i32);
-                if (self.pieces_p(pt0) & self.pieces_p(pt1)).to_bool() {
+                if self.pieces_p(pt0).and_to_bool(self.pieces_p(pt1)) {
                     panic!("position is ng. line: {}", line!());
                 }
             }

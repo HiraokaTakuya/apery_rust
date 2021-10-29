@@ -126,7 +126,7 @@ impl Bitboard {
     }
     #[allow(dead_code)]
     pub fn clear(&mut self, sq: Square) {
-        *self &= !Bitboard::square_mask(sq);
+        self.and_equal_not(Bitboard::square_mask(sq));
     }
     pub fn xor(&mut self, sq: Square) {
         *self ^= Bitboard::square_mask(sq);
@@ -137,11 +137,9 @@ impl Bitboard {
     pub fn count_ones(&self) -> u32 {
         self.value(0).count_ones() + self.value(1).count_ones()
     }
-    #[allow(dead_code)]
     pub fn notand(self, other: Bitboard) -> Bitboard {
         (!self) & other
     }
-    #[allow(dead_code)]
     pub fn and_equal_not(&mut self, other: Bitboard) {
         *self &= !other;
     }
@@ -376,7 +374,6 @@ impl Bitboard {
             _ => unreachable!(),
         }
     }
-    #[allow(dead_code)]
     pub fn in_front_mask(c: Color, r: Rank) -> Bitboard {
         debug_assert!(0 <= c.0 && c.0 < Color::NUM as i32);
         debug_assert!(0 <= r.0 && r.0 < Rank::NUM as i32);
@@ -594,7 +591,7 @@ impl<'a> Magic<'a> {
         unsafe {
             *self
                 .attacks
-                .get_unchecked(((self.mask & *occupied).merge().wrapping_mul(self.magic) >> self.shift) as usize)
+                .get_unchecked(Self::occupied_to_index(&(self.mask & *occupied), self.magic, self.shift))
         }
     }
 

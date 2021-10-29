@@ -263,7 +263,7 @@ impl MoveList {
             let them = us.inverse();
             let ksq = pos.king_square(them);
             let drop_pawn_check_bb = ATTACK_TABLE.pawn.attack(them, ksq);
-            if (drop_pawn_check_bb & to_bb).to_bool() {
+            if drop_pawn_check_bb.and_to_bool(to_bb) {
                 debug_assert_eq!(drop_pawn_check_bb.count_ones(), 1);
                 let to = drop_pawn_check_bb.lsb_unchecked();
                 if pos.is_drop_pawn_mate(us, to) {
