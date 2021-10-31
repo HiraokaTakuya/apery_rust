@@ -335,19 +335,19 @@ impl MoveList {
         let from_bb = pos.pieces_cp(us, PieceType::PAWN);
         let to_bb = if us == Color::BLACK {
             const_assert_eq!(Square::DELTA_N.0, -1);
-            from_bb >> 1
+            from_bb.shift_right::<1>()
         } else {
             const_assert_eq!(Square::DELTA_S.0, 1);
-            from_bb << 1
+            from_bb.shift_left::<1>()
         } & *target;
 
         fn make_to_bb<AMT: AllowMovesTrait>(pos: &Position, from_bb: Bitboard, us: Color) -> Bitboard {
             let mut to_bb = if us == Color::BLACK {
                 const_assert_eq!(Square::DELTA_N.0, -1);
-                from_bb >> 1
+                from_bb.shift_right::<1>()
             } else {
                 const_assert_eq!(Square::DELTA_S.0, 1);
-                from_bb << 1
+                from_bb.shift_left::<1>()
             };
             to_bb &= !pos.pieces_c(us);
             if AMT::EVASIONS {

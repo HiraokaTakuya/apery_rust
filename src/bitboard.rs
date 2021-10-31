@@ -2,20 +2,35 @@ use crate::types::*;
 use std::fmt;
 use std::ops::*;
 
+#[repr(align(16))]
 #[derive(Copy)]
-pub struct Bitboard {
-    pub v: [u64; 2],
+pub union Bitboard {
+    v: [u64; 2],
+    #[cfg(target_feature = "sse2")]
+    m: std::arch::x86_64::__m128i,
 }
 
 impl Clone for Bitboard {
+    #[cfg(target_feature = "sse2")]
     fn clone(&self) -> Bitboard {
-        Bitboard { v: self.v }
+        Bitboard { m: unsafe { self.m } }
+    }
+    #[cfg(not(target_feature = "sse2"))]
+    fn clone(&self) -> Bitboard {
+        Bitboard { v: unsafe { self.v } }
     }
 }
 
 impl BitOr for Bitboard {
     type Output = Bitboard;
 
+    #[cfg(target_feature = "sse2")]
+    fn bitor(self, other: Bitboard) -> Bitboard {
+        Bitboard {
+            m: unsafe { std::arch::x86_64::_mm_or_si128(self.m, other.m) },
+        }
+    }
+    #[cfg(not(target_feature = "sse2"))]
     fn bitor(self, other: Bitboard) -> Bitboard {
         Bitboard {
             v: [self.value(0) | other.value(0), self.value(1) | other.value(1)],
@@ -26,6 +41,13 @@ impl BitOr for Bitboard {
 impl BitAnd for Bitboard {
     type Output = Bitboard;
 
+    #[cfg(target_feature = "sse2")]
+    fn bitand(self, other: Bitboard) -> Bitboard {
+        Bitboard {
+            m: unsafe { std::arch::x86_64::_mm_and_si128(self.m, other.m) },
+        }
+    }
+    #[cfg(not(target_feature = "sse2"))]
     fn bitand(self, other: Bitboard) -> Bitboard {
         Bitboard {
             v: [self.value(0) & other.value(0), self.value(1) & other.value(1)],
@@ -36,6 +58,13 @@ impl BitAnd for Bitboard {
 impl BitXor for Bitboard {
     type Output = Bitboard;
 
+    #[cfg(target_feature = "sse2")]
+    fn bitxor(self, other: Bitboard) -> Bitboard {
+        Bitboard {
+            m: unsafe { std::arch::x86_64::_mm_xor_si128(self.m, other.m) },
+        }
+    }
+    #[cfg(not(target_feature = "sse2"))]
     fn bitxor(self, other: Bitboard) -> Bitboard {
         Bitboard {
             v: [self.value(0) ^ other.value(0), self.value(1) ^ other.value(1)],
@@ -44,69 +73,77 @@ impl BitXor for Bitboard {
 }
 
 impl BitOrAssign for Bitboard {
+    #[cfg(target_feature = "sse2")]
     fn bitor_assign(&mut self, other: Bitboard) {
-        self.v[0] = self.value(0) | other.value(0);
-        self.v[1] = self.value(1) | other.value(1);
+        unsafe {
+            self.m = std::arch::x86_64::_mm_or_si128(self.m, other.m);
+        }
+    }
+    #[cfg(not(target_feature = "sse2"))]
+    fn bitor_assign(&mut self, other: Bitboard) {
+        unsafe {
+            self.v[0] |= other.value(0);
+            self.v[1] |= other.value(1);
+        }
     }
 }
 
 impl BitAndAssign for Bitboard {
+    #[cfg(target_feature = "sse2")]
     fn bitand_assign(&mut self, other: Bitboard) {
-        self.v[0] = self.value(0) & other.value(0);
-        self.v[1] = self.value(1) & other.value(1);
+        unsafe {
+            self.m = std::arch::x86_64::_mm_and_si128(self.m, other.m);
+        }
+    }
+    #[cfg(not(target_feature = "sse2"))]
+    fn bitand_assign(&mut self, other: Bitboard) {
+        unsafe {
+            self.v[0] &= other.value(0);
+            self.v[1] &= other.value(1);
+        }
     }
 }
 
 impl BitXorAssign for Bitboard {
+    #[cfg(target_feature = "sse2")]
     fn bitxor_assign(&mut self, other: Bitboard) {
-        self.v[0] = self.value(0) ^ other.value(0);
-        self.v[1] = self.value(1) ^ other.value(1);
-    }
-}
-
-impl Shr<i32> for Bitboard {
-    type Output = Bitboard;
-
-    fn shr(self, other: i32) -> Bitboard {
-        Bitboard {
-            v: [self.v[0] >> other, self.v[1] >> other],
+        unsafe {
+            self.m = std::arch::x86_64::_mm_xor_si128(self.m, other.m);
         }
     }
-}
-
-impl Shl<i32> for Bitboard {
-    type Output = Bitboard;
-
-    fn shl(self, other: i32) -> Bitboard {
-        Bitboard {
-            v: [self.v[0] << other, self.v[1] << other],
+    #[cfg(not(target_feature = "sse2"))]
+    fn bitxor_assign(&mut self, other: Bitboard) {
+        unsafe {
+            self.v[0] ^= other.value(0);
+            self.v[1] ^= other.value(1);
         }
-    }
-}
-
-impl ShrAssign<i32> for Bitboard {
-    fn shr_assign(&mut self, other: i32) {
-        self.v[0] = self.v[0] >> other;
-        self.v[1] = self.v[1] >> other;
-    }
-}
-
-impl ShlAssign<i32> for Bitboard {
-    fn shl_assign(&mut self, other: i32) {
-        self.v[0] = self.v[0] << other;
-        self.v[1] = self.v[1] << other;
     }
 }
 
 impl PartialEq for Bitboard {
+    #[cfg(target_feature = "sse4.1")]
     fn eq(&self, other: &Bitboard) -> bool {
-        self.v[0] == other.v[0] && self.v[1] == other.v[1]
+        unsafe {
+            std::arch::x86_64::_mm_testc_si128(
+                std::arch::x86_64::_mm_cmpeq_epi8(self.m, other.m),
+                std::arch::x86_64::_mm_set1_epi8(-1i8),
+            ) != 0
+        }
+    }
+    #[cfg(not(target_feature = "sse4.1"))]
+    fn eq(&self, other: &Bitboard) -> bool {
+        self.value(0) == other.value(0) && self.value(1) == other.value(1)
     }
 }
 
 impl Not for Bitboard {
     type Output = Bitboard;
 
+    #[cfg(target_feature = "sse2")]
+    fn not(self) -> Bitboard {
+        self ^ Self::ALL
+    }
+    #[cfg(not(target_feature = "sse2"))]
     fn not(self) -> Bitboard {
         Bitboard {
             v: [!self.value(0), !self.value(1)],
@@ -116,11 +153,36 @@ impl Not for Bitboard {
 
 impl fmt::Debug for Bitboard {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Bitboard {{ v: [{}, {}] }}", self.v[0], self.v[1])
+        write!(f, "Bitboard {{ v: [{}, {}] }}", self.value(0), self.value(1))
     }
 }
 
 impl Bitboard {
+    #[cfg(target_feature = "sse2")]
+    pub fn shift_right<const N: i32>(self) -> Bitboard {
+        Bitboard {
+            m: unsafe { std::arch::x86_64::_mm_srli_epi64::<N>(self.m) },
+        }
+    }
+    #[cfg(not(target_feature = "sse2"))]
+    pub fn shift_right<const N: i32>(self) -> Bitboard {
+        Bitboard {
+            v: [self.value(0) >> N, self.value(1) >> N],
+        }
+    }
+    #[cfg(target_feature = "sse2")]
+    pub fn shift_left<const N: i32>(self) -> Bitboard {
+        Bitboard {
+            m: unsafe { std::arch::x86_64::_mm_slli_epi64::<N>(self.m) },
+        }
+    }
+    #[cfg(not(target_feature = "sse2"))]
+    pub fn shift_left<const N: i32>(self) -> Bitboard {
+        Bitboard {
+            v: [self.value(0) << N, self.value(1) << N],
+        }
+    }
+
     pub fn set(&mut self, sq: Square) {
         *self |= Bitboard::square_mask(sq);
     }
@@ -137,15 +199,39 @@ impl Bitboard {
     pub fn count_ones(&self) -> u32 {
         self.value(0).count_ones() + self.value(1).count_ones()
     }
+    #[cfg(target_feature = "sse2")]
+    pub fn notand(self, other: Bitboard) -> Bitboard {
+        Bitboard {
+            m: unsafe { std::arch::x86_64::_mm_andnot_si128(self.m, other.m) },
+        }
+    }
+    #[cfg(not(target_feature = "sse2"))]
     pub fn notand(self, other: Bitboard) -> Bitboard {
         (!self) & other
     }
+    #[cfg(target_feature = "sse2")]
+    pub fn and_equal_not(&mut self, other: Bitboard) {
+        unsafe {
+            self.m = std::arch::x86_64::_mm_andnot_si128(other.m, self.m);
+        }
+    }
+    #[cfg(not(target_feature = "sse2"))]
     pub fn and_equal_not(&mut self, other: Bitboard) {
         *self &= !other;
     }
+    #[cfg(target_feature = "sse4.1")]
+    pub fn to_bool(self) -> bool {
+        unsafe { std::arch::x86_64::_mm_testz_si128(self.m, self.m) == 0 }
+    }
+    #[cfg(not(target_feature = "sse4.1"))]
     pub fn to_bool(self) -> bool {
         self.merge() != 0
     }
+    #[cfg(target_feature = "sse4.1")]
+    pub fn and_to_bool(self, other: Bitboard) -> bool {
+        unsafe { std::arch::x86_64::_mm_testz_si128(self.m, other.m) == 0 }
+    }
+    #[cfg(not(target_feature = "sse4.1"))]
     pub fn and_to_bool(self, other: Bitboard) -> bool {
         (self & other).to_bool()
     }
@@ -158,12 +244,16 @@ impl Bitboard {
     }
     fn pop_lsb_right_unchecked(&mut self) -> Square {
         let sq = Square(self.value(0).trailing_zeros() as i32);
-        self.v[0] &= self.v[0] - 1;
+        unsafe {
+            self.v[0] &= self.value(0) - 1;
+        }
         sq
     }
     fn pop_lsb_left_unchecked(&mut self) -> Square {
         let sq = Square((self.value(1).trailing_zeros() + 63) as i32);
-        self.v[1] &= self.v[1] - 1;
+        unsafe {
+            self.v[1] &= self.value(1) - 1;
+        }
         sq
     }
     fn lsb_right_unchecked(&self) -> Square {
@@ -546,8 +636,10 @@ fn sliding_attacks(deltas: &[Square], sq: Square, occupied: &Bitboard) -> Bitboa
 #[derive(Debug)]
 pub struct Magic<'a> {
     mask: Bitboard,
+    #[cfg(not(target_feature = "bmi2"))]
     magic: u64,
     attacks: &'a [Bitboard],
+    #[cfg(not(target_feature = "bmi2"))]
     shift: u32,
 }
 
@@ -583,10 +675,20 @@ impl<'a> Magic<'a> {
         ret
     }
 
+    #[cfg(target_feature = "bmi2")]
+    fn occupied_to_index(occupied: &Bitboard, mask: &Bitboard) -> usize {
+        unsafe { std::arch::x86_64::_pext_u64((*occupied & *mask).merge(), mask.merge()) as usize }
+    }
+    #[cfg(not(target_feature = "bmi2"))]
     fn occupied_to_index(occupied: &Bitboard, magic: u64, shift: u32) -> usize {
         (occupied.merge().wrapping_mul(magic) >> shift) as usize
     }
 
+    #[cfg(target_feature = "bmi2")]
+    pub fn attack(&self, occupied: &Bitboard) -> Bitboard {
+        unsafe { *self.attacks.get_unchecked(Self::occupied_to_index(occupied, &self.mask)) }
+    }
+    #[cfg(not(target_feature = "bmi2"))]
     pub fn attack(&self, occupied: &Bitboard) -> Bitboard {
         unsafe {
             *self
@@ -684,7 +786,12 @@ pub struct MagicTable<'a> {
 }
 
 impl<'a> MagicTable<'a> {
-    fn new(table_num: usize, shifts: &[i8; Square::NUM], magic_nums: &[u64; Square::NUM], deltas: &[Square]) -> MagicTable<'a> {
+    fn new(
+        table_num: usize,
+        shifts: &[i8; Square::NUM],
+        #[cfg(not(target_feature = "bmi2"))] magic_nums: &[u64; Square::NUM],
+        deltas: &[Square],
+    ) -> MagicTable<'a> {
         let mut attacks = vec![Bitboard::ZERO; table_num];
         let mut magics = std::mem::MaybeUninit::<[Magic<'a>; Square::NUM]>::uninit();
         let mut count = 0;
@@ -696,14 +803,23 @@ impl<'a> MagicTable<'a> {
             };
             for index in 0..(1 << mask.count_ones()) {
                 let occupied = Magic::index_to_occupied(index, mask.count_ones(), &mask);
-                slice_attacks[Magic::occupied_to_index(&occupied, magic_nums[sq.0 as usize], shifts[sq.0 as usize] as u32)] =
-                    sliding_attacks(deltas, *sq, &occupied);
+                #[cfg(target_feature = "bmi2")]
+                {
+                    slice_attacks[Magic::occupied_to_index(&occupied, &mask)] = sliding_attacks(deltas, *sq, &occupied);
+                }
+                #[cfg(not(target_feature = "bmi2"))]
+                {
+                    slice_attacks[Magic::occupied_to_index(&occupied, magic_nums[sq.0 as usize], shifts[sq.0 as usize] as u32)] =
+                        sliding_attacks(deltas, *sq, &occupied);
+                }
             }
             count += slice_attacks.len();
             let tmp_magic: Magic = Magic {
                 mask: Magic::attack_mask(deltas, *sq),
+                #[cfg(not(target_feature = "bmi2"))]
                 magic: magic_nums[sq.0 as usize],
                 attacks: slice_attacks,
+                #[cfg(not(target_feature = "bmi2"))]
                 shift: shifts[sq.0 as usize] as u32,
             };
             unsafe {
@@ -835,8 +951,25 @@ impl<'a> AttackTable<'a> {
     const ROOK_DELTAS: [Square; 4] = [Square::DELTA_N, Square::DELTA_E, Square::DELTA_S, Square::DELTA_W];
 
     const BISHOP_ATTACK_TABLE_NUM: usize = 20224;
-    const ROOK_ATTACK_TABLE_NUM: usize = 512_000; // if using pext, 512000 -> 4951616
+    #[cfg(target_feature = "bmi2")]
+    const ROOK_ATTACK_TABLE_NUM: usize = 495_616;
+    #[cfg(not(target_feature = "bmi2"))]
+    const ROOK_ATTACK_TABLE_NUM: usize = 512_000;
     #[rustfmt::skip]
+    #[cfg(target_feature = "bmi2")]
+    const ROOK_SHIFT_BITS: [i8; Square::NUM] = [
+        50, 51, 51, 51, 51, 51, 51, 51, 50,
+        51, 52, 52, 52, 52, 52, 52, 52, 51,
+        51, 52, 52, 52, 52, 52, 52, 52, 51,
+        51, 52, 52, 52, 52, 52, 52, 52, 51,
+        51, 52, 52, 52, 52, 52, 52, 52, 51,
+        51, 52, 52, 52, 52, 52, 52, 52, 51,
+        51, 52, 52, 52, 52, 52, 52, 52, 51,
+        51, 52, 52, 52, 52, 52, 52, 52, 51,
+        50, 51, 51, 51, 51, 51, 51, 51, 50,
+    ];
+    #[rustfmt::skip]
+    #[cfg(not(target_feature = "bmi2"))]
     const ROOK_SHIFT_BITS: [i8; Square::NUM] = [
         50, 51, 51, 51, 51, 51, 51, 51, 50,
         51, 52, 52, 52, 52, 52, 52, 52, 50, // [17]: 51 -> 50
@@ -861,6 +994,7 @@ impl<'a> AttackTable<'a> {
         57, 58, 58, 58, 58, 58, 58, 58, 57,
     ];
     #[rustfmt::skip]
+    #[cfg(not(target_feature = "bmi2"))]
     const BISHOP_MAGICS: [u64; Square::NUM] = [
         0x2010_1042_c820_0428, 0x0000_8402_4038_0102, 0x8008_00c0_1810_8251,
         0x0082_4280_1030_1000, 0x0481_0082_0100_0040, 0x8081_0204_2088_0800,
@@ -891,6 +1025,7 @@ impl<'a> AttackTable<'a> {
         0x0080_0908_8080_8183, 0x0300_1200_2040_0410, 0x021a_0901_0082_2002,
     ];
     #[rustfmt::skip]
+    #[cfg(not(target_feature = "bmi2"))]
     const ROOK_MAGICS: [u64; Square::NUM] = [
         0x0140_0004_0080_9300, 0x1320_0009_0200_0240, 0x0080_0191_0c00_8180,
         0x0040_0200_0440_1040, 0x0040_0100_00d0_1120, 0x0080_0480_2008_4050,
@@ -982,29 +1117,18 @@ pub static ATTACK_TABLE: once_cell::sync::Lazy<AttackTable<'static>> = once_cell
     bishop: MagicTable::new(
         AttackTable::BISHOP_ATTACK_TABLE_NUM,
         &AttackTable::BISHOP_SHIFT_BITS,
+        #[cfg(not(target_feature = "bmi2"))]
         &AttackTable::BISHOP_MAGICS,
         &AttackTable::BISHOP_DELTAS,
     ),
     rook: MagicTable::new(
         AttackTable::ROOK_ATTACK_TABLE_NUM,
         &AttackTable::ROOK_SHIFT_BITS,
+        #[cfg(not(target_feature = "bmi2"))]
         &AttackTable::ROOK_MAGICS,
         &AttackTable::ROOK_DELTAS,
     ),
 });
-
-//#[test]
-//fn test_bitboard_union() {
-//    let bb1 = Bitboard { v: [6, 0] };
-//    let bb2 = Bitboard {
-//        m: simd::i32x4::new(1, 0, 2, 0),
-//    };
-//    let mut bb3 = bb1 | bb2;
-//    let bb4 = Bitboard { v: [7, 3] };
-//    bb3.set(Square::SQ81);
-//    assert_eq!(bb3.value(0), bb4.value(0));
-//    assert_eq!(bb3.value(1), bb4.value(1));
-//}
 
 #[test]
 fn test_bitboard_eq() {

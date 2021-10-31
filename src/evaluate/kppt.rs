@@ -290,17 +290,25 @@ impl Evaluator {
                 let l0 = list.get(j, Color::BLACK);
                 let l1 = list.get(j, Color::WHITE);
                 let board_and_turn_0 = self.kpp(sq_bk, k0, l0);
-                sum.val[0][0] += i32::from(board_and_turn_0[0]);
-                sum.val[0][1] += i32::from(board_and_turn_0[1]);
+                unsafe {
+                    sum.vk.val[0][0] += i32::from(board_and_turn_0[0]);
+                    sum.vk.val[0][1] += i32::from(board_and_turn_0[1]);
+                }
                 let board_and_turn_1 = self.kpp(sq_wk_inv, k1, l1);
-                sum.val[1][0] += i32::from(board_and_turn_1[0]);
-                sum.val[1][1] += i32::from(board_and_turn_1[1]);
+                unsafe {
+                    sum.vk.val[1][0] += i32::from(board_and_turn_1[0]);
+                    sum.vk.val[1][1] += i32::from(board_and_turn_1[1]);
+                }
             }
             let board_and_turn = self.kkp(sq_bk, sq_wk, k0);
-            sum.val[2][0] += i32::from(board_and_turn[0]);
-            sum.val[2][1] += i32::from(board_and_turn[1]);
+            unsafe {
+                sum.vk.val[2][0] += i32::from(board_and_turn[0]);
+                sum.vk.val[2][1] += i32::from(board_and_turn[1]);
+            }
         }
-        sum.val[2][0] += pos.material().0 * FV_SCALE;
+        unsafe {
+            sum.vk.val[2][0] += pos.material().0 * FV_SCALE;
+        }
         sum.sum(pos.side_to_move()) / FV_SCALE
     }
     fn doapc(&self, pos: &Position, eval_index: EvalIndex) -> EvalSum {
@@ -308,17 +316,23 @@ impl Evaluator {
         let sq_wk = pos.king_square(Color::WHITE);
         let mut eval_sum = EvalSum::new();
         let board_and_turn = self.kkp(sq_bk, sq_wk, eval_index);
-        eval_sum.val[2][0] = i32::from(board_and_turn[0]);
-        eval_sum.val[2][1] = i32::from(board_and_turn[1]);
+        unsafe {
+            eval_sum.vk.val[2][0] = i32::from(board_and_turn[0]);
+            eval_sum.vk.val[2][1] = i32::from(board_and_turn[1]);
+        }
         let inv_sq_wk = sq_wk.inverse();
         let inv_eval_index = eval_index.inverse();
         for item in pos.eval_list().0.iter() {
             let board_and_turn_0 = self.kpp(sq_bk, eval_index, item[0]);
-            eval_sum.val[0][0] += i32::from(board_and_turn_0[0]);
-            eval_sum.val[0][1] += i32::from(board_and_turn_0[1]);
+            unsafe {
+                eval_sum.vk.val[0][0] += i32::from(board_and_turn_0[0]);
+                eval_sum.vk.val[0][1] += i32::from(board_and_turn_0[1]);
+            }
             let board_and_turn_1 = self.kpp(inv_sq_wk, inv_eval_index, item[1]);
-            eval_sum.val[1][0] += i32::from(board_and_turn_1[0]);
-            eval_sum.val[1][1] += i32::from(board_and_turn_1[1]);
+            unsafe {
+                eval_sum.vk.val[1][0] += i32::from(board_and_turn_1[0]);
+                eval_sum.vk.val[1][1] += i32::from(board_and_turn_1[1]);
+            }
         }
         eval_sum
     }
@@ -349,7 +363,7 @@ impl Evaluator {
             let key_excluded_turn = pos.key().excluded_turn();
             let mut entry = unsafe { (*ehash).get(key_excluded_turn) };
             entry.decode();
-            if entry.key == key_excluded_turn {
+            if entry.key() == key_excluded_turn {
                 get_stack_mut(stack, 0).static_eval_raw = entry;
                 debug_assert_eq!(entry.sum(pos.side_to_move()), self.evaluate_debug(pos));
                 return entry.sum(pos.side_to_move()) / FV_SCALE;
@@ -361,58 +375,78 @@ impl Evaluator {
             if PieceType::new(last_move.piece_moved_before_move()) == PieceType::KING {
                 get_stack_mut(stack, 0).static_eval_raw = get_stack(stack, -1).static_eval_raw;
                 let sum = &mut get_stack_mut(stack, 0).static_eval_raw;
-                sum.val[2][0] = pos.material().0 * FV_SCALE;
-                sum.val[2][1] = 0;
+                unsafe {
+                    sum.vk.val[2][0] = pos.material().0 * FV_SCALE;
+                    sum.vk.val[2][1] = 0;
+                }
                 if pos.side_to_move() == Color::BLACK {
-                    sum.val[1][0] = 0;
-                    sum.val[1][1] = 0;
+                    unsafe {
+                        sum.vk.val[1][0] = 0;
+                        sum.vk.val[1][1] = 0;
+                    }
                     let inv_sq_wk = sq_wk.inverse();
                     let eval_list = pos.eval_list();
                     for (i, item) in eval_list.0.iter().enumerate() {
                         for item_inner in eval_list.0.iter().take(i) {
                             let board_and_turn = self.kpp(inv_sq_wk, item[1], item_inner[1]);
-                            sum.val[1][0] += i32::from(board_and_turn[0]);
-                            sum.val[1][1] += i32::from(board_and_turn[1]);
+                            unsafe {
+                                sum.vk.val[1][0] += i32::from(board_and_turn[0]);
+                                sum.vk.val[1][1] += i32::from(board_and_turn[1]);
+                            }
                         }
                         let board_and_turn = self.kkp(inv_sq_wk, sq_bk.inverse(), item[1]);
-                        sum.val[2][0] -= i32::from(board_and_turn[0]);
-                        sum.val[2][1] += i32::from(board_and_turn[1]);
+                        unsafe {
+                            sum.vk.val[2][0] -= i32::from(board_and_turn[0]);
+                            sum.vk.val[2][1] += i32::from(board_and_turn[1]);
+                        }
                     }
 
                     if pos.is_capture_after_move() {
                         let changed_eval_index_captured = pos.changed_eval_index_captured();
                         let diff = self.doablack(pos, changed_eval_index_captured.new_index);
-                        sum.val[0][0] += diff[0];
-                        sum.val[0][1] += diff[1];
+                        unsafe {
+                            sum.vk.val[0][0] += diff[0];
+                            sum.vk.val[0][1] += diff[1];
+                        }
                         let list_index_captured = pos.eval_list_index(changed_eval_index_captured.new_index);
                         pos.eval_list_mut()
                             .set(list_index_captured, Color::BLACK, changed_eval_index_captured.old_index);
                         let diff = self.doablack(pos, changed_eval_index_captured.old_index);
-                        sum.val[0][0] -= diff[0];
-                        sum.val[0][1] -= diff[1];
+                        unsafe {
+                            sum.vk.val[0][0] -= diff[0];
+                            sum.vk.val[0][1] -= diff[1];
+                        }
                         pos.eval_list_mut()
                             .set(list_index_captured, Color::BLACK, changed_eval_index_captured.new_index);
                     }
                 } else {
-                    sum.val[0][0] = 0;
-                    sum.val[0][1] = 0;
+                    unsafe {
+                        sum.vk.val[0][0] = 0;
+                        sum.vk.val[0][1] = 0;
+                    }
                     let eval_list = pos.eval_list();
                     for (i, item) in eval_list.0.iter().enumerate() {
                         for item_inner in eval_list.0.iter().take(i) {
                             let board_and_turn = self.kpp(sq_bk, item[0], item_inner[0]);
-                            sum.val[0][0] += i32::from(board_and_turn[0]);
-                            sum.val[0][1] += i32::from(board_and_turn[1]);
+                            unsafe {
+                                sum.vk.val[0][0] += i32::from(board_and_turn[0]);
+                                sum.vk.val[0][1] += i32::from(board_and_turn[1]);
+                            }
                         }
                         let board_and_turn = self.kkp(sq_bk, sq_wk, item[0]);
-                        sum.val[2][0] += i32::from(board_and_turn[0]);
-                        sum.val[2][1] += i32::from(board_and_turn[1]);
+                        unsafe {
+                            sum.vk.val[2][0] += i32::from(board_and_turn[0]);
+                            sum.vk.val[2][1] += i32::from(board_and_turn[1]);
+                        }
                     }
 
                     if pos.is_capture_after_move() {
                         let changed_eval_index_captured = pos.changed_eval_index_captured();
                         let diff = self.doawhite(pos, changed_eval_index_captured.new_index.inverse());
-                        sum.val[1][0] += diff[0];
-                        sum.val[1][1] += diff[1];
+                        unsafe {
+                            sum.vk.val[1][0] += diff[0];
+                            sum.vk.val[1][1] += diff[1];
+                        }
                         let list_index_captured = pos.eval_list_index(changed_eval_index_captured.new_index);
                         pos.eval_list_mut().set(
                             list_index_captured,
@@ -420,8 +454,10 @@ impl Evaluator {
                             changed_eval_index_captured.old_index.inverse(),
                         );
                         let diff = self.doawhite(pos, changed_eval_index_captured.old_index.inverse());
-                        sum.val[1][0] -= diff[0];
-                        sum.val[1][1] -= diff[1];
+                        unsafe {
+                            sum.vk.val[1][0] -= diff[0];
+                            sum.vk.val[1][1] -= diff[1];
+                        }
                         pos.eval_list_mut().set(
                             list_index_captured,
                             Color::WHITE,
@@ -429,7 +465,7 @@ impl Evaluator {
                         );
                     }
                 }
-                sum.key = key_excluded_turn;
+                sum.vk.key = key_excluded_turn;
                 sum.encode();
                 debug_assert_eq!(sum.sum(pos.side_to_move()), self.evaluate_debug(pos));
                 unsafe {
@@ -447,15 +483,19 @@ impl Evaluator {
                         pos.changed_eval_index().new_index,
                         pos.changed_eval_index_captured().new_index,
                     );
-                    diff.val[0][0] -= i32::from(board_and_turn[0]);
-                    diff.val[0][1] -= i32::from(board_and_turn[1]);
+                    unsafe {
+                        diff.vk.val[0][0] -= i32::from(board_and_turn[0]);
+                        diff.vk.val[0][1] -= i32::from(board_and_turn[1]);
+                    }
                     let board_and_turn = self.kpp(
                         inv_sq_wk,
                         pos.changed_eval_index().new_index.inverse(),
                         pos.changed_eval_index_captured().new_index.inverse(),
                     );
-                    diff.val[1][0] -= i32::from(board_and_turn[0]);
-                    diff.val[1][1] -= i32::from(board_and_turn[1]);
+                    unsafe {
+                        diff.vk.val[1][0] -= i32::from(board_and_turn[0]);
+                        diff.vk.val[1][1] -= i32::from(board_and_turn[1]);
+                    }
                     let changed_eval_index_captured = pos.changed_eval_index_captured();
                     let list_index_captured = pos.eval_list_index(changed_eval_index_captured.new_index);
                     pos.eval_list_mut()
@@ -479,15 +519,19 @@ impl Evaluator {
                         pos.changed_eval_index().old_index,
                         pos.changed_eval_index_captured().old_index,
                     );
-                    diff.val[0][0] += i32::from(board_and_turn[0]);
-                    diff.val[0][1] += i32::from(board_and_turn[1]);
+                    unsafe {
+                        diff.vk.val[0][0] += i32::from(board_and_turn[0]);
+                        diff.vk.val[0][1] += i32::from(board_and_turn[1]);
+                    }
                     let board_and_turn = self.kpp(
                         inv_sq_wk,
                         pos.changed_eval_index().old_index.inverse(),
                         pos.changed_eval_index_captured().old_index.inverse(),
                     );
-                    diff.val[1][0] += i32::from(board_and_turn[0]);
-                    diff.val[1][1] += i32::from(board_and_turn[1]);
+                    unsafe {
+                        diff.vk.val[1][0] += i32::from(board_and_turn[0]);
+                        diff.vk.val[1][1] += i32::from(board_and_turn[1]);
+                    }
 
                     let changed_eval_index_captured = pos.changed_eval_index_captured();
                     pos.eval_list_mut()
@@ -508,10 +552,12 @@ impl Evaluator {
                     .set(list_index, Color::BLACK, changed_eval_index.new_index);
                 pos.eval_list_mut()
                     .set(list_index, Color::WHITE, changed_eval_index.new_index.inverse());
-                diff.val[2][0] += pos.material_diff().0 * FV_SCALE;
+                unsafe {
+                    diff.vk.val[2][0] += pos.material_diff().0 * FV_SCALE;
+                }
                 get_stack_mut(stack, 0).static_eval_raw = get_stack(stack, -1).static_eval_raw;
                 get_stack_mut(stack, 0).static_eval_raw += diff;
-                get_stack_mut(stack, 0).static_eval_raw.key = key_excluded_turn;
+                get_stack_mut(stack, 0).static_eval_raw.vk.key = key_excluded_turn;
                 get_stack_mut(stack, 0).static_eval_raw.encode();
                 debug_assert_eq!(
                     get_stack(stack, 0).static_eval_raw.sum(pos.side_to_move()),
@@ -544,17 +590,25 @@ impl Evaluator {
                 let l0 = list.get(j, Color::BLACK);
                 let l1 = list.get(j, Color::WHITE);
                 let board_and_turn_0 = self.kpp(sq_bk, k0, l0);
-                sum.val[0][0] += i32::from(board_and_turn_0[0]);
-                sum.val[0][1] += i32::from(board_and_turn_0[1]);
+                unsafe {
+                    sum.vk.val[0][0] += i32::from(board_and_turn_0[0]);
+                    sum.vk.val[0][1] += i32::from(board_and_turn_0[1]);
+                }
                 let board_and_turn_1 = self.kpp(sq_wk_inv, k1, l1);
-                sum.val[1][0] += i32::from(board_and_turn_1[0]);
-                sum.val[1][1] += i32::from(board_and_turn_1[1]);
+                unsafe {
+                    sum.vk.val[1][0] += i32::from(board_and_turn_1[0]);
+                    sum.vk.val[1][1] += i32::from(board_and_turn_1[1]);
+                }
             }
             let board_and_turn = self.kkp(sq_bk, sq_wk, k0);
-            sum.val[2][0] += i32::from(board_and_turn[0]);
-            sum.val[2][1] += i32::from(board_and_turn[1]);
+            unsafe {
+                sum.vk.val[2][0] += i32::from(board_and_turn[0]);
+                sum.vk.val[2][1] += i32::from(board_and_turn[1]);
+            }
         }
-        sum.val[2][0] += pos.material().0 * FV_SCALE;
+        unsafe {
+            sum.vk.val[2][0] += pos.material().0 * FV_SCALE;
+        }
         sum.sum(pos.side_to_move()) // not div by FV_SCALE
     }
 }
@@ -613,71 +667,129 @@ pub fn evaluate_at_root(pos: &Position, stack: &mut [Stack]) -> Value {
     unsafe { EVALUATOR.evaluate_at_root(pos, stack) }
 }
 
-#[repr(align(256))]
 #[derive(Clone, Copy)]
-pub struct EvalSum {
+struct EvalSumValueAndKey {
     pub val: [[i32; 2]; 3],
     pub key: KeyExcludedTurn,
 }
 
+#[repr(align(256))]
+#[derive(Copy)]
+pub union EvalSum {
+    vk: EvalSumValueAndKey,
+    #[cfg(target_feature = "avx2")]
+    mm: std::arch::x86_64::__m256i,
+}
+
+impl Clone for EvalSum {
+    #[cfg(target_feature = "avx2")]
+    fn clone(&self) -> Self {
+        Self { mm: unsafe { self.mm } }
+    }
+    #[cfg(not(target_feature = "avx2"))]
+    fn clone(&self) -> Self {
+        Self { vk: unsafe { self.vk } }
+    }
+}
+
 impl std::ops::AddAssign for EvalSum {
+    #[cfg(target_feature = "avx2")]
     fn add_assign(&mut self, other: EvalSum) {
-        self.val[0][0] += other.val[0][0];
-        self.val[0][1] += other.val[0][1];
-        self.val[1][0] += other.val[1][0];
-        self.val[1][1] += other.val[1][1];
-        self.val[2][0] += other.val[2][0];
-        self.val[2][1] += other.val[2][1];
+        unsafe {
+            self.mm = std::arch::x86_64::_mm256_add_epi32(self.mm, other.mm);
+        }
+    }
+    #[cfg(not(target_feature = "avx2"))]
+    fn add_assign(&mut self, other: EvalSum) {
+        unsafe {
+            self.vk.val[0][0] += other.vk.val[0][0];
+            self.vk.val[0][1] += other.vk.val[0][1];
+            self.vk.val[1][0] += other.vk.val[1][0];
+            self.vk.val[1][1] += other.vk.val[1][1];
+            self.vk.val[2][0] += other.vk.val[2][0];
+            self.vk.val[2][1] += other.vk.val[2][1];
+        }
     }
 }
 
 impl std::ops::SubAssign for EvalSum {
+    #[cfg(target_feature = "avx2")]
     fn sub_assign(&mut self, other: EvalSum) {
-        self.val[0][0] -= other.val[0][0];
-        self.val[0][1] -= other.val[0][1];
-        self.val[1][0] -= other.val[1][0];
-        self.val[1][1] -= other.val[1][1];
-        self.val[2][0] -= other.val[2][0];
-        self.val[2][1] -= other.val[2][1];
+        unsafe {
+            self.mm = std::arch::x86_64::_mm256_sub_epi32(self.mm, other.mm);
+        }
+    }
+    #[cfg(not(target_feature = "avx2"))]
+    fn sub_assign(&mut self, other: EvalSum) {
+        unsafe {
+            self.vk.val[0][0] -= other.vk.val[0][0];
+            self.vk.val[0][1] -= other.vk.val[0][1];
+            self.vk.val[1][0] -= other.vk.val[1][0];
+            self.vk.val[1][1] -= other.vk.val[1][1];
+            self.vk.val[2][0] -= other.vk.val[2][0];
+            self.vk.val[2][1] -= other.vk.val[2][1];
+        }
     }
 }
 
 impl EvalSum {
     const NOT_EVALUATED: i32 = i32::max_value();
+    #[cfg(target_feature = "avx2")]
     pub fn new() -> EvalSum {
         EvalSum {
-            val: [[0; 2]; 3],
-            key: KeyExcludedTurn(0),
+            mm: unsafe { std::arch::x86_64::_mm256_set1_epi8(0i8) },
         }
+    }
+    #[cfg(not(target_feature = "avx2"))]
+    pub fn new() -> EvalSum {
+        EvalSum {
+            vk: EvalSumValueAndKey {
+                val: [[0; 2]; 3],
+                key: KeyExcludedTurn(0),
+            },
+        }
+    }
+    fn value(&self, i: usize, j: usize) -> i32 {
+        debug_assert!(i < 3);
+        debug_assert!(j < 2);
+        unsafe { *self.vk.val.get_unchecked(i).get_unchecked(j) }
+    }
+    fn key(&self) -> KeyExcludedTurn {
+        unsafe { self.vk.key }
     }
     fn sum(&self, side_to_move: Color) -> Value {
         let value_board = {
-            let pseudo_value_board = self.val[0][0] - self.val[1][0] + self.val[2][0];
+            let pseudo_value_board = self.value(0, 0) - self.value(1, 0) + self.value(2, 0);
             if side_to_move == Color::BLACK {
                 pseudo_value_board
             } else {
                 -pseudo_value_board
             }
         };
-        let value_turn = self.val[0][1] + self.val[1][1] + self.val[2][1];
+        let value_turn = self.value(0, 1) + self.value(1, 1) + self.value(2, 1);
         Value(value_board + value_turn)
     }
     fn decode(&mut self) {
-        self.key = KeyExcludedTurn(unsafe {
-            self.key.0
-                ^ std::mem::transmute::<[i32; 2], u64>(self.val[0])
-                ^ std::mem::transmute::<[i32; 2], u64>(self.val[1])
-                ^ std::mem::transmute::<[i32; 2], u64>(self.val[2])
-        });
+        #[cfg(not(target_feature = "avx2"))]
+        unsafe {
+            self.vk.key = KeyExcludedTurn(
+                self.key().0
+                    ^ std::mem::transmute::<[i32; 2], u64>(self.vk.val[0])
+                    ^ std::mem::transmute::<[i32; 2], u64>(self.vk.val[1])
+                    ^ std::mem::transmute::<[i32; 2], u64>(self.vk.val[2]),
+            );
+        }
     }
     fn encode(&mut self) {
         self.decode();
     }
     pub fn set_not_evaluated(&mut self) {
-        self.val[0][0] = EvalSum::NOT_EVALUATED;
+        unsafe {
+            self.vk.val[0][0] = EvalSum::NOT_EVALUATED;
+        }
     }
     pub fn is_not_evaluated(&self) -> bool {
-        self.val[0][0] == EvalSum::NOT_EVALUATED
+        self.value(0, 0) == EvalSum::NOT_EVALUATED
     }
 }
 
