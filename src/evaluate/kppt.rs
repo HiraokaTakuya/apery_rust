@@ -517,6 +517,9 @@ impl Evaluator {
                     get_stack(stack, 0).static_eval_raw.sum(pos.side_to_move()),
                     self.evaluate_debug(pos)
                 );
+                unsafe {
+                    (*ehash).set(key_excluded_turn, &get_stack(stack, 0).static_eval_raw);
+                }
                 get_stack(stack, 0).static_eval_raw.sum(pos.side_to_move()) / FV_SCALE
             }
         } else {
