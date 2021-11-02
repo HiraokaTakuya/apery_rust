@@ -2,7 +2,8 @@
 name = "apery"
 version = "2.0.0"
 authors = ["HiraokaTakuya <hiraoka64@gmail.com>"]
-edition = "2018"
+edition = "2021"
+rust-version = "1.56.0"
 
 [dependencies]
 arrayvec = "0.7.1"
