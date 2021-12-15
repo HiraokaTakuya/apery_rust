@@ -3,6 +3,7 @@ use crate::position::*;
 use crate::search::*;
 use crate::thread::*;
 use crate::types::*;
+use anyhow::{anyhow, Result};
 use rayon::prelude::*;
 use std::io::prelude::*;
 
@@ -627,35 +628,37 @@ pub static mut EVALUATOR: Evaluator = Evaluator {
     kkp: std::ptr::null(),
 };
 
-pub fn load_evaluate_files(eval_dir: &str) -> Result<(), String> {
+pub fn load_evaluate_files(eval_dir: &str) -> Result<()> {
     let kpp_file_name = {
         let mut path = std::path::PathBuf::from(eval_dir);
         path.push("KPP.bin");
         path.as_path().as_os_str().to_str().unwrap().to_string()
     };
-    if let Err(err) = unsafe { EVALUATOR.load_kpp(&kpp_file_name) } {
-        return Err(format!("{}\nFile name: {}", err, kpp_file_name));
-    }
+    unsafe { &mut EVALUATOR }
+        .load_kpp(&kpp_file_name)
+        .map_err(|e| anyhow!("{}: {}", e, kpp_file_name))?;
+
     let kkp_file_name = {
         let mut path = std::path::PathBuf::from(eval_dir);
         path.push("KKP.bin");
         path.as_path().as_os_str().to_str().unwrap().to_string()
     };
-    if let Err(err) = unsafe { EVALUATOR.load_kkp(&kkp_file_name) } {
-        return Err(format!("{}\nFile name: {}", err, kkp_file_name));
-    }
+    unsafe { &mut EVALUATOR }
+        .load_kkp(&kkp_file_name)
+        .map_err(|e| anyhow!("{}: {}", e, kkp_file_name))?;
+
     Ok(())
 }
 
-pub fn write_evaluate_files() -> Result<(), String> {
+pub fn write_evaluate_files() -> Result<()> {
     let kpp_file_name = "KPP.bin";
     let kkp_file_name = "KKP.bin";
-    if let Err(err) = unsafe { EVALUATOR.write_kpp(kpp_file_name) } {
-        return Err(format!("{}\nFile name: {}", err, kpp_file_name));
-    }
-    if let Err(err) = unsafe { EVALUATOR.write_kkp(kkp_file_name) } {
-        return Err(format!("{}\nFile name: {}", err, kkp_file_name));
-    }
+    unsafe { &mut EVALUATOR }
+        .write_kpp(kpp_file_name)
+        .map_err(|e| anyhow!("{}: {}", e, kpp_file_name))?;
+    unsafe { &mut EVALUATOR }
+        .write_kkp(kkp_file_name)
+        .map_err(|e| anyhow!("{}: {}", e, kkp_file_name))?;
     Ok(())
 }
 

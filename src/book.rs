@@ -1,6 +1,7 @@
 use crate::movetypes::*;
 use crate::position::*;
 use crate::types::*;
+use anyhow::Result;
 use rand::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -40,7 +41,7 @@ impl Book {
         let usi_move = move_and_weights[dist.sample(rng)].0;
         Move::new_from_usi(usi_move, pos)
     }
-    pub fn from_file<P>(path: P) -> Result<Book, Box<dyn std::error::Error>>
+    pub fn from_file<P>(path: P) -> Result<Book>
     where
         P: AsRef<std::path::Path>,
     {

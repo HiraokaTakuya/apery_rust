@@ -12,9 +12,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "anyhow"
+version = "1.0.51"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8b26702f315f53b6071259e15dd9d64528213b44d61de1ec926eca7715d62203"
+
+[[package]]
 name = "apery"
 version = "2.0.0"
 dependencies = [
+ "anyhow",
  "arrayvec",
  "custom_derive",
  "derive_more",

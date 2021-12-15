@@ -1,5 +1,6 @@
 use crate::position::*;
 use crate::types::*;
+use thiserror::Error;
 
 #[derive(PartialEq, Eq)]
 pub struct HuffmanCode {
@@ -107,13 +108,19 @@ impl HuffmanCode {
     }
 }
 
+#[derive(Debug, Error)]
 pub enum HuffmanCodeForFieldError {
-    NotFoundYet,
+    #[error("huffman code for field error. undecided yet.")]
+    UndecidedYet,
+    #[error("huffman code for field error. max bit length.")]
     OverMaxBitLength,
 }
 
+#[derive(Debug, Error)]
 pub enum HuffmanCodeForHandError {
-    NotFoundYet,
+    #[error("huffman code for hand error. undecided yet.")]
+    UndecidedYet,
+    #[error("huffman code for hand error. max bit length.")]
     OverMaxBitLength,
 }
 
@@ -152,7 +159,7 @@ impl std::convert::TryFrom<&HuffmanCode> for Piece {
                 bit_length: HuffmanCode::MAX_BIT_LENGTH_FOR_FIELD..=std::u8::MAX,
                 ..
             } => Err(Self::Error::OverMaxBitLength),
-            _ => Err(Self::Error::NotFoundYet),
+            _ => Err(Self::Error::UndecidedYet),
         }
     }
 }
@@ -180,7 +187,7 @@ impl std::convert::TryFrom<&HuffmanCode> for ColorAndPieceTypeForHand {
                 bit_length: HuffmanCode::MAX_BIT_LENGTH_FOR_HAND..=std::u8::MAX,
                 ..
             } => Err(Self::Error::OverMaxBitLength),
-            _ => Err(Self::Error::NotFoundYet),
+            _ => Err(Self::Error::UndecidedYet),
         }
     }
 }

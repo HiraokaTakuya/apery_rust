@@ -7,6 +7,7 @@ use crate::movetypes::*;
 use crate::piecevalue::*;
 use crate::sfen::*;
 use crate::types::*;
+use anyhow::{anyhow, Result};
 use rand::prelude::*;
 use rand::{Rng, SeedableRng};
 use std::convert::TryFrom;
@@ -570,7 +571,7 @@ impl PositionBase {
         check_pieces(&pos, &[PieceType::ROOK, PieceType::DRAGON], 2)?;
         Ok(pos)
     }
-    pub fn new_from_huffman_coded_position(hcp: &HuffmanCodedPosition) -> Result<PositionBase, u32> {
+    pub fn new_from_huffman_coded_position(hcp: &HuffmanCodedPosition) -> Result<PositionBase> {
         let mut bs = BitStreamReader::new(&hcp.buf);
         let mut pos = PositionBase {
             board: [Piece::EMPTY; Square::NUM],
@@ -608,10 +609,10 @@ impl PositionBase {
                         }
                         break;
                     }
-                    Err(HuffmanCodeForFieldError::OverMaxBitLength) => {
-                        return Err(line!());
+                    Err(e @ HuffmanCodeForFieldError::OverMaxBitLength) => {
+                        return Err(anyhow!(e));
                     }
-                    Err(HuffmanCodeForFieldError::NotFoundYet) => {}
+                    Err(HuffmanCodeForFieldError::UndecidedYet) => {}
                 }
             }
         }
@@ -625,10 +626,10 @@ impl PositionBase {
                         pos.hands[c.0 as usize].plus_one(pt);
                         break;
                     }
-                    Err(HuffmanCodeForHandError::OverMaxBitLength) => {
-                        return Err(line!());
+                    Err(e @ HuffmanCodeForHandError::OverMaxBitLength) => {
+                        return Err(anyhow!(e));
                     }
-                    Err(HuffmanCodeForHandError::NotFoundYet) => {}
+                    Err(HuffmanCodeForHandError::UndecidedYet) => {}
                 }
             }
         }
@@ -973,29 +974,25 @@ impl Position {
             Err(sfen_error) => Err(sfen_error),
         }
     }
-    pub fn new_from_huffman_coded_position(hcp: &HuffmanCodedPosition) -> Result<Position, u32> {
-        match PositionBase::new_from_huffman_coded_position(hcp) {
-            Ok(base) => {
-                let state = StateInfo::new_from_position(&base);
-                #[cfg(feature = "kppt")]
-                let eval_list = EvalList::new(&base);
-                #[cfg(feature = "kppt")]
-                let eval_index_to_eval_list_index = EvalIndexToEvalListIndex::new(&eval_list);
-                let mut pos = Position {
-                    base,
-                    #[cfg(feature = "kppt")]
-                    eval_list,
-                    #[cfg(feature = "kppt")]
-                    eval_index_to_eval_list_index,
-                    states: Vec::new(),
-                    nodes: Arc::new(AtomicI64::new(0)),
-                };
-                pos.init_states_and_push(state);
-                debug_assert!(pos.is_ok());
-                Ok(pos)
-            }
-            Err(err) => Err(err),
-        }
+    pub fn new_from_huffman_coded_position(hcp: &HuffmanCodedPosition) -> Result<Position> {
+        let base = PositionBase::new_from_huffman_coded_position(hcp)?;
+        let state = StateInfo::new_from_position(&base);
+        #[cfg(feature = "kppt")]
+        let eval_list = EvalList::new(&base);
+        #[cfg(feature = "kppt")]
+        let eval_index_to_eval_list_index = EvalIndexToEvalListIndex::new(&eval_list);
+        let mut pos = Position {
+            base,
+            #[cfg(feature = "kppt")]
+            eval_list,
+            #[cfg(feature = "kppt")]
+            eval_index_to_eval_list_index,
+            states: Vec::new(),
+            nodes: Arc::new(AtomicI64::new(0)),
+        };
+        pos.init_states_and_push(state);
+        debug_assert!(pos.is_ok());
+        Ok(pos)
     }
     pub fn new_from_position(pos: &Position, nodes: Arc<AtomicI64>) -> Position {
         let mut p = Position {
@@ -3201,7 +3198,8 @@ fn test_huffman_code() {
             let sfen = pos_from_hcp.to_sfen();
             assert_eq!(START_SFEN, &sfen);
         }
-        Err(_err) => {
+        Err(err) => {
+            eprintln!("{}", err);
             panic!();
         }
     }

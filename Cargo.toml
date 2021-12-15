@@ -6,6 +6,7 @@ edition = "2021"
 rust-version = "1.56.0"
 
 [dependencies]
+anyhow = "1.0.51"
 arrayvec = "0.7.1"
 custom_derive = "0.1.7"
 derive_more = "0.99.16"

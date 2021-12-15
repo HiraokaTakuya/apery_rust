@@ -15,6 +15,7 @@ use crate::thread::*;
 use crate::tt::*;
 use crate::types::*;
 use crate::usioption::*;
+use anyhow::{anyhow, Context, Result};
 use std::io::prelude::*;
 
 fn go(
@@ -23,14 +24,16 @@ fn go(
     usi_options: &UsiOptions,
     pos: &Position,
     args: &[&str],
-) -> Result<(), String> {
+) -> Result<()> {
     let mut limits = LimitsType::new();
     limits.start_time = Some(std::time::Instant::now());
     let mut iter = args.iter();
-    fn next_num<T: std::str::FromStr>(limit_type: &str, iter: &mut std::slice::Iter<'_, &str>) -> Result<T, String> {
-        let item = iter.next().ok_or_else(|| format!("Error: No token after {}.", limit_type))?;
-        let n = item.parse().map_err(|_| "Error: Parse error.".to_string())?;
-        Ok(n)
+    fn next_num<T: std::str::FromStr>(limit_type: &str, iter: &mut std::slice::Iter<'_, &str>) -> Result<T>
+    where
+        <T as std::str::FromStr>::Err: std::error::Error + Send + Sync + 'static,
+    {
+        let item = iter.next().with_context(|| format!("no token after {}.", limit_type))?;
+        item.parse::<T>().map_err(|e| anyhow!("{}: {}", e, item))
     }
     let mut ponder_mode = false;
     while let Some(&limit_type) = iter.next() {
@@ -75,7 +78,7 @@ fn go(
                 let n = next_num(limit_type, &mut iter)?;
                 limits.perft = Some(n);
             }
-            invalid_token => return Err(format!("Error: Invalid token: {}", invalid_token)),
+            invalid_token => return Err(anyhow!("invalid token: {}", invalid_token)),
         }
     }
     let hide_all_output = false;
@@ -368,7 +371,7 @@ fn read_csa_dirs_and_output_sfen(dir_paths: &[&str]) {
     }
 }
 
-fn csa_record_to_sfen(csa: &[u8]) -> Result<String, String> {
+fn csa_record_to_sfen(csa: &[u8]) -> Result<String> {
     enum Phase {
         InitialPositionAndOptionalInformation,
         Moves,
@@ -424,18 +427,11 @@ fn csa_record_to_sfen(csa: &[u8]) -> Result<String, String> {
                     // game end.
                 } else if line.starts_with(b"+") || line.starts_with(b"-") {
                     // black or white player's move
-                    match std::str::from_utf8(&line[1..]) {
-                        Ok(line) => {
-                            if let Some(m) = Move::new_from_csa_str(line, &pos) {
-                                s += &format!(" {}", m.to_usi_string());
-                                let gives_check = pos.gives_check(m);
-                                pos.do_move(m, gives_check);
-                            } else {
-                                return Err("Illegal move".to_string());
-                            }
-                        }
-                        Err(_) => return Err("move is not ascii and not utf-8".to_string()),
-                    }
+                    let line = std::str::from_utf8(&line[1..])?;
+                    let m = Move::new_from_csa_str(line, &pos).context("illegal move")?;
+                    s += &format!(" {}", m.to_usi_string());
+                    let gives_check = pos.gives_check(m);
+                    pos.do_move(m, gives_check);
                 } else if line.starts_with(b"T") {
                     // consumption time
                 }
