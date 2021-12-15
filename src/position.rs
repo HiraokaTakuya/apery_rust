@@ -456,7 +456,7 @@ impl PositionBase {
                     file_idx += 1;
                 } else {
                     return Err(SfenError::InvalidPieceCharactors {
-                        chars: token.to_string(),
+                        token: token.to_string(),
                     });
                 }
             }
@@ -515,7 +515,9 @@ impl PositionBase {
                         }
                         _ => {
                             if pos.hands[c.0 as usize].exist(pt) {
-                                return Err(SfenError::SameHandPieceTwice { pt });
+                                return Err(SfenError::SameHandPieceTwice {
+                                    token: token.to_string(),
+                                });
                             }
                             pos.hands[c.0 as usize].set(pt, hand_num as u32);
                             hand_num = 1; // reset hand_num
@@ -523,12 +525,12 @@ impl PositionBase {
                     };
                 } else {
                     return Err(SfenError::InvalidHandPieceCharactors {
-                        chars: token.to_string(),
+                        token: token.to_string(),
                     });
                 }
             }
             if hand_num != 1 {
-                return Err(SfenError::InvalidHandPieceCharactors { chars: "".to_string() });
+                return Err(SfenError::EndWithHandPieceNumber { last_number: hand_num });
             }
         }
         match game_ply_str.to_string().parse::<i32>() {
@@ -2870,23 +2872,23 @@ fn test_position_set() {
     let sfens = [
         (
             "l6nl/5+P1gk/2np1S3/p1p4Pp/3P2Sp1/1PPb2P1P/P5GS1/R8/LN4bKL w RRGgsn5p 1",
-            PieceType::ROOK,
+            Some(Piece::B_ROOK),
         ),
         (
             "l4S2l/4g1gs1/5p1p1/pr2N1pkp/4Gn3/PP3PPPP/2GPP4/1K7/L3r+s2L w BS2S2N5Pb 20",
-            PieceType::SILVER,
+            Some(Piece::B_SILVER),
         ),
         (
             "6n1l/2+S1k4/2lp4p/1np1B2b1/3PP4/1N1S3rP/1P2+pPP+p1/1p1G5/3KG2r1 b GSN2L4Pgss2p 399",
-            PieceType::SILVER,
+            Some(Piece::W_SILVER),
         ),
     ];
-    for &(sfen, pt_twice) in sfens.iter() {
+    for &(sfen, pc_twice) in sfens.iter() {
         match Position::new_from_sfen(sfen) {
             Ok(_) => assert_eq!("".to_string(), sfen.to_string()),
             Err(err) => match err {
-                SfenError::SameHandPieceTwice { pt } => {
-                    assert_eq!(pt, pt_twice);
+                SfenError::SameHandPieceTwice { token } => {
+                    assert_eq!(Piece::new_hand_piece_from_str(&token), pc_twice);
                 }
                 _ => panic!(),
             },
@@ -2911,6 +2913,22 @@ fn test_position_set() {
                     assert_eq!(c, color_of_king_nothing);
                 }
                 _ => panic!(),
+            },
+        }
+    }
+
+    let sfens = [
+        ("l6nl/5+P1gk/2np1S3/p1p4Pp/3P2Sp1/1PPb2P1P/P5GS1/R8/LN4bKL w RGgsn5p9 1", 9),
+        ("l6nl/5+P1gk/2np1S3/p1p4Pp/3P2Sp1/1PPb2P1P/P5GS1/R8/LN4bKL w RGgsn5p99 1", 99),
+    ];
+    for &(sfen, last_hand_number) in sfens.iter() {
+        match Position::new_from_sfen(sfen) {
+            Ok(_) => unreachable!(),
+            Err(err) => match err {
+                SfenError::EndWithHandPieceNumber { last_number } => {
+                    assert_eq!(last_number, last_hand_number);
+                }
+                _ => unreachable!(),
             },
         }
     }

@@ -135,9 +135,11 @@ fn position(pos: &mut Position, args: &[&str]) {
         "sfen" => {
             // &args[1..]:  skip "sfen".
             match Position::new_from_sfen_args(&args[1..]) {
-                Ok(new_pos) => tmp_pos = new_pos,
+                Ok(new_pos) => {
+                    tmp_pos = new_pos;
+                }
                 Err(err) => {
-                    println!("sfen error: {:?}", err);
+                    println!("sfen error. {}", err);
                     return;
                 }
             }

@@ -14,7 +14,7 @@ impl Bool for False {
     const BOOL: bool = false;
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 pub struct Color(pub i32);
 
 impl Color {
@@ -30,6 +30,18 @@ impl Color {
     }
     pub fn new(pc: Piece) -> Color {
         Color((pc.0 & Piece::WHITE_BIT) >> Piece::WHITE_BIT_SHIFT)
+    }
+}
+
+impl std::fmt::Debug for Color {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let s = match *self {
+            Color::BLACK => "black",
+            Color::WHITE => "white",
+            _ => unreachable!(),
+        };
+        write!(f, "{}", s)?;
+        Ok(())
     }
 }
 
