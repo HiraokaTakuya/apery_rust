@@ -86,6 +86,48 @@ fn go(
     Ok(())
 }
 
+fn isready(
+    is_ready: &mut bool,
+    usi_options: &UsiOptions,
+    thread_pool: &mut ThreadPool,
+    tt: &mut TranspositionTable,
+    #[cfg(feature = "kppt")] ehash: &mut EvalHash,
+) {
+    if !*is_ready {
+        #[cfg(feature = "kppt")]
+        let mut all_ok = true;
+        #[cfg(feature = "material")]
+        let all_ok = true;
+        #[cfg(feature = "kppt")]
+        match load_evaluate_files(&usi_options.get_string(UsiOptions::EVAL_DIR)) {
+            Ok(_) => {}
+            Err(err) => {
+                eprintln!("{}", err);
+                all_ok = false;
+            }
+        }
+        match Book::from_file(&usi_options.get_filename(UsiOptions::BOOK_FILE)) {
+            Ok(book) => {
+                thread_pool.book = Some(book);
+            }
+            Err(_err) => {
+                //eprintln!("{}", err);
+                //all_ok = false;
+            }
+        }
+        if all_ok {
+            tt.resize(usi_options.get_i64(UsiOptions::USI_HASH) as usize, thread_pool);
+            #[cfg(feature = "kppt")]
+            ehash.resize(usi_options.get_i64(UsiOptions::EVAL_HASH) as usize, thread_pool);
+
+            *is_ready = true;
+        }
+    }
+    if *is_ready {
+        println!("readyok");
+    }
+}
+
 fn usi_new_game(thread_pool: &mut ThreadPool, _tt: &mut TranspositionTable) {
     thread_pool.wait_for_search_finished();
     thread_pool.clear();
@@ -492,39 +534,14 @@ pub fn cmd_loop() {
                 }
             }
             "isready" => {
-                if !is_ready {
+                isready(
+                    &mut is_ready,
+                    &usi_options,
+                    &mut thread_pool,
+                    &mut tt,
                     #[cfg(feature = "kppt")]
-                    let mut all_ok = true;
-                    #[cfg(feature = "material")]
-                    let all_ok = true;
-                    #[cfg(feature = "kppt")]
-                    match load_evaluate_files(&usi_options.get_string(UsiOptions::EVAL_DIR)) {
-                        Ok(_) => {}
-                        Err(err) => {
-                            eprintln!("{}", err);
-                            all_ok = false;
-                        }
-                    }
-                    match Book::from_file(&usi_options.get_filename(UsiOptions::BOOK_FILE)) {
-                        Ok(book) => {
-                            thread_pool.book = Some(book);
-                        }
-                        Err(_err) => {
-                            //eprintln!("{}", err);
-                            //all_ok = false;
-                        }
-                    }
-                    if all_ok {
-                        tt.resize(usi_options.get_i64(UsiOptions::USI_HASH) as usize, &mut thread_pool);
-                        #[cfg(feature = "kppt")]
-                        ehash.resize(usi_options.get_i64(UsiOptions::EVAL_HASH) as usize, &mut thread_pool);
-
-                        is_ready = true;
-                    }
-                }
-                if is_ready {
-                    println!("readyok");
-                }
+                    &mut ehash,
+                );
             }
             "ponderhit" => {
                 thread_pool.ponder.store(false, std::sync::atomic::Ordering::Relaxed);
