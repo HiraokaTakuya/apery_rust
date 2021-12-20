@@ -12,6 +12,7 @@ use crate::tt::*;
 use crate::types::*;
 use crate::usi::*;
 use crate::usioption::*;
+use anyhow::{anyhow, Context, Result};
 use rand::prelude::*;
 use rand::Rng;
 use std::io::prelude::*;
@@ -90,55 +91,35 @@ fn random_move(pos: &mut Position, rng: &mut ThreadRng) {
     }
 }
 
-pub fn generate_teachers(args: &[&str]) {
+pub fn generate_teachers(args: &[&str]) -> Result<()> {
     if args.len() != 5 {
-        eprintln!("Invalid generate_teachers command.");
-        eprintln!("expected:");
-        eprintln!(
-            r#"generate_teachers <output_file_path> <root_positions_file_path> <search_depth> <num_threads> <num_teachers>"#
+        let s = concat!(
+            "Invalid generate_teachers command.\n",
+            "expected:\n",
+            r#"generate_teachers <output_file_path> <root_positions_file_path> <search_depth> <num_threads> <num_teachers>"#,
         );
-        return;
+        return Err(anyhow!(s));
     }
     let output = args[0];
     let root_positions_file_path = args[1];
     let search_depth = args[2];
     let num_threads = args[3];
     let num_teachers = args[4];
-    let writer = std::sync::Arc::new(std::sync::Mutex::new(match TeacherWriter::new(output) {
-        Ok(w) => w,
-        Err(_) => {
-            eprintln!(r#"Cannot create file "{}"."#, output);
-            return;
-        }
-    }));
-    let roots: std::sync::Arc<Vec<HuffmanCodedPosition>> = std::sync::Arc::new(match file_to_vec(root_positions_file_path) {
-        Ok(v) => v,
-        Err(_) => {
-            eprintln!(r#"Cannot read file "{}"."#, root_positions_file_path);
-            return;
-        }
-    });
-    let search_depth = match search_depth.parse::<u32>() {
-        Ok(n) => n,
-        Err(_) => {
-            eprintln!(r#"Cannot parse "{}" as search_depth."#, search_depth);
-            return;
-        }
-    };
-    let num_threads = match num_threads.parse::<usize>() {
-        Ok(n) => n,
-        Err(_) => {
-            eprintln!(r#"Cannot parse "{}" as num_threads."#, num_threads);
-            return;
-        }
-    };
-    let num_teachers = match num_teachers.parse::<usize>() {
-        Ok(n) => n,
-        Err(_) => {
-            eprintln!(r#"Cannot parse "{}" as num_teachers."#, num_teachers);
-            return;
-        }
-    };
+    let writer = std::sync::Arc::new(std::sync::Mutex::new(
+        TeacherWriter::new(output).with_context(|| anyhow!(r#"Cannot create file "{}"."#, output))?,
+    ));
+    let roots: std::sync::Arc<Vec<HuffmanCodedPosition>> = std::sync::Arc::new(
+        file_to_vec(root_positions_file_path).with_context(|| anyhow!(r#"Cannot read file "{}"."#, root_positions_file_path))?,
+    );
+    let search_depth = search_depth
+        .parse::<u32>()
+        .with_context(|| anyhow!(r#"Cannot parse "{}" as search_depth."#, search_depth))?;
+    let num_threads = num_threads
+        .parse::<usize>()
+        .with_context(|| anyhow!(r#"Cannot parse "{}" as num_threads."#, num_threads))?;
+    let num_teachers = num_teachers
+        .parse::<usize>()
+        .with_context(|| anyhow!(r#"Cannot parse "{}" as num_teachers."#, num_teachers))?;
     let count_teachers = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
     let mut v = vec![];
     for _ in 0..num_threads {
@@ -281,4 +262,5 @@ pub fn generate_teachers(args: &[&str]) {
     for th in v {
         th.join().unwrap();
     }
+    Ok(())
 }

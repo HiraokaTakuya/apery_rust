@@ -578,7 +578,9 @@ pub fn cmd_loop() {
             }
             "generate_teachers" => {
                 if is_ready {
-                    generate_teachers(&args[1..]);
+                    if let Err(e) = generate_teachers(&args[1..]) {
+                        eprintln!("{}", e);
+                    }
                 } else {
                     eprintln!(r#"We need "isready" command in advance."#);
                 }
