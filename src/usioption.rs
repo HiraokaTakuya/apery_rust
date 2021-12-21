@@ -166,11 +166,18 @@ impl UsiOptions {
                     println!("{:?}", err);
                 }
             },
-            Some(UsiOptionValue::Check { current, .. }) => match value {
-                "true" => *current = true,
-                "false" => *current = false,
-                _ => println!("Error: illegal option value: {}", value),
-            },
+            Some(UsiOptionValue::Check { current, .. }) => {
+                let prev = *current;
+                match value {
+                    "true" => *current = true,
+                    "false" => *current = false,
+                    _ => println!("Error: illegal option value: {}", value),
+                }
+                let false_to_true = !prev && *current;
+                if false_to_true && key == Self::BOOK_ENABLE {
+                    *is_ready = false;
+                }
+            }
             Some(UsiOptionValue::Button) => println!(r#"Error: The option "{}" is button type. You can't set value to it."#, key),
         }
     }
