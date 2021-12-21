@@ -3193,16 +3193,9 @@ fn test_check_info_do_move() {
 fn test_huffman_code() {
     let pos = Position::new_from_sfen(START_SFEN).unwrap();
     let hcp = HuffmanCodedPosition::from(&pos);
-    match Position::new_from_huffman_coded_position(&hcp) {
-        Ok(pos_from_hcp) => {
-            let sfen = pos_from_hcp.to_sfen();
-            assert_eq!(START_SFEN, &sfen);
-        }
-        Err(err) => {
-            eprintln!("{}", err);
-            panic!();
-        }
-    }
+    let sfen = Position::new_from_huffman_coded_position(&hcp).map(|pos_from_hcp| pos_from_hcp.to_sfen());
+    assert!(sfen.is_ok());
+    assert_eq!(sfen.unwrap(), START_SFEN);
 }
 
 #[test]

@@ -93,38 +93,39 @@ fn isready(
     tt: &mut TranspositionTable,
     #[cfg(feature = "kppt")] ehash: &mut EvalHash,
 ) {
-    if !*is_ready {
+    fn isready_impl(
+        is_ready: &mut bool,
+        usi_options: &UsiOptions,
+        thread_pool: &mut ThreadPool,
+        tt: &mut TranspositionTable,
+        #[cfg(feature = "kppt")] ehash: &mut EvalHash,
+    ) -> Result<()> {
+        if *is_ready {
+            return Ok(());
+        }
         #[cfg(feature = "kppt")]
-        let mut all_ok = true;
-        #[cfg(feature = "material")]
-        let all_ok = true;
+        load_evaluate_files(&usi_options.get_string(UsiOptions::EVAL_DIR))?;
+        if usi_options.get_bool(UsiOptions::BOOK_ENABLE) {
+            let file_name = usi_options.get_filename(UsiOptions::BOOK_FILE);
+            let book = Book::from_file(&file_name).map_err(|e| anyhow!("{}: {}", e, file_name))?;
+            thread_pool.book = Some(book);
+        }
+        tt.resize(usi_options.get_i64(UsiOptions::USI_HASH) as usize, thread_pool);
         #[cfg(feature = "kppt")]
-        match load_evaluate_files(&usi_options.get_string(UsiOptions::EVAL_DIR)) {
-            Ok(_) => {}
-            Err(err) => {
-                eprintln!("{}", err);
-                all_ok = false;
-            }
-        }
-        match Book::from_file(&usi_options.get_filename(UsiOptions::BOOK_FILE)) {
-            Ok(book) => {
-                thread_pool.book = Some(book);
-            }
-            Err(_err) => {
-                //eprintln!("{}", err);
-                //all_ok = false;
-            }
-        }
-        if all_ok {
-            tt.resize(usi_options.get_i64(UsiOptions::USI_HASH) as usize, thread_pool);
-            #[cfg(feature = "kppt")]
-            ehash.resize(usi_options.get_i64(UsiOptions::EVAL_HASH) as usize, thread_pool);
-
-            *is_ready = true;
-        }
+        ehash.resize(usi_options.get_i64(UsiOptions::EVAL_HASH) as usize, thread_pool);
+        *is_ready = true;
+        Ok(())
     }
-    if *is_ready {
-        println!("readyok");
+    match isready_impl(
+        is_ready,
+        usi_options,
+        thread_pool,
+        tt,
+        #[cfg(feature = "kppt")]
+        ehash,
+    ) {
+        Ok(()) => println!("readyok"),
+        Err(e) => println!("{}", e),
     }
 }
 
