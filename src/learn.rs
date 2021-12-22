@@ -93,12 +93,12 @@ fn random_move(pos: &mut Position, rng: &mut ThreadRng) {
 
 pub fn generate_teachers(args: &[&str]) -> Result<()> {
     if args.len() != 5 {
-        let s = concat!(
-            "Invalid generate_teachers command.\n",
+        const S: &str = concat!(
+            "invalid generate_teachers command.\n",
             "expected:\n",
             r#"generate_teachers <output_file_path> <root_positions_file_path> <search_depth> <num_threads> <num_teachers>"#,
         );
-        return Err(anyhow!(s));
+        return Err(anyhow!(S));
     }
     let output = args[0];
     let root_positions_file_path = args[1];
@@ -106,20 +106,20 @@ pub fn generate_teachers(args: &[&str]) -> Result<()> {
     let num_threads = args[3];
     let num_teachers = args[4];
     let writer = std::sync::Arc::new(std::sync::Mutex::new(
-        TeacherWriter::new(output).with_context(|| anyhow!(r#"Cannot create file "{}"."#, output))?,
+        TeacherWriter::new(output).with_context(|| anyhow!(r#"cannot create file "{}"."#, output))?,
     ));
     let roots: std::sync::Arc<Vec<HuffmanCodedPosition>> = std::sync::Arc::new(
-        file_to_vec(root_positions_file_path).with_context(|| anyhow!(r#"Cannot read file "{}"."#, root_positions_file_path))?,
+        file_to_vec(root_positions_file_path).with_context(|| anyhow!(r#"cannot read file "{}"."#, root_positions_file_path))?,
     );
     let search_depth = search_depth
         .parse::<u32>()
-        .with_context(|| anyhow!(r#"Cannot parse "{}" as search_depth."#, search_depth))?;
+        .with_context(|| anyhow!(r#"cannot parse "{}" as search_depth."#, search_depth))?;
     let num_threads = num_threads
         .parse::<usize>()
-        .with_context(|| anyhow!(r#"Cannot parse "{}" as num_threads."#, num_threads))?;
+        .with_context(|| anyhow!(r#"cannot parse "{}" as num_threads."#, num_threads))?;
     let num_teachers = num_teachers
         .parse::<usize>()
-        .with_context(|| anyhow!(r#"Cannot parse "{}" as num_teachers."#, num_teachers))?;
+        .with_context(|| anyhow!(r#"cannot parse "{}" as num_teachers."#, num_teachers))?;
     let count_teachers = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
     let mut v = vec![];
     for _ in 0..num_threads {

@@ -125,7 +125,7 @@ fn isready(
         ehash,
     ) {
         Ok(()) => println!("readyok"),
-        Err(e) => println!("{}", e),
+        Err(e) => println!("info {}", e),
     }
 }
 
@@ -168,57 +168,55 @@ fn self_move(thread_pool: &mut ThreadPool, tt: &mut TranspositionTable, usi_opti
 }
 
 fn position(pos: &mut Position, args: &[&str]) {
-    if args.is_empty() {
-        eprintln!(r#"Invalid postion command. expected: "startpos" or "sfen". but found nothing"#,);
-        return;
-    }
-    let mut tmp_pos;
-    let args = match args[0] {
-        "startpos" => {
-            tmp_pos = Position::new();
-            &args[1..]
+    fn position_impl(pos: &mut Position, args: &[&str]) -> Result<()> {
+        if args.is_empty() {
+            return Err(anyhow!(
+                r#"invalid position command. expected: "startpos" or "sfen". but found nothing"#,
+            ));
         }
-        "sfen" => {
-            // &args[1..]:  skip "sfen".
-            match Position::new_from_sfen_args(&args[1..]) {
-                Ok(new_pos) => {
-                    tmp_pos = new_pos;
-                }
-                Err(err) => {
-                    println!("sfen error. {}", err);
-                    return;
-                }
+        let mut tmp_pos;
+        let args = match args[0] {
+            "startpos" => {
+                tmp_pos = Position::new();
+                &args[1..]
             }
-            &args[5..]
+            "sfen" => {
+                // &args[1..]:  skip "sfen".
+                tmp_pos = Position::new_from_sfen_args(&args[1..]).map_err(|e| anyhow!("sfen error: {}", e))?;
+                &args[5..]
+            }
+            _ => {
+                return Err(anyhow!(
+                    r#"invalid position command. expected: "startpos" or "sfen". found: "{}""#,
+                    args[0]
+                ));
+            }
+        };
+        if args.is_empty() {
+            *pos = tmp_pos;
+            pos.reserve_states();
+            return Ok(());
         }
-        _ => {
-            eprintln!(
-                r#"Invalid postion command. expected: "startpos" or "sfen". found: "{}""#,
+        if args[0] != "moves" {
+            return Err(anyhow!(
+                r#"invalid position command. expected: "moves". found: "{}""#,
                 args[0]
-            );
-            return;
+            ));
         }
-    };
-    if args.is_empty() {
-        *pos = tmp_pos;
-        pos.reserve_states();
-        return;
-    }
-    if args[0] != "moves" {
-        eprintln!(r#"Invalid position command. expected: "moves". found: "{}""#, args[0]);
-        return;
-    }
-    for arg in &args[1..] {
-        if let Some(m) = Move::new_from_usi_str(arg, &tmp_pos) {
+        for arg in &args[1..] {
+            let m = Move::new_from_usi_str(arg, &tmp_pos)
+                .with_context(|| anyhow!("invalid move: {}, position: {}", arg, tmp_pos.to_sfen()))?;
             let gives_check = tmp_pos.gives_check(m);
             tmp_pos.do_move(m, gives_check);
-        } else {
-            eprintln!("Invalid move: {}, position: {}", arg, tmp_pos.to_sfen());
-            return;
         }
+        *pos = tmp_pos;
+        pos.reserve_states();
+        Ok(())
     }
-    *pos = tmp_pos;
-    pos.reserve_states();
+
+    if let Err(e) = position_impl(pos, args) {
+        println!("info {}", e);
+    }
 }
 
 pub fn setoption(
@@ -230,39 +228,61 @@ pub fn setoption(
     reductions: &mut Reductions,
     is_ready: &mut bool,
 ) {
-    if !args.is_empty() && args[0] != "name" {
-        eprintln!(r#"Error: expected: "name", found: "{}""#, args[0]);
-        return;
-    }
-    match args.len() {
-        2 => {
-            let name = args[1];
-            usi_options.push_button(name, tt);
+    fn setoption_impl(
+        args: &[&str],
+        usi_options: &mut UsiOptions,
+        thread_pool: &mut ThreadPool,
+        tt: &mut TranspositionTable,
+        #[cfg(feature = "kppt")] ehash: &mut EvalHash,
+        reductions: &mut Reductions,
+        is_ready: &mut bool,
+    ) -> Result<()> {
+        if !args.is_empty() && args[0] != "name" {
+            return Err(anyhow!(r#"invalid token: expected: "name", found: "{}""#, args[0]));
         }
-        4 => {
-            if args[2] != "value" {
-                eprintln!(r#"Error: expected: "value", found: "{}""#, args[2]);
-                return;
+        match args.len() {
+            2 => {
+                let name = args[1];
+                usi_options.push_button(name, tt);
             }
-            let name = args[1];
-            let value = args[3];
-            usi_options.set(
-                name,
-                value,
-                thread_pool,
-                tt,
-                #[cfg(feature = "kppt")]
-                ehash,
-                reductions,
-                is_ready,
-            );
+            4 => {
+                if args[2] != "value" {
+                    return Err(anyhow!(r#"invalid token: expected: "value", found: "{}""#, args[2]));
+                }
+                let name = args[1];
+                let value = args[3];
+                usi_options.set(
+                    name,
+                    value,
+                    thread_pool,
+                    tt,
+                    #[cfg(feature = "kppt")]
+                    ehash,
+                    reductions,
+                    is_ready,
+                );
+            }
+            _ => {
+                return Err(anyhow!(
+                    "invalid number of sections. expected: name <option-name> value <option-value> found: {}",
+                    args.join(" ")
+                ));
+            }
         }
-        _ => {
-            let mut s = "Error: invalid number of sections.".to_string();
-            s += "\nExpected: name <option name> value <option value>";
-            s += &format!("\nfound:{}", args.iter().fold("".to_string(), |sum, x| sum + " " + x));
-            eprintln!("{}", s);
-        }
+        Ok(())
+    }
+
+    if let Err(e) = setoption_impl(
+        args,
+        usi_options,
+        thread_pool,
+        tt,
+        #[cfg(feature = "kppt")]
+        ehash,
+        reductions,
+        is_ready,
+    ) {
+        println!("info {}", e);
     }
 }
 
@@ -302,101 +322,113 @@ fn bench_movegen(pos: &Position) {
 }
 
 fn read_sfen_and_output_hcp(args: &[&str]) {
-    if args.len() != 2 {
-        eprintln!("requires 2 arguments, but received {} arguments.", args.len());
-        return;
-    }
-    let input_path = args[0];
-    let output_path = args[1];
-    let mut set = std::collections::HashSet::new();
-    let mut v = Vec::new();
-    let f = std::fs::File::open(&input_path).unwrap();
-    for line in std::io::BufReader::new(f).lines() {
-        let line = line.unwrap();
-        let args = line.split_whitespace().collect::<Vec<&str>>();
-        if args.is_empty() {
-            return;
+    fn read_sfen_and_output_hcp_impl(args: &[&str]) -> Result<()> {
+        if args.len() != 2 {
+            return Err(anyhow!("expected: <input-path> <output-path> found: {}", args.join(" ")));
         }
-        let mut pos;
-        let args = match args[0] {
-            "startpos" => {
-                pos = Position::new();
-                &args[1..]
-            }
-            "sfen" => {
-                // &args[1..]:  skip "sfen".
-                match Position::new_from_sfen_args(&args[1..]) {
-                    Ok(tmp_pos) => pos = tmp_pos,
-                    Err(err) => {
-                        eprintln!("sfen error: {:?}", err);
-                        continue;
-                    }
-                }
-                &args[5..]
-            }
-            _ => {
-                eprintln!(
-                    r#"Invalid postion command. expected: "startpos" or "sfen". found: "{}""#,
-                    args[0]
-                );
+        let input_path = args[0];
+        let output_path = args[1];
+        let mut set = std::collections::HashSet::new();
+        let mut v = Vec::new();
+        let input_file = std::fs::File::open(&input_path).map_err(|e| anyhow!("{}: {}", e, input_path))?;
+        for line in std::io::BufReader::new(input_file).lines() {
+            let line = line.unwrap();
+            let args = line.split_whitespace().collect::<Vec<&str>>();
+            if args.is_empty() {
                 continue;
             }
-        };
-        if args.is_empty() {
-            pos.reserve_states();
-            continue;
-        }
-        if args[0] != "moves" {
-            println!(r#"Invalid position command. expected: "moves". found: "{}""#, args[0]);
-            continue;
-        }
-
-        if !set.contains(&pos.key()) {
-            set.insert(pos.key());
-            v.push(HuffmanCodedPosition::from(&pos));
-        }
-        for arg in &args[1..] {
-            if let Some(m) = Move::new_from_usi_str(arg, &pos) {
-                let gives_check = pos.gives_check(m);
-                pos.do_move(m, gives_check);
-                if !set.contains(&pos.key()) {
-                    set.insert(pos.key());
-                    v.push(HuffmanCodedPosition::from(&pos));
+            let mut pos;
+            let args = match args[0] {
+                "startpos" => {
+                    pos = Position::new();
+                    &args[1..]
                 }
-            } else {
-                eprintln!("Invalid move: {}, position: {}", arg, pos.to_sfen());
-                break;
+                "sfen" => {
+                    // &args[1..]:  skip "sfen".
+                    match Position::new_from_sfen_args(&args[1..]) {
+                        Ok(tmp_pos) => pos = tmp_pos,
+                        Err(e) => {
+                            println!("info sfen error: {}", e);
+                            continue;
+                        }
+                    }
+                    &args[5..]
+                }
+                _ => {
+                    println!(
+                        r#"info invalid position command. expected: "startpos" or "sfen". found: "{}""#,
+                        args[0]
+                    );
+                    continue;
+                }
+            };
+            if args.is_empty() {
+                pos.reserve_states();
+                continue;
+            }
+            if args[0] != "moves" {
+                println!(r#"info invalid position command. expected: "moves". found: "{}""#, args[0]);
+                continue;
+            }
+
+            if !set.contains(&pos.key()) {
+                set.insert(pos.key());
+                v.push(HuffmanCodedPosition::from(&pos));
+            }
+            for arg in &args[1..] {
+                if let Some(m) = Move::new_from_usi_str(arg, &pos) {
+                    let gives_check = pos.gives_check(m);
+                    pos.do_move(m, gives_check);
+                    if !set.contains(&pos.key()) {
+                        set.insert(pos.key());
+                        v.push(HuffmanCodedPosition::from(&pos));
+                    }
+                } else {
+                    println!("info invalid move: {}, position: {}", arg, pos.to_sfen());
+                    break;
+                }
             }
         }
+        let mut output_file =
+            std::io::BufWriter::new(std::fs::File::create(&output_path).map_err(|e| anyhow!("{}: {}", e, output_path))?);
+        let slice: &[u8] = unsafe {
+            std::slice::from_raw_parts(
+                v.as_slice().as_ptr() as *const u8,
+                std::mem::size_of::<HuffmanCodedPosition>() * v.len(),
+            )
+        };
+        output_file.write_all(slice).unwrap();
+        Ok(())
     }
-    let mut f = std::io::BufWriter::new(std::fs::File::create(&output_path).unwrap());
-    let slice: &[u8] = unsafe {
-        std::slice::from_raw_parts(
-            v.as_slice().as_ptr() as *const u8,
-            std::mem::size_of::<HuffmanCodedPosition>() * v.len(),
-        )
-    };
-    f.write_all(slice).unwrap();
+
+    if let Err(e) = read_sfen_and_output_hcp_impl(args) {
+        println!("info {}", e);
+    }
 }
 
 // debug code
 fn read_hcp(args: &[&str]) {
-    if args.len() != 1 {
-        eprintln!("arguments error");
-        return;
-    }
-    let input_path = args[0];
-    let v = file_to_vec(input_path).unwrap();
-    for item in v {
-        match Position::new_from_huffman_coded_position(&item) {
-            Ok(pos) => {
-                println!("{}", pos.to_sfen());
-            }
-            Err(_) => {
-                eprintln!("cannot decode");
-                return;
-            }
+    fn read_hcp_impl(args: &[&str]) -> Result<()> {
+        if args.len() != 2 {
+            return Err(anyhow!(
+                "read_hcp error. expected: <input-path> <output-path> found: {}",
+                args.join(" ")
+            ));
         }
+        let input_path = args[0];
+        let output_path = args[1];
+        let v = file_to_vec(input_path).map_err(|e| anyhow!("{}: {}", e, input_path))?;
+        let mut output_file =
+            std::io::BufWriter::new(std::fs::File::create(&output_path).map_err(|e| anyhow!("{}: {}", e, output_path))?);
+        for item in v {
+            let pos = Position::new_from_huffman_coded_position(&item)?;
+            writeln!(output_file, "{}", pos.to_sfen())?;
+        }
+        Ok(())
+    }
+
+    if let Err(e) = read_hcp_impl(args) {
+        println!("{}", e);
     }
 }
 
@@ -528,10 +560,10 @@ pub fn cmd_loop() {
             "go" => {
                 if is_ready {
                     if let Err(err) = go(&mut thread_pool, &mut tt, &usi_options, &pos, &args[1..]) {
-                        eprintln!("{}", err);
+                        println!("info {}", err);
                     }
                 } else {
-                    println!(r#"We need "isready" command in advance."#);
+                    println!(r#"info error. "isready" command is needed in advance."#);
                 }
             }
             "isready" => {
@@ -574,16 +606,16 @@ pub fn cmd_loop() {
                     let mut stack = vec![Stack::new(); CURRENT_STACK_INDEX + 1];
                     println!("{}", evaluate_at_root(&pos, &mut stack).0);
                 } else {
-                    eprintln!(r#"We need "isready" command in advance."#);
+                    println!(r#"info error. "isready" command is needed in advance."#);
                 }
             }
             "generate_teachers" => {
                 if is_ready {
                     if let Err(e) = generate_teachers(&args[1..]) {
-                        eprintln!("{}", e);
+                        println!("info {}", e);
                     }
                 } else {
-                    eprintln!(r#"We need "isready" command in advance."#);
+                    println!(r#"info error. "isready" command is needed in advance."#);
                 }
             }
             "key" => println!("{}", pos.key().0),
@@ -597,15 +629,14 @@ pub fn cmd_loop() {
             "write_eval" => {
                 if is_ready {
                     #[cfg(feature = "kppt")]
-                    match write_evaluate_files() {
-                        Ok(_) => {}
-                        Err(err) => eprintln!("{}", err),
+                    if let Err(e) = write_evaluate_files() {
+                        println!("info {}", e);
                     }
                 } else {
-                    eprintln!("Evaluation files have not been loaded yet.");
+                    println!(r#"info error. "isready" command is needed in advance."#);
                 }
             }
-            _ => eprintln!("unknown command: {}", cmd),
+            _ => println!("info unknown command: {}", cmd),
         }
         if std::env::args().len() > 1 || token == "quit" {
             break;

@@ -592,6 +592,7 @@ impl PositionBase {
             let val = bs.get_bits_from_lsb(7);
             Square(i32::from(val))
         };
+        // todo: check king square < Square::NUM
         pos.put_piece(Piece::B_KING, pos.king_square(Color::BLACK));
         pos.put_piece(Piece::W_KING, pos.king_square(Color::WHITE));
         for &sq in Square::ALL.iter() {
@@ -951,28 +952,24 @@ impl Position {
         Self::new_from_sfen_args(sfen.split_whitespace().collect::<Vec<&str>>().as_slice())
     }
     pub fn new_from_sfen_args(sfen_slice: &[&str]) -> Result<Position, SfenError> {
-        match PositionBase::new_from_sfen_args(sfen_slice) {
-            Ok(base) => {
-                let state = StateInfo::new_from_position(&base);
-                #[cfg(feature = "kppt")]
-                let eval_list = EvalList::new(&base);
-                #[cfg(feature = "kppt")]
-                let eval_index_to_eval_list_index = EvalIndexToEvalListIndex::new(&eval_list);
-                let mut pos = Position {
-                    base,
-                    #[cfg(feature = "kppt")]
-                    eval_list,
-                    #[cfg(feature = "kppt")]
-                    eval_index_to_eval_list_index,
-                    states: Vec::new(),
-                    nodes: Arc::new(AtomicI64::new(0)),
-                };
-                pos.init_states_and_push(state);
-                debug_assert!(pos.is_ok());
-                Ok(pos)
-            }
-            Err(sfen_error) => Err(sfen_error),
-        }
+        let base = PositionBase::new_from_sfen_args(sfen_slice)?;
+        let state = StateInfo::new_from_position(&base);
+        #[cfg(feature = "kppt")]
+        let eval_list = EvalList::new(&base);
+        #[cfg(feature = "kppt")]
+        let eval_index_to_eval_list_index = EvalIndexToEvalListIndex::new(&eval_list);
+        let mut pos = Position {
+            base,
+            #[cfg(feature = "kppt")]
+            eval_list,
+            #[cfg(feature = "kppt")]
+            eval_index_to_eval_list_index,
+            states: Vec::new(),
+            nodes: Arc::new(AtomicI64::new(0)),
+        };
+        pos.init_states_and_push(state);
+        debug_assert!(pos.is_ok());
+        Ok(pos)
     }
     pub fn new_from_huffman_coded_position(hcp: &HuffmanCodedPosition) -> Result<Position> {
         let base = PositionBase::new_from_huffman_coded_position(hcp)?;
