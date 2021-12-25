@@ -13,8 +13,8 @@ enum UsiOptionValue {
     },
     #[allow(dead_code)]
     Filename {
-        default: String,
-        current: String,
+        default: std::path::PathBuf,
+        current: std::path::PathBuf,
     },
     Spin {
         default: i64,
@@ -40,8 +40,8 @@ impl UsiOptionValue {
     #[allow(dead_code)]
     fn filename(default: &str) -> UsiOptionValue {
         UsiOptionValue::Filename {
-            default: default.to_string(),
-            current: default.to_string(),
+            default: default.into(),
+            current: default.into(),
         }
     }
     fn spin(default: i64, min: i64, max: i64) -> UsiOptionValue {
@@ -138,7 +138,7 @@ impl UsiOptions {
                 }
             }
             Some(UsiOptionValue::Filename { current, .. }) => {
-                *current = value.to_string();
+                *current = value.into();
                 if key == Self::BOOK_FILE {
                     *is_ready = false;
                 }
@@ -190,7 +190,7 @@ impl UsiOptions {
                     format!("option name {} type string default {}", key, default)
                 }
                 UsiOptionValue::Filename { default, .. } => {
-                    format!("option name {} type filename default {}", key, default)
+                    format!("option name {} type filename default {}", key, default.to_string_lossy())
                 }
                 UsiOptionValue::Spin { default, min, max, .. } => {
                     format!("option name {} type spin default {} min {} max {}", key, default, min, max)
@@ -218,7 +218,7 @@ impl UsiOptions {
         }
     }
     #[allow(dead_code)]
-    pub fn get_filename(&self, key: &str) -> String {
+    pub fn get_filename(&self, key: &str) -> std::path::PathBuf {
         match self.v.get(key) {
             Some(UsiOptionValue::Filename { current, .. }) => current.clone(),
             _ => panic!("Error: illegal option name: {}", key),

@@ -107,7 +107,7 @@ fn isready(
         load_evaluate_files(&usi_options.get_string(UsiOptions::EVAL_DIR))?;
         if usi_options.get_bool(UsiOptions::BOOK_ENABLE) {
             let file_name = usi_options.get_filename(UsiOptions::BOOK_FILE);
-            let book = Book::from_file(&file_name).map_err(|e| anyhow!("{}: {}", e, file_name))?;
+            let book = Book::from_file(&file_name).map_err(|e| anyhow!("{}: {}", e, file_name.to_string_lossy()))?;
             thread_pool.book = Some(book);
         }
         tt.resize(usi_options.get_i64(UsiOptions::USI_HASH) as usize, thread_pool);
