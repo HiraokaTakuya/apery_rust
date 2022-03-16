@@ -1844,8 +1844,6 @@ impl Position {
                 {
                     let old_eval_index = EvalIndex(EvalIndex::new_board(pc_to).0 + to.0 as usize);
                     let new_eval_index = EvalIndex(EvalIndex::new_board(pc_from).0 + from.0 as usize);
-                    unsafe { (*self.st_mut().changed_eval_index.as_mut_ptr()).old_index = old_eval_index };
-                    unsafe { (*self.st_mut().changed_eval_index.as_mut_ptr()).new_index = new_eval_index };
                     let eval_list_index = self.eval_index_to_eval_list_index.get(old_eval_index);
                     self.eval_index_to_eval_list_index.set(new_eval_index, eval_list_index);
                     self.eval_list.set(eval_list_index, Color::BLACK, new_eval_index);
