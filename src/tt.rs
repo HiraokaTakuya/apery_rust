@@ -4,6 +4,7 @@ use crate::thread::*;
 use crate::types::*;
 use rayon::prelude::*;
 
+#[derive(Clone, Copy)]
 pub struct TtEntry {
     key16: u16,
     mv16: u16,
@@ -14,6 +15,16 @@ pub struct TtEntry {
 }
 
 impl TtEntry {
+    fn new() -> Self {
+        Self {
+            key16: 0,
+            mv16: 0,
+            value16: 0,
+            eval16: 0,
+            genbound8: 0,
+            depth8: 0,
+        }
+    }
     pub fn mv(&self, pos: &Position) -> Option<Move> {
         // This can be illegal move.
         let m = Move(unsafe { std::num::NonZeroU32::new_unchecked(u32::from(self.mv16)) });
@@ -87,9 +98,19 @@ const GENERATION_CYCLE: i32 = 255 + (1 << GENERATION_BITS);
 const GENERATION_MASK: i32 = (0xff << GENERATION_BITS) & 0xff;
 
 #[repr(align(32))]
+#[derive(Clone, Copy)]
 struct TtCluster {
     entry: [TtEntry; CLUSTER_SIZE],
     _padding: [u8; 2],
+}
+
+impl TtCluster {
+    fn new() -> Self {
+        Self {
+            entry: [TtEntry::new(); CLUSTER_SIZE],
+            _padding: [0; 2],
+        }
+    }
 }
 
 pub struct TranspositionTable {
@@ -113,11 +134,7 @@ impl TranspositionTable {
         // self.table can be very large and takes much time to clear, so parallelize self.clear().
         self.table.clear();
         self.table.shrink_to_fit();
-        self.table = Vec::<TtCluster>::with_capacity(self.cluster_count);
-        unsafe {
-            self.table.set_len(self.cluster_count);
-        }
-        self.clear();
+        self.table = (0..self.cluster_count).into_par_iter().map(|_| TtCluster::new()).collect();
     }
     // parallel zero clearing.
     pub fn clear(&mut self) {
