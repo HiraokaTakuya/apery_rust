@@ -820,7 +820,7 @@ impl EvalHash {
     // parallel zero clearing.
     pub fn clear(&mut self) {
         self.value.par_iter_mut().for_each(|x| {
-            *x = unsafe { std::mem::zeroed() };
+            *x = EvalSum::new();
         });
     }
     pub fn get(&self, key: KeyExcludedTurn) -> EvalSum {
@@ -841,11 +841,7 @@ impl EvalHash {
         let len = mega_byte_size * 1024 * 1024 / std::mem::size_of::<EvalSum>();
         self.value.clear();
         self.value.shrink_to_fit();
-        self.value = Vec::<EvalSum>::with_capacity(len);
-        unsafe {
-            self.value.set_len(len);
-        }
-        self.clear();
+        self.value = (0..len).into_par_iter().map(|_| EvalSum::new()).collect::<Vec<_>>();
     }
 }
 
