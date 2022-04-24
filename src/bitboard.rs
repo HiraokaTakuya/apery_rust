@@ -240,7 +240,7 @@ impl Bitboard {
     }
     #[allow(dead_code)]
     pub fn print(self) {
-        println!("{}", self.to_string());
+        println!("{}", self);
     }
     fn pop_lsb_right_unchecked(&mut self) -> Square {
         let sq = Square(self.value(0).trailing_zeros() as i32);
