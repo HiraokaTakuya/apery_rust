@@ -208,14 +208,6 @@ pub fn value_to_tt(v: Value, ply: i32) -> Value {
     }
 }
 
-pub fn value_mate_in(ply: i32) -> Value {
-    Value::MATE - Value(ply)
-}
-
-pub fn value_mated_in(ply: i32) -> Value {
-    -Value::MATE + Value(ply)
-}
-
 pub fn stat_bonus(depth: Depth) -> i32 {
     let d = depth.0;
     if d > 14 {

@@ -392,8 +392,8 @@ impl Thread {
                     }
                 }
                 Repetition::Draw => return Value::DRAW,
-                Repetition::Win => return value_mate_in(get_stack(stack, 0).ply),
-                Repetition::Lose => return value_mated_in(get_stack(stack, 0).ply),
+                Repetition::Win => return Value::mate_in(get_stack(stack, 0).ply),
+                Repetition::Lose => return Value::mated_in(get_stack(stack, 0).ply),
                 Repetition::Superior => {
                     if get_stack(stack, 0).ply != 2 {
                         return Value::MATE_IN_MAX_PLY;
@@ -407,8 +407,8 @@ impl Thread {
             }
 
             // Step 3
-            alpha = std::cmp::max(value_mated_in(get_stack(stack, 0).ply), alpha);
-            beta = std::cmp::min(value_mate_in(get_stack(stack, 0).ply + 1), beta);
+            alpha = std::cmp::max(Value::mated_in(get_stack(stack, 0).ply), alpha);
+            beta = std::cmp::min(Value::mate_in(get_stack(stack, 0).ply + 1), beta);
             if alpha >= beta {
                 return alpha;
             }
@@ -1112,7 +1112,7 @@ impl Thread {
             best_value = if excluded_move.is_some() {
                 alpha
             } else {
-                value_mated_in(get_stack(stack, 0).ply)
+                Value::mated_in(get_stack(stack, 0).ply)
             };
         } else if let Some(best_move) = best_move {
             self.update_all_stats(
@@ -1231,7 +1231,7 @@ impl Thread {
             best_value = -Value::INFINITE;
         } else {
             if let Some(_mate_move) = self.position.mate_move_in_1ply() {
-                return value_mate_in(get_stack(stack, 0).ply);
+                return Value::mate_in(get_stack(stack, 0).ply);
             }
             if get_stack(stack, 0).tt_hit {
                 best_value = tte.eval();
