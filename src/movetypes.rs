@@ -136,8 +136,8 @@ impl Move {
                 let rank_from = Rank::new_from_csa_char(v[1])?;
                 Square::new(file_from, rank_from)
             };
+            let pc_from = pos.piece_on(from);
             let is_promote = {
-                let pc_from = pos.piece_on(from);
                 if pc_from == pc {
                     false
                 } else if pc_from.is_promotable() && pc_from.to_promote() == pc {
@@ -147,9 +147,9 @@ impl Move {
                 }
             };
             if is_promote {
-                m = Move::new_promote(from, to, pc);
+                m = Move::new_promote(from, to, pc_from);
             } else {
-                m = Move::new_unpromote(from, to, pc);
+                m = Move::new_unpromote(from, to, pc_from);
             }
         }
 
