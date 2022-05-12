@@ -78,6 +78,14 @@ fn go(
                 let n = next_num(limit_type, &mut iter)?;
                 limits.perft = Some(n);
             }
+            "mate" => {
+                let mate_limit = iter.next().with_context(|| format!("no token after {}.", limit_type))?;
+                let n = match *mate_limit {
+                    "infinite" => 0,
+                    _ => mate_limit.parse().map_err(|e| anyhow!("{}: {}", e, mate_limit))?,
+                };
+                limits.mate = Some(n);
+            }
             invalid_token => return Err(anyhow!("invalid token: {}", invalid_token)),
         }
     }

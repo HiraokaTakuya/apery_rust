@@ -1683,8 +1683,11 @@ impl ThreadPool {
         hide_all_output: bool,
     ) {
         let mut limits = limits;
-        if limits.perft.is_some() {
-            Perft::new(pos).go(limits.perft.unwrap());
+        if let Some(perft) = limits.perft {
+            Perft::new(pos).go(perft);
+            return;
+        } else if let Some(mate) = limits.mate {
+            Mate::new(pos).go(mate);
             return;
         }
         self.wait_for_search_finished();
