@@ -38,7 +38,7 @@ pub struct LimitsType {
     pub inc: [std::time::Duration; 2],
     pub depth: Option<u32>,
     pub movetime: Option<std::time::Duration>,
-    pub mate: Option<u32>,
+    pub mate: Option<u64>,
     pub perft: Option<u32>,
     pub infinite: Option<()>, // Is bool more appropriate?
     pub nodes: Option<u64>,
@@ -326,5 +326,42 @@ impl Perft {
             }
         }
         nodes
+    }
+}
+
+pub struct Mate {
+    position: Position,
+}
+
+impl Mate {
+    pub fn new(pos: &Position) -> Self {
+        Self {
+            position: Position::new_from_position(pos, std::sync::Arc::new(std::sync::atomic::AtomicI64::new(0))),
+        }
+    }
+    pub fn go(&self, timeout_milli: u64) {
+        let timeout = if timeout_milli == 0 {
+            None
+        } else {
+            Some(std::time::Duration::from_millis(timeout_milli))
+        };
+        let r = tsumeshogi_solver::solve(&self.position.to_sfen(), tsumeshogi_solver::Backend::Yasai, timeout);
+        match r {
+            Ok(v) => {
+                let mut pos =
+                    Position::new_from_position(&self.position, std::sync::Arc::new(std::sync::atomic::AtomicI64::new(0)));
+                let mut pv = vec![];
+                for m in v {
+                    let m = m.chars().skip(1).collect::<String>();
+                    let m = Move::new_from_csa_str(&m, &pos).unwrap();
+                    pv.push(m.to_usi_string());
+                    pos.do_move(m, pos.gives_check(m));
+                }
+                println!("checkmate {}", pv.join(" "));
+            }
+            Err(_) => {
+                println!("checkmate none");
+            }
+        }
     }
 }
