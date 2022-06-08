@@ -1,25 +1,25 @@
 [package]
 name = "apery"
-version = "2.0.0"
+version = "2.1.0"
 authors = ["HiraokaTakuya <hiraoka64@gmail.com>"]
 edition = "2021"
 rust-version = "1.56.0"
 
 [dependencies]
-anyhow = "1.0.56"
+anyhow = "1.0.57"
 arrayvec = "0.7.2"
 custom_derive = "0.1.7"
 derive_more = "0.99.17"
 enum_derive = "0.1.7"
 num = "0.4.0"
-once_cell = "1.10.0"
+once_cell = "1.12.0"
 rand = "0.8.5"
-rayon = "1.5.2"
-regex = "1.5.5"
-serde = { version = "1.0.136", features = ["derive"] }
-serde_json = "1.0.79"
+rayon = "1.5.3"
+regex = "1.5.6"
+serde = { version = "1.0.137", features = ["derive"] }
+serde_json = "1.0.81"
 static_assertions = "1.1.0"
-thiserror = "1.0.30"
+thiserror = "1.0.31"
 tsumeshogi-solver = { version = "0.5.2", git = "https://github.com/sugyan/tsumeshogi-solver.git" }
 
 [profile.release]
