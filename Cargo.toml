@@ -3,7 +3,7 @@ name = "apery"
 version = "2.1.0"
 authors = ["HiraokaTakuya <hiraoka64@gmail.com>"]
 edition = "2021"
-rust-version = "1.56.0"
+rust-version = "1.75.0"
 
 [dependencies]
 anyhow = "1.0.57"
@@ -20,7 +20,7 @@ serde = { version = "1.0.137", features = ["derive"] }
 serde_json = "1.0.81"
 static_assertions = "1.1.0"
 thiserror = "1.0.31"
-tsumeshogi-solver = { version = "0.5.2", git = "https://github.com/sugyan/tsumeshogi-solver.git" }
+tsumeshogi-solver = { tag = "0.5.2", git = "https://github.com/sugyan/tsumeshogi-solver.git" }
 
 [profile.release]
 lto = true
