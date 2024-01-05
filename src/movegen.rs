@@ -101,12 +101,7 @@ impl MoveList {
         }
     }
     pub fn slice(&self, begin: usize) -> &[ExtMove] {
-        unsafe {
-            std::slice::from_raw_parts(
-                self.ext_moves.get_unchecked(begin).as_ptr() as *const ExtMove,
-                self.size - begin,
-            )
-        }
+        unsafe { std::slice::from_raw_parts(self.ext_moves.get_unchecked(begin).as_ptr(), self.size - begin) }
     }
     pub fn slice_mut(&mut self, begin: usize) -> &mut [ExtMove] {
         unsafe {

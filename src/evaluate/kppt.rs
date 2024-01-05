@@ -687,11 +687,11 @@ pub union EvalSum {
 impl Clone for EvalSum {
     #[cfg(target_feature = "avx2")]
     fn clone(&self) -> Self {
-        Self { mm: unsafe { self.mm } }
+        *self
     }
     #[cfg(not(target_feature = "avx2"))]
     fn clone(&self) -> Self {
-        Self { vk: unsafe { self.vk } }
+        *self
     }
 }
 

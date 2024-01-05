@@ -13,7 +13,7 @@ pub union Bitboard {
 impl Clone for Bitboard {
     #[cfg(target_feature = "sse2")]
     fn clone(&self) -> Bitboard {
-        Bitboard { m: unsafe { self.m } }
+        *self
     }
     #[cfg(not(target_feature = "sse2"))]
     fn clone(&self) -> Bitboard {
