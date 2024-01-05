@@ -3,22 +3,11 @@ use std::fmt;
 use std::ops::*;
 
 #[repr(align(16))]
-#[derive(Copy)]
+#[derive(Clone, Copy)]
 pub union Bitboard {
     v: [u64; 2],
     #[cfg(target_feature = "sse2")]
     m: std::arch::x86_64::__m128i,
-}
-
-impl Clone for Bitboard {
-    #[cfg(target_feature = "sse2")]
-    fn clone(&self) -> Bitboard {
-        *self
-    }
-    #[cfg(not(target_feature = "sse2"))]
-    fn clone(&self) -> Bitboard {
-        Bitboard { v: unsafe { self.v } }
-    }
 }
 
 impl BitOr for Bitboard {

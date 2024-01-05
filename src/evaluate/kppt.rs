@@ -677,22 +677,11 @@ struct EvalSumValueAndKey {
 }
 
 #[repr(align(256))]
-#[derive(Copy)]
+#[derive(Clone, Copy)]
 pub union EvalSum {
     vk: EvalSumValueAndKey,
     #[cfg(target_feature = "avx2")]
     mm: std::arch::x86_64::__m256i,
-}
-
-impl Clone for EvalSum {
-    #[cfg(target_feature = "avx2")]
-    fn clone(&self) -> Self {
-        *self
-    }
-    #[cfg(not(target_feature = "avx2"))]
-    fn clone(&self) -> Self {
-        *self
-    }
 }
 
 impl std::ops::AddAssign for EvalSum {
