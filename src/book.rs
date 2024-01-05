@@ -52,9 +52,13 @@ impl Book {
     }
 }
 
-#[test]
-fn test_book() {
-    std::thread::Builder::new()
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_book() {
+        std::thread::Builder::new()
         .stack_size(crate::stack_size::STACK_SIZE)
         .spawn(|| {
             let sfen = "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1";
@@ -117,75 +121,75 @@ fn test_book() {
         .unwrap()
         .join()
         .unwrap();
-}
+    }
 
-#[test]
-fn test_book_probe() {
-    std::thread::Builder::new()
-        .stack_size(crate::stack_size::STACK_SIZE)
-        .spawn(|| {
-            let sfen = "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1";
-            let pos = Position::new_from_sfen(sfen).unwrap();
-            let mut b = Book::new();
-            b.insert(
-                sfen.to_string(),
-                Move::new_from_usi_str("2g2f", &pos).unwrap(),
-                Info {
-                    value: Value(36),
-                    win: 70,
-                    lose: 30,
-                },
-            );
-            b.insert(
-                sfen.to_string(),
-                Move::new_from_usi_str("7g7f", &pos).unwrap(),
-                Info {
-                    value: Value(99),
-                    win: 30,
-                    lose: 10,
-                },
-            );
+    #[test]
+    fn test_book_probe() {
+        std::thread::Builder::new()
+            .stack_size(crate::stack_size::STACK_SIZE)
+            .spawn(|| {
+                let sfen = "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1";
+                let pos = Position::new_from_sfen(sfen).unwrap();
+                let mut b = Book::new();
+                b.insert(
+                    sfen.to_string(),
+                    Move::new_from_usi_str("2g2f", &pos).unwrap(),
+                    Info {
+                        value: Value(36),
+                        win: 70,
+                        lose: 30,
+                    },
+                );
+                b.insert(
+                    sfen.to_string(),
+                    Move::new_from_usi_str("7g7f", &pos).unwrap(),
+                    Info {
+                        value: Value(99),
+                        win: 30,
+                        lose: 10,
+                    },
+                );
 
-            let mut rng = rand::thread_rng();
-            for i in 0.. {
-                assert!(i < 10000);
-                match b.probe(&pos, &mut rng) {
-                    Some(mv) => {
-                        if mv.to_usi_string() == "2g2f" {
-                            break;
+                let mut rng = rand::thread_rng();
+                for i in 0.. {
+                    assert!(i < 10000);
+                    match b.probe(&pos, &mut rng) {
+                        Some(mv) => {
+                            if mv.to_usi_string() == "2g2f" {
+                                break;
+                            }
                         }
+                        None => unreachable!(),
                     }
-                    None => unreachable!(),
+                    let mv = b.probe(&pos, &mut rng).unwrap();
+                    if mv.to_usi_string() == "2g2f" {
+                        break;
+                    }
                 }
-                let mv = b.probe(&pos, &mut rng).unwrap();
-                if mv.to_usi_string() == "2g2f" {
-                    break;
-                }
-            }
-            for i in 0.. {
-                assert!(i < 10000);
-                match b.probe(&pos, &mut rng) {
-                    Some(mv) => {
-                        if mv.to_usi_string() == "2g2f" {
-                            break;
+                for i in 0.. {
+                    assert!(i < 10000);
+                    match b.probe(&pos, &mut rng) {
+                        Some(mv) => {
+                            if mv.to_usi_string() == "2g2f" {
+                                break;
+                            }
                         }
+                        None => unreachable!(),
                     }
-                    None => unreachable!(),
+                    let mv = b.probe(&pos, &mut rng).unwrap();
+                    if mv.to_usi_string() == "7g7f" {
+                        break;
+                    }
                 }
-                let mv = b.probe(&pos, &mut rng).unwrap();
-                if mv.to_usi_string() == "7g7f" {
-                    break;
-                }
-            }
-        })
-        .unwrap()
-        .join()
-        .unwrap();
-}
+            })
+            .unwrap()
+            .join()
+            .unwrap();
+    }
 
-#[test]
-fn test_book_from_file() {
-    std::thread::Builder::new()
+    #[test]
+    fn test_book_from_file() {
+        std::thread::Builder::new()
         .stack_size(crate::stack_size::STACK_SIZE)
         .spawn(|| {
             let path = std::path::Path::new("test/book.json");
@@ -198,4 +202,5 @@ fn test_book_from_file() {
         .unwrap()
         .join()
         .unwrap();
+    }
 }

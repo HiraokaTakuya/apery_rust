@@ -186,141 +186,146 @@ impl TranspositionTable {
     }
 }
 
-#[test]
-fn test_size() {
-    assert_eq!(std::mem::size_of::<TtEntry>(), 10);
-    assert_eq!(std::mem::size_of::<TtCluster>(), 32);
-    assert_eq!(std::mem::size_of::<[TtCluster; 4]>(), 128);
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-#[test]
-fn test_cluster_index() {
-    #[cfg(feature = "kppt")]
-    use crate::evaluate::kppt::*;
-    use crate::search::*;
-    std::thread::Builder::new()
-        .stack_size(crate::stack_size::STACK_SIZE)
-        .spawn(|| {
-            let mut thread_pool = ThreadPool::new();
-            let mut tt = TranspositionTable::new();
-            #[cfg(feature = "kppt")]
-            let mut ehash = EvalHash::new();
-            let mut reductions = Reductions::new();
-            thread_pool.set(
-                1,
-                &mut tt,
+    #[test]
+    fn test_size() {
+        assert_eq!(std::mem::size_of::<TtEntry>(), 10);
+        assert_eq!(std::mem::size_of::<TtCluster>(), 32);
+        assert_eq!(std::mem::size_of::<[TtCluster; 4]>(), 128);
+    }
+
+    #[test]
+    fn test_cluster_index() {
+        #[cfg(feature = "kppt")]
+        use crate::evaluate::kppt::*;
+        use crate::search::*;
+        std::thread::Builder::new()
+            .stack_size(crate::stack_size::STACK_SIZE)
+            .spawn(|| {
+                let mut thread_pool = ThreadPool::new();
+                let mut tt = TranspositionTable::new();
                 #[cfg(feature = "kppt")]
-                &mut ehash,
-                &mut reductions,
-            );
-            tt.resize(1, &mut thread_pool);
-            #[cfg(feature = "kppt")]
-            ehash.resize(1, &mut thread_pool);
-
-            // If key is all 1 bits, index is max.
-            let key = Key(0xffff_ffff_ffff_ffff);
-            let index = tt.cluster_index(key);
-            assert_eq!(index, tt.cluster_count - 1);
-        })
-        .unwrap()
-        .join()
-        .unwrap();
-}
-
-#[test]
-fn test_probe() {
-    #[cfg(feature = "kppt")]
-    use crate::evaluate::kppt::*;
-    use crate::search::*;
-    std::thread::Builder::new()
-        .stack_size(crate::stack_size::STACK_SIZE)
-        .spawn(|| {
-            let mut thread_pool = ThreadPool::new();
-            let mut tt = TranspositionTable::new();
-            #[cfg(feature = "kppt")]
-            let mut ehash = EvalHash::new();
-            let mut reductions = Reductions::new();
-            thread_pool.set(
-                1,
-                &mut tt,
+                let mut ehash = EvalHash::new();
+                let mut reductions = Reductions::new();
+                thread_pool.set(
+                    1,
+                    &mut tt,
+                    #[cfg(feature = "kppt")]
+                    &mut ehash,
+                    &mut reductions,
+                );
+                tt.resize(1, &mut thread_pool);
                 #[cfg(feature = "kppt")]
-                &mut ehash,
-                &mut reductions,
-            );
-            tt.resize(1, &mut thread_pool);
-            #[cfg(feature = "kppt")]
-            ehash.resize(1, &mut thread_pool);
-            let pv = false;
-            let gen8 = tt.generation8;
+                ehash.resize(1, &mut thread_pool);
 
-            use rand::prelude::*;
-            let mut rand: StdRng = SeedableRng::seed_from_u64(123);
-            let key = Key(0x0123_4567_89ab_cdef);
-            let cluster_index = tt.cluster_index(key);
+                // If key is all 1 bits, index is max.
+                let key = Key(0xffff_ffff_ffff_ffff);
+                let index = tt.cluster_index(key);
+                assert_eq!(index, tt.cluster_count - 1);
+            })
+            .unwrap()
+            .join()
+            .unwrap();
+    }
 
-            let (tte, found) = tt.probe(key);
-            assert!(!found);
-            let (d2_val, d2) = (Value(20), Depth(2));
-            tte.save(key, d2_val, pv, Bound::EXACT, d2, None, Value(0), gen8); // cluster: [(d2, gen_old), 0, 0]
-            let (_, found) = tt.probe(key);
-            assert!(found);
+    #[test]
+    fn test_probe() {
+        #[cfg(feature = "kppt")]
+        use crate::evaluate::kppt::*;
+        use crate::search::*;
+        std::thread::Builder::new()
+            .stack_size(crate::stack_size::STACK_SIZE)
+            .spawn(|| {
+                let mut thread_pool = ThreadPool::new();
+                let mut tt = TranspositionTable::new();
+                #[cfg(feature = "kppt")]
+                let mut ehash = EvalHash::new();
+                let mut reductions = Reductions::new();
+                thread_pool.set(
+                    1,
+                    &mut tt,
+                    #[cfg(feature = "kppt")]
+                    &mut ehash,
+                    &mut reductions,
+                );
+                tt.resize(1, &mut thread_pool);
+                #[cfg(feature = "kppt")]
+                ehash.resize(1, &mut thread_pool);
+                let pv = false;
+                let gen8 = tt.generation8;
 
-            fn gen_same_cluster_index_key(rng: &mut StdRng, cluster_index: usize, tt: &TranspositionTable) -> Key {
-                loop {
-                    let key = Key(rng.gen());
-                    let c_index = tt.cluster_index(key);
-                    if c_index == cluster_index {
-                        return key;
+                use rand::prelude::*;
+                let mut rand: StdRng = SeedableRng::seed_from_u64(123);
+                let key = Key(0x0123_4567_89ab_cdef);
+                let cluster_index = tt.cluster_index(key);
+
+                let (tte, found) = tt.probe(key);
+                assert!(!found);
+                let (d2_val, d2) = (Value(20), Depth(2));
+                tte.save(key, d2_val, pv, Bound::EXACT, d2, None, Value(0), gen8); // cluster: [(d2, gen_old), 0, 0]
+                let (_, found) = tt.probe(key);
+                assert!(found);
+
+                fn gen_same_cluster_index_key(rng: &mut StdRng, cluster_index: usize, tt: &TranspositionTable) -> Key {
+                    loop {
+                        let key = Key(rng.gen());
+                        let c_index = tt.cluster_index(key);
+                        if c_index == cluster_index {
+                            return key;
+                        }
                     }
                 }
-            }
-            let key = gen_same_cluster_index_key(&mut rand, cluster_index, &tt);
-            let (tte, found) = tt.probe(key);
-            assert!(!found);
-            let (d1_val, d1) = (Value(10), Depth(1));
-            tte.save(key, d1_val, pv, Bound::EXACT, d1, None, Value(0), gen8); // cluster: [(d2, gen_old), (d1, gen_old), 0]
-            let (_, found) = tt.probe(key);
-            assert!(found);
+                let key = gen_same_cluster_index_key(&mut rand, cluster_index, &tt);
+                let (tte, found) = tt.probe(key);
+                assert!(!found);
+                let (d1_val, d1) = (Value(10), Depth(1));
+                tte.save(key, d1_val, pv, Bound::EXACT, d1, None, Value(0), gen8); // cluster: [(d2, gen_old), (d1, gen_old), 0]
+                let (_, found) = tt.probe(key);
+                assert!(found);
 
-            let key = gen_same_cluster_index_key(&mut rand, cluster_index, &tt);
-            let (tte, found) = tt.probe(key);
-            assert!(!found);
-            let (d9_val, d9) = (Value(90), Depth(9));
-            tte.save(key, d9_val, pv, Bound::EXACT, d9, None, Value(0), gen8); // cluster: [(d2, gen_old), (d1, gen_old), (d9, gen_old)]
-            let (_, found) = tt.probe(key);
-            assert!(found);
+                let key = gen_same_cluster_index_key(&mut rand, cluster_index, &tt);
+                let (tte, found) = tt.probe(key);
+                assert!(!found);
+                let (d9_val, d9) = (Value(90), Depth(9));
+                tte.save(key, d9_val, pv, Bound::EXACT, d9, None, Value(0), gen8); // cluster: [(d2, gen_old), (d1, gen_old), (d9, gen_old)]
+                let (_, found) = tt.probe(key);
+                assert!(found);
 
-            tt.new_search();
-            let gen8 = tt.generation8;
+                tt.new_search();
+                let gen8 = tt.generation8;
 
-            let key = gen_same_cluster_index_key(&mut rand, cluster_index, &tt);
-            let (tte, found) = tt.probe(key);
-            assert!(!found);
-            assert_eq!(tte.value(), d1_val); // the entry is most shallow depth
-            let (d1_val, d1) = (Value(10), Depth(1));
-            tte.save(key, d1_val, pv, Bound::EXACT, d1, None, Value(0), gen8); // cluster: [(d2, gen_old), (d1, gen_new), (d9, gen_old)]
-            let (_, found) = tt.probe(key);
-            assert!(found);
+                let key = gen_same_cluster_index_key(&mut rand, cluster_index, &tt);
+                let (tte, found) = tt.probe(key);
+                assert!(!found);
+                assert_eq!(tte.value(), d1_val); // the entry is most shallow depth
+                let (d1_val, d1) = (Value(10), Depth(1));
+                tte.save(key, d1_val, pv, Bound::EXACT, d1, None, Value(0), gen8); // cluster: [(d2, gen_old), (d1, gen_new), (d9, gen_old)]
+                let (_, found) = tt.probe(key);
+                assert!(found);
 
-            let key = gen_same_cluster_index_key(&mut rand, cluster_index, &tt);
-            let (tte, found) = tt.probe(key);
-            assert!(!found);
-            assert_eq!(tte.value(), d2_val); // old and shallow entry.
-            let (d3_val, d3) = (Value(30), Depth(3));
-            tte.save(key, d3_val, pv, Bound::EXACT, d3, None, Value(0), gen8); // cluster: [d3, gen_new), (d1, gen_new), (d9, gen_old)]
-            let (_, found) = tt.probe(key);
-            assert!(found);
+                let key = gen_same_cluster_index_key(&mut rand, cluster_index, &tt);
+                let (tte, found) = tt.probe(key);
+                assert!(!found);
+                assert_eq!(tte.value(), d2_val); // old and shallow entry.
+                let (d3_val, d3) = (Value(30), Depth(3));
+                tte.save(key, d3_val, pv, Bound::EXACT, d3, None, Value(0), gen8); // cluster: [d3, gen_new), (d1, gen_new), (d9, gen_old)]
+                let (_, found) = tt.probe(key);
+                assert!(found);
 
-            let key = gen_same_cluster_index_key(&mut rand, cluster_index, &tt);
-            let (tte, found) = tt.probe(key);
-            assert!(!found);
-            assert_eq!(tte.value(), d1_val); // d9 entry has very deep depth. d9 isn't chosen.
-            let (d2_val, d2) = (Value(20), Depth(2));
-            tte.save(key, d2_val, pv, Bound::EXACT, d2, None, Value(0), gen8); // cluster: [d3, gen_new), (d2, gen_new), (d9, gen_old)]
-            let (_, found) = tt.probe(key);
-            assert!(found);
-        })
-        .unwrap()
-        .join()
-        .unwrap();
+                let key = gen_same_cluster_index_key(&mut rand, cluster_index, &tt);
+                let (tte, found) = tt.probe(key);
+                assert!(!found);
+                assert_eq!(tte.value(), d1_val); // d9 entry has very deep depth. d9 isn't chosen.
+                let (d2_val, d2) = (Value(20), Depth(2));
+                tte.save(key, d2_val, pv, Bound::EXACT, d2, None, Value(0), gen8); // cluster: [d3, gen_new), (d2, gen_new), (d9, gen_old)]
+                let (_, found) = tt.probe(key);
+                assert!(found);
+            })
+            .unwrap()
+            .join()
+            .unwrap();
+    }
 }

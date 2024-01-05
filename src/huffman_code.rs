@@ -317,8 +317,13 @@ pub struct HuffmanCodedPositionAndEval {
     pub padding: u8,
 }
 
-#[test]
-fn test_huffmancodedpositionandeval_size() {
-    assert_eq!(std::mem::size_of::<GameResult>(), 1);
-    assert_eq!(std::mem::size_of::<HuffmanCodedPositionAndEval>(), 42);
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_huffmancodedpositionandeval_size() {
+        assert_eq!(std::mem::size_of::<GameResult>(), 1);
+        assert_eq!(std::mem::size_of::<HuffmanCodedPositionAndEval>(), 42);
+    }
 }

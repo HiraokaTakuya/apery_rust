@@ -1901,47 +1901,52 @@ impl Drop for ThreadPool {
     }
 }
 
-#[test]
-fn test_start_thinking() {
-    std::thread::Builder::new()
-        .stack_size(crate::stack_size::STACK_SIZE)
-        .spawn(|| {
-            let mut thread_pool = ThreadPool::new();
-            let mut tt = TranspositionTable::new();
-            #[cfg(feature = "kppt")]
-            let usi_options = UsiOptions::new();
-            #[cfg(feature = "kppt")]
-            let mut ehash = EvalHash::new();
-            tt.resize(16, &mut thread_pool);
-            #[cfg(feature = "kppt")]
-            ehash.resize(16, &mut thread_pool);
-            #[cfg(feature = "kppt")]
-            if load_evaluate_files(&usi_options.get_string(UsiOptions::EVAL_DIR)).is_ok() {
-                let limits = {
-                    let mut limits = LimitsType::new();
-                    limits.depth = Some(1);
-                    limits.start_time = Some(std::time::Instant::now());
-                    limits
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_start_thinking() {
+        std::thread::Builder::new()
+            .stack_size(crate::stack_size::STACK_SIZE)
+            .spawn(|| {
+                let mut thread_pool = ThreadPool::new();
+                let mut tt = TranspositionTable::new();
+                #[cfg(feature = "kppt")]
+                let usi_options = UsiOptions::new();
+                #[cfg(feature = "kppt")]
+                let mut ehash = EvalHash::new();
+                tt.resize(16, &mut thread_pool);
+                #[cfg(feature = "kppt")]
+                ehash.resize(16, &mut thread_pool);
+                #[cfg(feature = "kppt")]
+                if load_evaluate_files(&usi_options.get_string(UsiOptions::EVAL_DIR)).is_ok() {
+                    let limits = {
+                        let mut limits = LimitsType::new();
+                        limits.depth = Some(1);
+                        limits.start_time = Some(std::time::Instant::now());
+                        limits
+                    };
+                    let mut reductions = Reductions::new();
+                    thread_pool.set(
+                        3,
+                        &mut tt,
+                        #[cfg(feature = "kppt")]
+                        &mut ehash,
+                        &mut reductions,
+                    );
+                    let ponder_mode = false;
+                    let hide_all_output = false;
+                    thread_pool.start_thinking(&Position::new(), &mut tt, limits, &usi_options, ponder_mode, hide_all_output);
+                    thread_pool.wait_for_search_finished();
                 };
-                let mut reductions = Reductions::new();
-                thread_pool.set(
-                    3,
-                    &mut tt,
-                    #[cfg(feature = "kppt")]
-                    &mut ehash,
-                    &mut reductions,
-                );
-                let ponder_mode = false;
-                let hide_all_output = false;
-                thread_pool.start_thinking(&Position::new(), &mut tt, limits, &usi_options, ponder_mode, hide_all_output);
-                thread_pool.wait_for_search_finished();
-            };
-            // No evaluation funciton binaries.
-            // We want to do "cargo test" without evaluation function binaries.
-            // Then we do nothing and pass this test.
-            // todo: Is there a more better way?
-        })
-        .unwrap()
-        .join()
-        .unwrap();
+                // No evaluation funciton binaries.
+                // We want to do "cargo test" without evaluation function binaries.
+                // Then we do nothing and pass this test.
+                // todo: Is there a more better way?
+            })
+            .unwrap()
+            .join()
+            .unwrap();
+    }
 }

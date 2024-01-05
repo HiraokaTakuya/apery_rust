@@ -134,55 +134,60 @@ impl Hand {
     }
 }
 
-#[test]
-fn test_hand_shift_bits() {
-    assert_eq!(Hand::PAWN_SHIFT_BITS, 0);
-    assert_eq!(Hand::BISHOP_SHIFT_BITS, 18);
-    assert_eq!(Hand::ROOK_SHIFT_BITS, 21);
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-#[test]
-fn test_hand_num() {
-    let hand = Hand(3 << Hand::LANCE_SHIFT_BITS);
-    assert_eq!(hand.num(PieceType::PAWN), 0);
-    assert_eq!(hand.num(PieceType::LANCE), 3);
-    assert_eq!(hand.num(PieceType::KNIGHT), 0);
-}
+    #[test]
+    fn test_hand_shift_bits() {
+        assert_eq!(Hand::PAWN_SHIFT_BITS, 0);
+        assert_eq!(Hand::BISHOP_SHIFT_BITS, 18);
+        assert_eq!(Hand::ROOK_SHIFT_BITS, 21);
+    }
 
-#[test]
-fn test_hand_set() {
-    let mut hand = Hand(0);
-    hand.set(PieceType::LANCE, 2);
-    hand.set(PieceType::GOLD, 4);
-    hand.set(PieceType::BISHOP, 1);
-    hand.minus_one(PieceType::GOLD);
-    hand.plus_one(PieceType::BISHOP);
-    assert_eq!(hand.num(PieceType::LANCE), 2);
-    assert_eq!(hand.num(PieceType::GOLD), 3);
-    assert_eq!(hand.num(PieceType::BISHOP), 2);
+    #[test]
+    fn test_hand_num() {
+        let hand = Hand(3 << Hand::LANCE_SHIFT_BITS);
+        assert_eq!(hand.num(PieceType::PAWN), 0);
+        assert_eq!(hand.num(PieceType::LANCE), 3);
+        assert_eq!(hand.num(PieceType::KNIGHT), 0);
+    }
 
-    let mut hand2: Hand = hand;
-    assert_eq!(hand, hand2);
-    assert_eq!(hand2.num(PieceType::LANCE), 2);
-    assert_eq!(hand2.num(PieceType::GOLD), 3);
-    assert_eq!(hand2.num(PieceType::BISHOP), 2);
-    hand2.minus_one(PieceType::LANCE);
-    assert!(hand != hand2);
-}
+    #[test]
+    fn test_hand_set() {
+        let mut hand = Hand(0);
+        hand.set(PieceType::LANCE, 2);
+        hand.set(PieceType::GOLD, 4);
+        hand.set(PieceType::BISHOP, 1);
+        hand.minus_one(PieceType::GOLD);
+        hand.plus_one(PieceType::BISHOP);
+        assert_eq!(hand.num(PieceType::LANCE), 2);
+        assert_eq!(hand.num(PieceType::GOLD), 3);
+        assert_eq!(hand.num(PieceType::BISHOP), 2);
 
-#[test]
-fn test_hand_is_equal_or_superior() {
-    let mut hand = Hand(0);
-    hand.set(PieceType::PAWN, 17);
-    hand.set(PieceType::SILVER, 3);
-    hand.set(PieceType::ROOK, 2);
-    let mut hand2 = hand;
-    assert!(hand.is_equal_or_superior(hand2));
-    assert!(hand2.is_equal_or_superior(hand));
-    hand2.minus_one(PieceType::PAWN);
-    assert!(hand.is_equal_or_superior(hand2));
-    assert!(!hand2.is_equal_or_superior(hand));
-    hand2.plus_one(PieceType::BISHOP);
-    assert!(!hand.is_equal_or_superior(hand2));
-    assert!(!hand2.is_equal_or_superior(hand));
+        let mut hand2: Hand = hand;
+        assert_eq!(hand, hand2);
+        assert_eq!(hand2.num(PieceType::LANCE), 2);
+        assert_eq!(hand2.num(PieceType::GOLD), 3);
+        assert_eq!(hand2.num(PieceType::BISHOP), 2);
+        hand2.minus_one(PieceType::LANCE);
+        assert!(hand != hand2);
+    }
+
+    #[test]
+    fn test_hand_is_equal_or_superior() {
+        let mut hand = Hand(0);
+        hand.set(PieceType::PAWN, 17);
+        hand.set(PieceType::SILVER, 3);
+        hand.set(PieceType::ROOK, 2);
+        let mut hand2 = hand;
+        assert!(hand.is_equal_or_superior(hand2));
+        assert!(hand2.is_equal_or_superior(hand));
+        hand2.minus_one(PieceType::PAWN);
+        assert!(hand.is_equal_or_superior(hand2));
+        assert!(!hand2.is_equal_or_superior(hand));
+        hand2.plus_one(PieceType::BISHOP);
+        assert!(!hand.is_equal_or_superior(hand2));
+        assert!(!hand2.is_equal_or_superior(hand));
+    }
 }

@@ -1119,299 +1119,304 @@ pub static ATTACK_TABLE: once_cell::sync::Lazy<AttackTable<'static>> = once_cell
     ),
 });
 
-#[test]
-fn test_bitboard_eq() {
-    let bb0 = Bitboard::ZERO;
-    let mut bb1 = Bitboard::ZERO;
-    assert!(bb0 == bb1);
-    bb1.set(Square::SQ13);
-    assert!(bb0 != bb1);
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-#[test]
-fn test_bitboard_part() {
-    assert_eq!(Bitboard::part(Square::SQ11), 0);
-    assert_eq!(Bitboard::part(Square::SQ79), 0);
-    assert_eq!(Bitboard::part(Square::SQ81), 1);
-    assert_eq!(Bitboard::part(Square::SQ99), 1);
-}
+    #[test]
+    fn test_bitboard_eq() {
+        let bb0 = Bitboard::ZERO;
+        let mut bb1 = Bitboard::ZERO;
+        assert!(bb0 == bb1);
+        bb1.set(Square::SQ13);
+        assert!(bb0 != bb1);
+    }
 
-#[test]
-fn test_sliding_attacks() {
-    let v = vec![Square::DELTA_N, Square::DELTA_E, Square::DELTA_S, Square::DELTA_W];
-    let mut occupied = Bitboard::ZERO;
-    occupied.set(Square::SQ46);
-    let bb = sliding_attacks(&v, Square::SQ44, &occupied);
-    assert!(bb.is_set(Square::SQ46));
-    assert!(!bb.is_set(Square::SQ47));
-    assert!(!bb.is_set(Square::SQ44));
-    assert!(bb.is_set(Square::SQ14));
-    assert!(bb.is_set(Square::SQ94));
-    assert!(bb.is_set(Square::SQ41));
-    assert!(!bb.is_set(Square::SQ22));
-    assert!(!bb.is_set(Square::SQ71));
-    assert!(!bb.is_set(Square::SQ17));
+    #[test]
+    fn test_bitboard_part() {
+        assert_eq!(Bitboard::part(Square::SQ11), 0);
+        assert_eq!(Bitboard::part(Square::SQ79), 0);
+        assert_eq!(Bitboard::part(Square::SQ81), 1);
+        assert_eq!(Bitboard::part(Square::SQ99), 1);
+    }
 
-    let v = vec![Square::DELTA_NE, Square::DELTA_SE, Square::DELTA_SW, Square::DELTA_NW];
-    let mut occupied = Bitboard::ZERO;
-    occupied.set(Square::SQ66);
-    let bb = sliding_attacks(&v, Square::SQ44, &occupied);
-    assert!(bb.is_set(Square::SQ66));
-    assert!(!bb.is_set(Square::SQ77));
-    assert!(!bb.is_set(Square::SQ44));
-    assert!(bb.is_set(Square::SQ22));
-    assert!(bb.is_set(Square::SQ71));
-    assert!(bb.is_set(Square::SQ17));
-    assert!(!bb.is_set(Square::SQ14));
-    assert!(!bb.is_set(Square::SQ94));
-    assert!(!bb.is_set(Square::SQ41));
-}
+    #[test]
+    fn test_sliding_attacks() {
+        let v = vec![Square::DELTA_N, Square::DELTA_E, Square::DELTA_S, Square::DELTA_W];
+        let mut occupied = Bitboard::ZERO;
+        occupied.set(Square::SQ46);
+        let bb = sliding_attacks(&v, Square::SQ44, &occupied);
+        assert!(bb.is_set(Square::SQ46));
+        assert!(!bb.is_set(Square::SQ47));
+        assert!(!bb.is_set(Square::SQ44));
+        assert!(bb.is_set(Square::SQ14));
+        assert!(bb.is_set(Square::SQ94));
+        assert!(bb.is_set(Square::SQ41));
+        assert!(!bb.is_set(Square::SQ22));
+        assert!(!bb.is_set(Square::SQ71));
+        assert!(!bb.is_set(Square::SQ17));
 
-#[test]
-fn test_clone() {
-    let bb = Bitboard::ZERO;
-    let bb2 = bb;
-    assert_eq!(bb, bb2);
-}
+        let v = vec![Square::DELTA_NE, Square::DELTA_SE, Square::DELTA_SW, Square::DELTA_NW];
+        let mut occupied = Bitboard::ZERO;
+        occupied.set(Square::SQ66);
+        let bb = sliding_attacks(&v, Square::SQ44, &occupied);
+        assert!(bb.is_set(Square::SQ66));
+        assert!(!bb.is_set(Square::SQ77));
+        assert!(!bb.is_set(Square::SQ44));
+        assert!(bb.is_set(Square::SQ22));
+        assert!(bb.is_set(Square::SQ71));
+        assert!(bb.is_set(Square::SQ17));
+        assert!(!bb.is_set(Square::SQ14));
+        assert!(!bb.is_set(Square::SQ94));
+        assert!(!bb.is_set(Square::SQ41));
+    }
 
-#[test]
-fn test_opponent_field_mask() {
-    for us in Color::ALL.iter() {
-        for sq in Square::ALL.iter() {
-            let rank = Rank::new(*sq);
-            assert_eq!(rank.is_opponent_field(*us), Bitboard::opponent_field_mask(*us).is_set(*sq));
+    #[test]
+    fn test_clone() {
+        let bb = Bitboard::ZERO;
+        let bb2 = bb;
+        assert_eq!(bb, bb2);
+    }
+
+    #[test]
+    fn test_opponent_field_mask() {
+        for us in Color::ALL.iter() {
+            for sq in Square::ALL.iter() {
+                let rank = Rank::new(*sq);
+                assert_eq!(rank.is_opponent_field(*us), Bitboard::opponent_field_mask(*us).is_set(*sq));
+            }
         }
     }
-}
 
-#[test]
-fn test_block_bits() {
-    let v = vec![Square::DELTA_N, Square::DELTA_E, Square::DELTA_S, Square::DELTA_W];
-    let mut occupied = Bitboard::ZERO;
-    occupied.set(Square::SQ46);
-    let bb = sliding_attacks(&v, Square::SQ11, &occupied);
-    let bits = bb.count_ones();
-    assert_eq!(bits, 16);
-}
-
-#[test]
-fn test_bishop_magic() {
-    std::thread::Builder::new()
-        .stack_size(crate::stack_size::STACK_SIZE)
-        .spawn(|| {
-            let mut occupied = Bitboard::ZERO;
-            occupied.set(Square::SQ66);
-            occupied.set(Square::SQ33);
-            occupied.set(Square::SQ22);
-            occupied.set(Square::SQ82);
-            occupied.set(Square::SQ28);
-            assert_eq!(
-                ATTACK_TABLE.bishop.magic(Square::SQ55).attack(&occupied),
-                sliding_attacks(&AttackTable::BISHOP_DELTAS, Square::SQ55, &occupied)
-            );
-        })
-        .unwrap()
-        .join()
-        .unwrap();
-}
-
-#[test]
-fn test_rook_magic() {
-    let mut occupied = Bitboard::ZERO;
-    occupied.set(Square::SQ65);
-    occupied.set(Square::SQ35);
-    occupied.set(Square::SQ25);
-    occupied.set(Square::SQ52);
-    occupied.set(Square::SQ58);
-    assert_eq!(
-        ATTACK_TABLE.rook.magic(Square::SQ55).attack(&occupied),
-        sliding_attacks(&AttackTable::ROOK_DELTAS, Square::SQ55, &occupied)
-    );
-}
-
-#[test]
-fn test_lance_attack() {
-    std::thread::Builder::new()
-        .stack_size(crate::stack_size::STACK_SIZE)
-        .spawn(|| {
-            let mut occupied = Bitboard::ZERO;
-            occupied.set(Square::SQ52);
-            let attack = ATTACK_TABLE.lance.attack(Color::BLACK, Square::SQ55, &occupied);
-            assert!(!attack.is_set(Square::SQ55));
-            assert!(attack.is_set(Square::SQ54));
-            assert!(attack.is_set(Square::SQ52));
-            assert!(!attack.is_set(Square::SQ51));
-
-            let mut occupied = Bitboard::ZERO;
-            occupied.set(Square::SQ58);
-            let attack = ATTACK_TABLE.lance.attack(Color::WHITE, Square::SQ55, &occupied);
-            assert!(!attack.is_set(Square::SQ55));
-            assert!(attack.is_set(Square::SQ56));
-            assert!(attack.is_set(Square::SQ58));
-            assert!(!attack.is_set(Square::SQ59));
-        })
-        .unwrap()
-        .join()
-        .unwrap();
-}
-
-#[test]
-fn test_king_attack() {
-    std::thread::Builder::new()
-        .stack_size(crate::stack_size::STACK_SIZE)
-        .spawn(|| {
-            let mut bb = Bitboard::ZERO;
-            bb.set(Square::SQ12);
-            bb.set(Square::SQ21);
-            bb.set(Square::SQ22);
-            assert_eq!(ATTACK_TABLE.king.attack(Square::SQ11), bb);
-
-            let mut bb = Bitboard::ZERO;
-            bb.set(Square::SQ77);
-            bb.set(Square::SQ78);
-            bb.set(Square::SQ79);
-            bb.set(Square::SQ87);
-            bb.set(Square::SQ89);
-            bb.set(Square::SQ97);
-            bb.set(Square::SQ98);
-            bb.set(Square::SQ99);
-            assert_eq!(ATTACK_TABLE.king.attack(Square::SQ88), bb);
-        })
-        .unwrap()
-        .join()
-        .unwrap();
-}
-
-#[test]
-fn test_piece_attack() {
-    std::thread::Builder::new()
-        .stack_size(crate::stack_size::STACK_SIZE)
-        .spawn(|| {
-            let bb = Bitboard::ZERO;
-            assert_eq!(ATTACK_TABLE.pawn.attack(Color::BLACK, Square::SQ11), bb);
-
-            let mut bb = Bitboard::ZERO;
-            bb.set(Square::SQ12);
-            assert_eq!(ATTACK_TABLE.pawn.attack(Color::WHITE, Square::SQ11), bb);
-
-            let mut bb = Bitboard::ZERO;
-            bb.set(Square::SQ77);
-            bb.set(Square::SQ78);
-            bb.set(Square::SQ87);
-            bb.set(Square::SQ89);
-            bb.set(Square::SQ97);
-            bb.set(Square::SQ98);
-            assert_eq!(ATTACK_TABLE.gold.attack(Color::BLACK, Square::SQ88), bb);
-
-            let mut bb = Bitboard::ZERO;
-            bb.set(Square::SQ77);
-            bb.set(Square::SQ79);
-            bb.set(Square::SQ87);
-            bb.set(Square::SQ97);
-            bb.set(Square::SQ99);
-            assert_eq!(ATTACK_TABLE.silver.attack(Color::BLACK, Square::SQ88), bb);
-
-            let mut bb = Bitboard::ZERO;
-            bb.set(Square::SQ76);
-            bb.set(Square::SQ96);
-            assert_eq!(ATTACK_TABLE.knight.attack(Color::BLACK, Square::SQ88), bb);
-
-            let bb = Bitboard::ZERO;
-            assert_eq!(ATTACK_TABLE.knight.attack(Color::WHITE, Square::SQ88), bb);
-        })
-        .unwrap()
-        .join()
-        .unwrap();
-}
-
-#[test]
-fn test_pseudo_attack() {
-    for sq in Square::ALL.iter() {
-        assert_eq!(
-            ATTACK_TABLE.bishop.magic(*sq).attack(&Bitboard::ZERO),
-            ATTACK_TABLE.bishop.magic(*sq).pseudo_attack()
-        );
-        assert_eq!(
-            ATTACK_TABLE.rook.magic(*sq).attack(&Bitboard::ZERO),
-            ATTACK_TABLE.rook.magic(*sq).pseudo_attack()
-        );
+    #[test]
+    fn test_block_bits() {
+        let v = vec![Square::DELTA_N, Square::DELTA_E, Square::DELTA_S, Square::DELTA_W];
+        let mut occupied = Bitboard::ZERO;
+        occupied.set(Square::SQ46);
+        let bb = sliding_attacks(&v, Square::SQ11, &occupied);
+        let bits = bb.count_ones();
+        assert_eq!(bits, 16);
     }
-    for c in Color::ALL.iter() {
-        for sq in Square::ALL.iter() {
-            assert_eq!(
-                ATTACK_TABLE.lance.attack(*c, *sq, &Bitboard::ZERO),
-                ATTACK_TABLE.lance.pseudo_attack(*c, *sq)
-            );
-        }
-    }
-}
 
-#[test]
-fn test_in_front_mask() {
-    for sq in Square::ALL.iter() {
-        let rank = Rank::new(*sq);
-        for c in Color::ALL.iter() {
-            let rab = RankAsBlack::new(*c, rank);
-            for sq_tmp in Square::ALL.iter() {
-                let rank_tmp = Rank::new(*sq_tmp);
+    #[test]
+    fn test_bishop_magic() {
+        std::thread::Builder::new()
+            .stack_size(crate::stack_size::STACK_SIZE)
+            .spawn(|| {
+                let mut occupied = Bitboard::ZERO;
+                occupied.set(Square::SQ66);
+                occupied.set(Square::SQ33);
+                occupied.set(Square::SQ22);
+                occupied.set(Square::SQ82);
+                occupied.set(Square::SQ28);
                 assert_eq!(
-                    rank_tmp.is_in_front_of(*c, rab),
-                    Bitboard::in_front_mask(*c, rank).is_set(*sq_tmp)
+                    ATTACK_TABLE.bishop.magic(Square::SQ55).attack(&occupied),
+                    sliding_attacks(&AttackTable::BISHOP_DELTAS, Square::SQ55, &occupied)
+                );
+            })
+            .unwrap()
+            .join()
+            .unwrap();
+    }
+
+    #[test]
+    fn test_rook_magic() {
+        let mut occupied = Bitboard::ZERO;
+        occupied.set(Square::SQ65);
+        occupied.set(Square::SQ35);
+        occupied.set(Square::SQ25);
+        occupied.set(Square::SQ52);
+        occupied.set(Square::SQ58);
+        assert_eq!(
+            ATTACK_TABLE.rook.magic(Square::SQ55).attack(&occupied),
+            sliding_attacks(&AttackTable::ROOK_DELTAS, Square::SQ55, &occupied)
+        );
+    }
+
+    #[test]
+    fn test_lance_attack() {
+        std::thread::Builder::new()
+            .stack_size(crate::stack_size::STACK_SIZE)
+            .spawn(|| {
+                let mut occupied = Bitboard::ZERO;
+                occupied.set(Square::SQ52);
+                let attack = ATTACK_TABLE.lance.attack(Color::BLACK, Square::SQ55, &occupied);
+                assert!(!attack.is_set(Square::SQ55));
+                assert!(attack.is_set(Square::SQ54));
+                assert!(attack.is_set(Square::SQ52));
+                assert!(!attack.is_set(Square::SQ51));
+
+                let mut occupied = Bitboard::ZERO;
+                occupied.set(Square::SQ58);
+                let attack = ATTACK_TABLE.lance.attack(Color::WHITE, Square::SQ55, &occupied);
+                assert!(!attack.is_set(Square::SQ55));
+                assert!(attack.is_set(Square::SQ56));
+                assert!(attack.is_set(Square::SQ58));
+                assert!(!attack.is_set(Square::SQ59));
+            })
+            .unwrap()
+            .join()
+            .unwrap();
+    }
+
+    #[test]
+    fn test_king_attack() {
+        std::thread::Builder::new()
+            .stack_size(crate::stack_size::STACK_SIZE)
+            .spawn(|| {
+                let mut bb = Bitboard::ZERO;
+                bb.set(Square::SQ12);
+                bb.set(Square::SQ21);
+                bb.set(Square::SQ22);
+                assert_eq!(ATTACK_TABLE.king.attack(Square::SQ11), bb);
+
+                let mut bb = Bitboard::ZERO;
+                bb.set(Square::SQ77);
+                bb.set(Square::SQ78);
+                bb.set(Square::SQ79);
+                bb.set(Square::SQ87);
+                bb.set(Square::SQ89);
+                bb.set(Square::SQ97);
+                bb.set(Square::SQ98);
+                bb.set(Square::SQ99);
+                assert_eq!(ATTACK_TABLE.king.attack(Square::SQ88), bb);
+            })
+            .unwrap()
+            .join()
+            .unwrap();
+    }
+
+    #[test]
+    fn test_piece_attack() {
+        std::thread::Builder::new()
+            .stack_size(crate::stack_size::STACK_SIZE)
+            .spawn(|| {
+                let bb = Bitboard::ZERO;
+                assert_eq!(ATTACK_TABLE.pawn.attack(Color::BLACK, Square::SQ11), bb);
+
+                let mut bb = Bitboard::ZERO;
+                bb.set(Square::SQ12);
+                assert_eq!(ATTACK_TABLE.pawn.attack(Color::WHITE, Square::SQ11), bb);
+
+                let mut bb = Bitboard::ZERO;
+                bb.set(Square::SQ77);
+                bb.set(Square::SQ78);
+                bb.set(Square::SQ87);
+                bb.set(Square::SQ89);
+                bb.set(Square::SQ97);
+                bb.set(Square::SQ98);
+                assert_eq!(ATTACK_TABLE.gold.attack(Color::BLACK, Square::SQ88), bb);
+
+                let mut bb = Bitboard::ZERO;
+                bb.set(Square::SQ77);
+                bb.set(Square::SQ79);
+                bb.set(Square::SQ87);
+                bb.set(Square::SQ97);
+                bb.set(Square::SQ99);
+                assert_eq!(ATTACK_TABLE.silver.attack(Color::BLACK, Square::SQ88), bb);
+
+                let mut bb = Bitboard::ZERO;
+                bb.set(Square::SQ76);
+                bb.set(Square::SQ96);
+                assert_eq!(ATTACK_TABLE.knight.attack(Color::BLACK, Square::SQ88), bb);
+
+                let bb = Bitboard::ZERO;
+                assert_eq!(ATTACK_TABLE.knight.attack(Color::WHITE, Square::SQ88), bb);
+            })
+            .unwrap()
+            .join()
+            .unwrap();
+    }
+
+    #[test]
+    fn test_pseudo_attack() {
+        for sq in Square::ALL.iter() {
+            assert_eq!(
+                ATTACK_TABLE.bishop.magic(*sq).attack(&Bitboard::ZERO),
+                ATTACK_TABLE.bishop.magic(*sq).pseudo_attack()
+            );
+            assert_eq!(
+                ATTACK_TABLE.rook.magic(*sq).attack(&Bitboard::ZERO),
+                ATTACK_TABLE.rook.magic(*sq).pseudo_attack()
+            );
+        }
+        for c in Color::ALL.iter() {
+            for sq in Square::ALL.iter() {
+                assert_eq!(
+                    ATTACK_TABLE.lance.attack(*c, *sq, &Bitboard::ZERO),
+                    ATTACK_TABLE.lance.pseudo_attack(*c, *sq)
                 );
             }
         }
     }
-}
 
-#[test]
-fn test_between_mask() {
-    std::thread::Builder::new()
-        .stack_size(crate::stack_size::STACK_SIZE)
-        .spawn(|| {
-            for sq0 in Square::ALL.iter() {
-                for sq1 in Square::ALL.iter() {
-                    let relation = Relation::new(*sq0, *sq1);
-                    if relation == Relation::MISC {
-                        assert_eq!(Bitboard::between_mask(*sq0, *sq1).count_ones(), 0);
-                    } else {
-                        let occupied = Bitboard::square_mask(*sq0) | Bitboard::square_mask(*sq1);
-                        let attack;
-                        if relation.is_cross() {
-                            attack =
-                                ATTACK_TABLE.rook.magic(*sq0).attack(&occupied) & ATTACK_TABLE.rook.magic(*sq1).attack(&occupied);
-                        } else if relation.is_diag() {
-                            attack = ATTACK_TABLE.bishop.magic(*sq0).attack(&occupied)
-                                & ATTACK_TABLE.bishop.magic(*sq1).attack(&occupied);
-                        } else {
-                            unreachable!();
-                        }
-                        assert_eq!(Bitboard::between_mask(*sq0, *sq1), attack);
-                    }
+    #[test]
+    fn test_in_front_mask() {
+        for sq in Square::ALL.iter() {
+            let rank = Rank::new(*sq);
+            for c in Color::ALL.iter() {
+                let rab = RankAsBlack::new(*c, rank);
+                for sq_tmp in Square::ALL.iter() {
+                    let rank_tmp = Rank::new(*sq_tmp);
+                    assert_eq!(
+                        rank_tmp.is_in_front_of(*c, rab),
+                        Bitboard::in_front_mask(*c, rank).is_set(*sq_tmp)
+                    );
                 }
             }
-        })
-        .unwrap()
-        .join()
-        .unwrap();
-}
+        }
+    }
 
-#[test]
-fn test_proximity_check_mask() {
-    std::thread::Builder::new()
-        .stack_size(crate::stack_size::STACK_SIZE)
-        .spawn(|| {
-            let check_candidates = Bitboard::proximity_check_mask(Piece::B_PAWN, Square::SQ53);
-            assert_eq!(check_candidates.count_ones(), 3);
-            assert!(check_candidates.is_set(Square::SQ44));
-            assert!(check_candidates.is_set(Square::SQ55));
-            assert!(check_candidates.is_set(Square::SQ64));
+    #[test]
+    fn test_between_mask() {
+        std::thread::Builder::new()
+            .stack_size(crate::stack_size::STACK_SIZE)
+            .spawn(|| {
+                for sq0 in Square::ALL.iter() {
+                    for sq1 in Square::ALL.iter() {
+                        let relation = Relation::new(*sq0, *sq1);
+                        if relation == Relation::MISC {
+                            assert_eq!(Bitboard::between_mask(*sq0, *sq1).count_ones(), 0);
+                        } else {
+                            let occupied = Bitboard::square_mask(*sq0) | Bitboard::square_mask(*sq1);
+                            let attack;
+                            if relation.is_cross() {
+                                attack = ATTACK_TABLE.rook.magic(*sq0).attack(&occupied)
+                                    & ATTACK_TABLE.rook.magic(*sq1).attack(&occupied);
+                            } else if relation.is_diag() {
+                                attack = ATTACK_TABLE.bishop.magic(*sq0).attack(&occupied)
+                                    & ATTACK_TABLE.bishop.magic(*sq1).attack(&occupied);
+                            } else {
+                                unreachable!();
+                            }
+                            assert_eq!(Bitboard::between_mask(*sq0, *sq1), attack);
+                        }
+                    }
+                }
+            })
+            .unwrap()
+            .join()
+            .unwrap();
+    }
 
-            let check_candidates = Bitboard::proximity_check_mask(Piece::B_BISHOP, Square::SQ53);
-            assert!(check_candidates.is_set(Square::SQ55));
-            assert!(!check_candidates.is_set(Square::SQ12));
-            assert!(!check_candidates.is_set(Square::SQ57)); // not proximity.
-        })
-        .unwrap()
-        .join()
-        .unwrap();
+    #[test]
+    fn test_proximity_check_mask() {
+        std::thread::Builder::new()
+            .stack_size(crate::stack_size::STACK_SIZE)
+            .spawn(|| {
+                let check_candidates = Bitboard::proximity_check_mask(Piece::B_PAWN, Square::SQ53);
+                assert_eq!(check_candidates.count_ones(), 3);
+                assert!(check_candidates.is_set(Square::SQ44));
+                assert!(check_candidates.is_set(Square::SQ55));
+                assert!(check_candidates.is_set(Square::SQ64));
+
+                let check_candidates = Bitboard::proximity_check_mask(Piece::B_BISHOP, Square::SQ53);
+                assert!(check_candidates.is_set(Square::SQ55));
+                assert!(!check_candidates.is_set(Square::SQ12));
+                assert!(!check_candidates.is_set(Square::SQ57)); // not proximity.
+            })
+            .unwrap()
+            .join()
+            .unwrap();
+    }
 }

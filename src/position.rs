@@ -2846,540 +2846,549 @@ impl Position {
     }
 }
 
-#[test]
-fn test_position_set() {
-    let sfens = [
-        "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1",
-        "l6nl/5+P1gk/2np1S3/p1p4Pp/3P2Sp1/1PPb2P1P/P5GS1/R8/LN4bKL w RGgsn5p 1",
-        "l4S2l/4g1gs1/5p1p1/pr2N1pkp/4Gn3/PP3PPPP/2GPP4/1K7/L3r+s2L w BS2N5Pb 20",
-        "6n1l/2+S1k4/2lp4p/1np1B2b1/3PP4/1N1S3rP/1P2+pPP+p1/1p1G5/3KG2r1 b GSN2L4Pgs2p 399",
-    ];
-    for sfen in sfens.iter() {
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_position_set() {
+        let sfens = [
+            "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1",
+            "l6nl/5+P1gk/2np1S3/p1p4Pp/3P2Sp1/1PPb2P1P/P5GS1/R8/LN4bKL w RGgsn5p 1",
+            "l4S2l/4g1gs1/5p1p1/pr2N1pkp/4Gn3/PP3PPPP/2GPP4/1K7/L3r+s2L w BS2N5Pb 20",
+            "6n1l/2+S1k4/2lp4p/1np1B2b1/3PP4/1N1S3rP/1P2+pPP+p1/1p1G5/3KG2r1 b GSN2L4Pgs2p 399",
+        ];
+        for sfen in sfens.iter() {
+            match Position::new_from_sfen(sfen) {
+                Ok(pos) => assert_eq!(pos.to_sfen(), sfen.to_string()),
+                Err(_) => assert_eq!("".to_string(), sfen.to_string()),
+            }
+        }
+
+        let sfens = [
+            (
+                "l6nl/5+P1gk/2np1S3/p1p4Pp/3P2Sp1/1PPb2P1P/P5GS1/R8/LN4bKL w RRGgsn5p 1",
+                Some(Piece::B_ROOK),
+            ),
+            (
+                "l4S2l/4g1gs1/5p1p1/pr2N1pkp/4Gn3/PP3PPPP/2GPP4/1K7/L3r+s2L w BS2S2N5Pb 20",
+                Some(Piece::B_SILVER),
+            ),
+            (
+                "6n1l/2+S1k4/2lp4p/1np1B2b1/3PP4/1N1S3rP/1P2+pPP+p1/1p1G5/3KG2r1 b GSN2L4Pgss2p 399",
+                Some(Piece::W_SILVER),
+            ),
+        ];
+        for &(sfen, pc_twice) in sfens.iter() {
+            match Position::new_from_sfen(sfen) {
+                Ok(_) => assert_eq!("".to_string(), sfen.to_string()),
+                Err(err) => match err {
+                    SfenError::SameHandPieceTwice { token } => {
+                        assert_eq!(Piece::new_hand_piece_from_str(&token), pc_twice);
+                    }
+                    _ => panic!(),
+                },
+            }
+        }
+
+        let sfens = [
+            (
+                "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSG1GSNL b - 1",
+                Color::BLACK,
+            ),
+            (
+                "lnsg1gsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1",
+                Color::WHITE,
+            ),
+        ];
+        for &(sfen, color_of_king_nothing) in sfens.iter() {
+            match Position::new_from_sfen(sfen) {
+                Ok(_) => assert_eq!("".to_string(), sfen.to_string()),
+                Err(err) => match err {
+                    SfenError::KingIsNothing { c } => {
+                        assert_eq!(c, color_of_king_nothing);
+                    }
+                    _ => panic!(),
+                },
+            }
+        }
+
+        let sfens = [
+            ("l6nl/5+P1gk/2np1S3/p1p4Pp/3P2Sp1/1PPb2P1P/P5GS1/R8/LN4bKL w RGgsn5p9 1", 9),
+            ("l6nl/5+P1gk/2np1S3/p1p4Pp/3P2Sp1/1PPb2P1P/P5GS1/R8/LN4bKL w RGgsn5p99 1", 99),
+        ];
+        for &(sfen, last_hand_number) in sfens.iter() {
+            match Position::new_from_sfen(sfen) {
+                Ok(_) => unreachable!(),
+                Err(err) => match err {
+                    SfenError::EndWithHandPieceNumber { last_number } => {
+                        assert_eq!(last_number, last_hand_number);
+                    }
+                    _ => unreachable!(),
+                },
+            }
+        }
+    }
+
+    #[test]
+    fn test_position_attackers_to() {
+        let sfens = ["lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1"];
+        for sfen in sfens.iter() {
+            match Position::new_from_sfen(sfen) {
+                Ok(pos) => {
+                    assert_eq!(pos.to_sfen(), sfen.to_string());
+                    let attackers = pos.attackers_to(Color::WHITE, Square::SQ52, &pos.occupied_bb());
+                    assert_eq!(attackers.count_ones(), 4);
+                    assert!(attackers.is_set(Square::SQ41));
+                    assert!(attackers.is_set(Square::SQ51));
+                    assert!(attackers.is_set(Square::SQ61));
+                    assert!(attackers.is_set(Square::SQ82));
+                }
+                Err(_) => assert_eq!("".to_string(), sfen.to_string()),
+            }
+        }
+        let sfen = "k8/5+R3/3b1l3/4s4/5pg1+r/4GP3/5LN2/9/K4L3 b - 1";
         match Position::new_from_sfen(sfen) {
-            Ok(pos) => assert_eq!(pos.to_sfen(), sfen.to_string()),
+            Ok(pos) => {
+                let to = Square::SQ45;
+                let attackers = pos.attackers_to_both_color(to, &pos.occupied_bb());
+                assert_eq!(attackers.count_ones(), 6);
+                assert!(attackers.is_set(Square::SQ35));
+                assert!(attackers.is_set(Square::SQ37));
+                assert!(attackers.is_set(Square::SQ43));
+                assert!(attackers.is_set(Square::SQ46));
+                assert!(attackers.is_set(Square::SQ54));
+                assert!(attackers.is_set(Square::SQ56));
+            }
             Err(_) => assert_eq!("".to_string(), sfen.to_string()),
         }
     }
 
-    let sfens = [
-        (
-            "l6nl/5+P1gk/2np1S3/p1p4Pp/3P2Sp1/1PPb2P1P/P5GS1/R8/LN4bKL w RRGgsn5p 1",
-            Some(Piece::B_ROOK),
-        ),
-        (
-            "l4S2l/4g1gs1/5p1p1/pr2N1pkp/4Gn3/PP3PPPP/2GPP4/1K7/L3r+s2L w BS2S2N5Pb 20",
-            Some(Piece::B_SILVER),
-        ),
-        (
-            "6n1l/2+S1k4/2lp4p/1np1B2b1/3PP4/1N1S3rP/1P2+pPP+p1/1p1G5/3KG2r1 b GSN2L4Pgss2p 399",
-            Some(Piece::W_SILVER),
-        ),
-    ];
-    for &(sfen, pc_twice) in sfens.iter() {
-        match Position::new_from_sfen(sfen) {
-            Ok(_) => assert_eq!("".to_string(), sfen.to_string()),
-            Err(err) => match err {
-                SfenError::SameHandPieceTwice { token } => {
-                    assert_eq!(Piece::new_hand_piece_from_str(&token), pc_twice);
-                }
-                _ => panic!(),
-            },
-        }
-    }
-
-    let sfens = [
-        (
-            "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSG1GSNL b - 1",
-            Color::BLACK,
-        ),
-        (
-            "lnsg1gsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1",
-            Color::WHITE,
-        ),
-    ];
-    for &(sfen, color_of_king_nothing) in sfens.iter() {
-        match Position::new_from_sfen(sfen) {
-            Ok(_) => assert_eq!("".to_string(), sfen.to_string()),
-            Err(err) => match err {
-                SfenError::KingIsNothing { c } => {
-                    assert_eq!(c, color_of_king_nothing);
-                }
-                _ => panic!(),
-            },
-        }
-    }
-
-    let sfens = [
-        ("l6nl/5+P1gk/2np1S3/p1p4Pp/3P2Sp1/1PPb2P1P/P5GS1/R8/LN4bKL w RGgsn5p9 1", 9),
-        ("l6nl/5+P1gk/2np1S3/p1p4Pp/3P2Sp1/1PPb2P1P/P5GS1/R8/LN4bKL w RGgsn5p99 1", 99),
-    ];
-    for &(sfen, last_hand_number) in sfens.iter() {
-        match Position::new_from_sfen(sfen) {
-            Ok(_) => unreachable!(),
-            Err(err) => match err {
-                SfenError::EndWithHandPieceNumber { last_number } => {
-                    assert_eq!(last_number, last_hand_number);
-                }
-                _ => unreachable!(),
-            },
-        }
-    }
-}
-
-#[test]
-fn test_position_attackers_to() {
-    let sfens = ["lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1"];
-    for sfen in sfens.iter() {
+    #[test]
+    fn test_position_slider_blockers() {
+        let sfen = "4k4/4l4/4P4/9/4K4/9/9/9/9 b - 1";
         match Position::new_from_sfen(sfen) {
             Ok(pos) => {
                 assert_eq!(pos.to_sfen(), sfen.to_string());
-                let attackers = pos.attackers_to(Color::WHITE, Square::SQ52, &pos.occupied_bb());
-                assert_eq!(attackers.count_ones(), 4);
-                assert!(attackers.is_set(Square::SQ41));
-                assert!(attackers.is_set(Square::SQ51));
-                assert!(attackers.is_set(Square::SQ61));
-                assert!(attackers.is_set(Square::SQ82));
+                let blockers_and_pinners_for_king = pos.slider_blockers_and_pinners(Color::WHITE, pos.king_square(Color::BLACK));
+                assert_eq!(blockers_and_pinners_for_king.0, Bitboard::square_mask(Square::SQ53));
+                assert_eq!(blockers_and_pinners_for_king.1, Bitboard::square_mask(Square::SQ52));
             }
             Err(_) => assert_eq!("".to_string(), sfen.to_string()),
         }
     }
-    let sfen = "k8/5+R3/3b1l3/4s4/5pg1+r/4GP3/5LN2/9/K4L3 b - 1";
-    match Position::new_from_sfen(sfen) {
-        Ok(pos) => {
-            let to = Square::SQ45;
-            let attackers = pos.attackers_to_both_color(to, &pos.occupied_bb());
-            assert_eq!(attackers.count_ones(), 6);
-            assert!(attackers.is_set(Square::SQ35));
-            assert!(attackers.is_set(Square::SQ37));
-            assert!(attackers.is_set(Square::SQ43));
-            assert!(attackers.is_set(Square::SQ46));
-            assert!(attackers.is_set(Square::SQ54));
-            assert!(attackers.is_set(Square::SQ56));
-        }
-        Err(_) => assert_eq!("".to_string(), sfen.to_string()),
-    }
-}
 
-#[test]
-fn test_position_slider_blockers() {
-    let sfen = "4k4/4l4/4P4/9/4K4/9/9/9/9 b - 1";
-    match Position::new_from_sfen(sfen) {
-        Ok(pos) => {
-            assert_eq!(pos.to_sfen(), sfen.to_string());
-            let blockers_and_pinners_for_king = pos.slider_blockers_and_pinners(Color::WHITE, pos.king_square(Color::BLACK));
-            assert_eq!(blockers_and_pinners_for_king.0, Bitboard::square_mask(Square::SQ53));
-            assert_eq!(blockers_and_pinners_for_king.1, Bitboard::square_mask(Square::SQ52));
-        }
-        Err(_) => assert_eq!("".to_string(), sfen.to_string()),
-    }
-}
-
-#[test]
-fn test_state_info() {
-    let sfen = "4k4/4l4/4L4/9/4K4/9/9/9/9 b - 1";
-    let pos = Position::new_from_sfen(sfen).unwrap();
-    assert_eq!(
-        pos.st().ci().blockers_for_king(Color::BLACK),
-        Bitboard::square_mask(Square::SQ53)
-    );
-    assert_eq!(
-        pos.st().ci().blockers_for_king(Color::WHITE),
-        Bitboard::square_mask(Square::SQ52)
-    );
-    assert_eq!(
-        pos.st().ci().pinners_for_king(Color::BLACK),
-        Bitboard::square_mask(Square::SQ52)
-    );
-    assert_eq!(
-        pos.st().ci().pinners_for_king(Color::WHITE),
-        Bitboard::square_mask(Square::SQ53)
-    );
-
-    let sfen = "4k4/4r4/4R4/9/4K4/9/9/9/9 b - 1";
-    let pos = Position::new_from_sfen(sfen).unwrap();
-    assert_eq!(
-        pos.st().ci().blockers_for_king(Color::BLACK),
-        Bitboard::square_mask(Square::SQ53)
-    );
-    assert_eq!(
-        pos.st().ci().blockers_for_king(Color::WHITE),
-        Bitboard::square_mask(Square::SQ52)
-    );
-    assert_eq!(
-        pos.st().ci().pinners_for_king(Color::BLACK),
-        Bitboard::square_mask(Square::SQ52)
-    );
-    assert_eq!(
-        pos.st().ci().pinners_for_king(Color::WHITE),
-        Bitboard::square_mask(Square::SQ53)
-    );
-
-    let sfen = "4k4/4+r4/4+R4/9/4K4/9/9/9/9 b - 1";
-    let pos = Position::new_from_sfen(sfen).unwrap();
-    assert_eq!(
-        pos.st().ci().blockers_for_king(Color::BLACK),
-        Bitboard::square_mask(Square::SQ53)
-    );
-    assert_eq!(
-        pos.st().ci().blockers_for_king(Color::WHITE),
-        Bitboard::square_mask(Square::SQ52)
-    );
-    assert_eq!(
-        pos.st().ci().pinners_for_king(Color::BLACK),
-        Bitboard::square_mask(Square::SQ52)
-    );
-    assert_eq!(
-        pos.st().ci().pinners_for_king(Color::WHITE),
-        Bitboard::square_mask(Square::SQ53)
-    );
-
-    let sfen = "k8/1b7/2B6/9/4K4/9/9/9/9 b - 1";
-    let pos = Position::new_from_sfen(sfen).unwrap();
-    assert_eq!(
-        pos.st().ci().blockers_for_king(Color::BLACK),
-        Bitboard::square_mask(Square::SQ73)
-    );
-    assert_eq!(
-        pos.st().ci().blockers_for_king(Color::WHITE),
-        Bitboard::square_mask(Square::SQ82)
-    );
-    assert_eq!(
-        pos.st().ci().pinners_for_king(Color::BLACK),
-        Bitboard::square_mask(Square::SQ82)
-    );
-    assert_eq!(
-        pos.st().ci().pinners_for_king(Color::WHITE),
-        Bitboard::square_mask(Square::SQ73)
-    );
-
-    let sfen = "k8/1+b7/2+B6/9/4K4/9/9/9/9 b - 1";
-    let pos = Position::new_from_sfen(sfen).unwrap();
-    assert_eq!(
-        pos.st().ci().blockers_for_king(Color::BLACK),
-        Bitboard::square_mask(Square::SQ73)
-    );
-    assert_eq!(
-        pos.st().ci().blockers_for_king(Color::WHITE),
-        Bitboard::square_mask(Square::SQ82)
-    );
-    assert_eq!(
-        pos.st().ci().pinners_for_king(Color::BLACK),
-        Bitboard::square_mask(Square::SQ82)
-    );
-    assert_eq!(
-        pos.st().ci().pinners_for_king(Color::WHITE),
-        Bitboard::square_mask(Square::SQ73)
-    );
-}
-
-#[test]
-fn test_position_see_ge() {
-    std::thread::Builder::new()
-        .stack_size(crate::stack_size::STACK_SIZE)
-        .spawn(|| {
-            let sfen = "k8/5+R3/3b1l3/4s4/6g1+r/4GP3/5LN2/9/K4L3 b - 1";
-            let pos = Position::new_from_sfen(sfen).unwrap();
-            let to = Square::SQ45;
-            let m = Move::new_unpromote(Square::SQ46, to, Piece::B_PAWN);
-            assert!(pos.see_ge(m, Value(0)));
-
-            let sfen = "k8/9/9/9/9/l8/p8/1B7/1K7 b - 1";
-            let pos = Position::new_from_sfen(sfen).unwrap();
-            let to = Square::SQ97;
-            let m = Move::new_unpromote(Square::SQ88, to, Piece::B_BISHOP);
-            assert!(!pos.see_ge(m, Value(0)));
-        })
-        .unwrap()
-        .join()
-        .unwrap();
-}
-
-#[test]
-fn test_position_gives_check() {
-    const CHECK: bool = true;
-    const NOT_CHECK: bool = false;
-    let array = [
-        (
-            "8k/9/9/9/9/9/9/9/K8 b Rr 1",
-            vec![("R*1b", CHECK), ("R*1h", CHECK), ("R*2b", NOT_CHECK)],
-        ),
-        (
-            "8k/9/9/9/9/9/9/9/K8 w Rr 1",
-            vec![("R*9h", CHECK), ("R*9b", CHECK), ("R*8h", NOT_CHECK)],
-        ),
-        ("8k/9/9/9/9/9/9/8G/K7L b Rr 1", vec![("1h2h", CHECK), ("1h1g", NOT_CHECK)]),
-    ];
-    for (sfen, move_candidates) in array.iter() {
+    #[test]
+    fn test_state_info() {
+        let sfen = "4k4/4l4/4L4/9/4K4/9/9/9/9 b - 1";
         let pos = Position::new_from_sfen(sfen).unwrap();
-        for &(move_str, is_check) in move_candidates {
-            let m = Move::new_from_usi_str(move_str, &pos);
-            assert!(m.is_some());
-            assert_eq!(pos.gives_check(m.unwrap()), is_check);
-        }
+        assert_eq!(
+            pos.st().ci().blockers_for_king(Color::BLACK),
+            Bitboard::square_mask(Square::SQ53)
+        );
+        assert_eq!(
+            pos.st().ci().blockers_for_king(Color::WHITE),
+            Bitboard::square_mask(Square::SQ52)
+        );
+        assert_eq!(
+            pos.st().ci().pinners_for_king(Color::BLACK),
+            Bitboard::square_mask(Square::SQ52)
+        );
+        assert_eq!(
+            pos.st().ci().pinners_for_king(Color::WHITE),
+            Bitboard::square_mask(Square::SQ53)
+        );
+
+        let sfen = "4k4/4r4/4R4/9/4K4/9/9/9/9 b - 1";
+        let pos = Position::new_from_sfen(sfen).unwrap();
+        assert_eq!(
+            pos.st().ci().blockers_for_king(Color::BLACK),
+            Bitboard::square_mask(Square::SQ53)
+        );
+        assert_eq!(
+            pos.st().ci().blockers_for_king(Color::WHITE),
+            Bitboard::square_mask(Square::SQ52)
+        );
+        assert_eq!(
+            pos.st().ci().pinners_for_king(Color::BLACK),
+            Bitboard::square_mask(Square::SQ52)
+        );
+        assert_eq!(
+            pos.st().ci().pinners_for_king(Color::WHITE),
+            Bitboard::square_mask(Square::SQ53)
+        );
+
+        let sfen = "4k4/4+r4/4+R4/9/4K4/9/9/9/9 b - 1";
+        let pos = Position::new_from_sfen(sfen).unwrap();
+        assert_eq!(
+            pos.st().ci().blockers_for_king(Color::BLACK),
+            Bitboard::square_mask(Square::SQ53)
+        );
+        assert_eq!(
+            pos.st().ci().blockers_for_king(Color::WHITE),
+            Bitboard::square_mask(Square::SQ52)
+        );
+        assert_eq!(
+            pos.st().ci().pinners_for_king(Color::BLACK),
+            Bitboard::square_mask(Square::SQ52)
+        );
+        assert_eq!(
+            pos.st().ci().pinners_for_king(Color::WHITE),
+            Bitboard::square_mask(Square::SQ53)
+        );
+
+        let sfen = "k8/1b7/2B6/9/4K4/9/9/9/9 b - 1";
+        let pos = Position::new_from_sfen(sfen).unwrap();
+        assert_eq!(
+            pos.st().ci().blockers_for_king(Color::BLACK),
+            Bitboard::square_mask(Square::SQ73)
+        );
+        assert_eq!(
+            pos.st().ci().blockers_for_king(Color::WHITE),
+            Bitboard::square_mask(Square::SQ82)
+        );
+        assert_eq!(
+            pos.st().ci().pinners_for_king(Color::BLACK),
+            Bitboard::square_mask(Square::SQ82)
+        );
+        assert_eq!(
+            pos.st().ci().pinners_for_king(Color::WHITE),
+            Bitboard::square_mask(Square::SQ73)
+        );
+
+        let sfen = "k8/1+b7/2+B6/9/4K4/9/9/9/9 b - 1";
+        let pos = Position::new_from_sfen(sfen).unwrap();
+        assert_eq!(
+            pos.st().ci().blockers_for_king(Color::BLACK),
+            Bitboard::square_mask(Square::SQ73)
+        );
+        assert_eq!(
+            pos.st().ci().blockers_for_king(Color::WHITE),
+            Bitboard::square_mask(Square::SQ82)
+        );
+        assert_eq!(
+            pos.st().ci().pinners_for_king(Color::BLACK),
+            Bitboard::square_mask(Square::SQ82)
+        );
+        assert_eq!(
+            pos.st().ci().pinners_for_king(Color::WHITE),
+            Bitboard::square_mask(Square::SQ73)
+        );
     }
-}
 
-#[test]
-fn test_position_do_move() {
-    let sfen_and_moves_array = [
-        ("4k4/9/9/9/9/9/9/9/4K4 b Bb 1", vec!["B*5g", "B*5c"]),
-        (
-            "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1",
-            vec![
-                "7g7f", "3c3d", "2g2f", "5c5d", "5g5f", "2b8h+", "7i8h", "B*5g", "B*5c", "8b5b", "5c8f+", "5a6b", "3i4h",
-                "5g2d+", "8h7g", "5d5e", "2f2e", "2d3e", "5f5e", "5b5e", "P*5g", "7a7b", "7g6f", "5e5a", "3g3f", "3e4d", "2e2d",
-                "2c2d", "2h2d", "3a3b", "5i6h", "6b7a", "4g4f", "P*5f", "5g5f", "5a5f", "4i5h", "P*2c", "2d2g", "5f5h+", "6i5h",
-                "G*8h", "8i7g", "8h9i", "7g6e", "L*5a", "P*5e", "5a5e", "5h4g", "P*5f", "P*5h", "9i9h", "2g2h", "4a5b", "R*3a",
-            ],
-        ),
-    ];
-    for (sfen, moves) in sfen_and_moves_array.iter() {
-        let mut pos = Position::new_from_sfen(sfen).unwrap();
-        for move_str in moves {
-            let m = Move::new_from_usi_str(move_str, &pos);
-            assert!(m.is_some());
-            let m = m.unwrap();
-            let gives_check = pos.gives_check(m);
-            {
-                // Checking Position::do_move and Position::undo_move work accurately.
-                // (Position::do_move and Position::undo_move call is_ok().)
-                pos.do_move(m, gives_check);
-                pos.undo_move(m);
-            }
-            pos.do_move(m, gives_check);
-            assert!(pos.is_repetition() == Repetition::Not);
-        }
+    #[test]
+    fn test_position_see_ge() {
+        std::thread::Builder::new()
+            .stack_size(crate::stack_size::STACK_SIZE)
+            .spawn(|| {
+                let sfen = "k8/5+R3/3b1l3/4s4/6g1+r/4GP3/5LN2/9/K4L3 b - 1";
+                let pos = Position::new_from_sfen(sfen).unwrap();
+                let to = Square::SQ45;
+                let m = Move::new_unpromote(Square::SQ46, to, Piece::B_PAWN);
+                assert!(pos.see_ge(m, Value(0)));
+
+                let sfen = "k8/9/9/9/9/l8/p8/1B7/1K7 b - 1";
+                let pos = Position::new_from_sfen(sfen).unwrap();
+                let to = Square::SQ97;
+                let m = Move::new_unpromote(Square::SQ88, to, Piece::B_BISHOP);
+                assert!(!pos.see_ge(m, Value(0)));
+            })
+            .unwrap()
+            .join()
+            .unwrap();
     }
-}
 
-#[test]
-fn test_check_info_new() {
-    // CheckInfo::check_squares in CheckInfo::new() depends on the following assumptions.
-    assert_eq!(0, PieceType::OCCUPIED.0);
-    assert_eq!(1, PieceType::PAWN.0);
-    assert_eq!(2, PieceType::LANCE.0);
-    assert_eq!(3, PieceType::KNIGHT.0);
-    assert_eq!(4, PieceType::SILVER.0);
-    assert_eq!(5, PieceType::BISHOP.0);
-    assert_eq!(6, PieceType::ROOK.0);
-    assert_eq!(7, PieceType::GOLD.0);
-    assert_eq!(8, PieceType::KING.0);
-    assert_eq!(9, PieceType::PRO_PAWN.0);
-    assert_eq!(10, PieceType::PRO_LANCE.0);
-    assert_eq!(11, PieceType::PRO_KNIGHT.0);
-    assert_eq!(12, PieceType::PRO_SILVER.0);
-    assert_eq!(13, PieceType::HORSE.0);
-    assert_eq!(14, PieceType::DRAGON.0);
-}
-
-#[test]
-fn test_check_info_do_move() {
-    let sfen = "9/4R+P2k/9/9/9/9/9/8K/9 b - 1";
-    let mut pos = Position::new_from_sfen(sfen).unwrap();
-    let move_str = "4b4a";
-    let m = Move::new_from_usi_str(move_str, &pos).unwrap();
-    let gives_check = pos.gives_check(m);
-    assert!(gives_check);
-    pos.do_move(m, gives_check);
-    assert!(pos.checkers().is_set(Square::SQ52));
-}
-
-#[test]
-fn test_huffman_code() {
-    let pos = Position::new_from_sfen(START_SFEN).unwrap();
-    let hcp = HuffmanCodedPosition::from(&pos);
-    let sfen = Position::new_from_huffman_coded_position(&hcp).map(|pos_from_hcp| pos_from_hcp.to_sfen());
-    assert!(sfen.is_ok());
-    assert_eq!(sfen.unwrap(), START_SFEN);
-}
-
-#[test]
-fn test_is_entering_king_win() {
-    std::thread::Builder::new()
-        .stack_size(crate::stack_size::STACK_SIZE)
-        .spawn(|| {
-            let pos = Position::new_from_sfen("1p7/KRRBBPPPP/NN7/9/9/9/9/9/8k b 2P 1").unwrap();
-            assert!(pos.is_entering_king_win());
-            let pos = Position::new_from_sfen("1p7/KRRBBPPPP/NN7/9/9/9/9/9/8k w 2P 1").unwrap();
-            assert!(!pos.is_entering_king_win()); // opponent side is entring king position. but own side is not.
-            let pos = Position::new_from_sfen("pp7/KRRBBPPPP/NN7/9/9/9/9/9/8k b 2P 1").unwrap();
-            assert!(!pos.is_entering_king_win()); // in_check
-            let pos = Position::new_from_sfen("1p7/1RRBBPPPP/NNN6/K8/9/9/9/9/8k b 2P 1").unwrap();
-            assert!(!pos.is_entering_king_win()); // not entering king
-            let pos = Position::new_from_sfen("1p7/KRRBBPPPP/N8/9/9/9/9/9/8k b 3P 1").unwrap();
-            assert!(!pos.is_entering_king_win()); // less than 10 own pieces on the opponent field.
-            let pos = Position::new_from_sfen("1p7/KRRBBPPPP/N8/N8/9/9/9/9/8k b 2P 1").unwrap();
-            assert!(!pos.is_entering_king_win()); // less than 28 point.
-            let pos = Position::new_from_sfen("1pGGGGS2/KRRB1PPPP/N8/N8/9/9/9/9/8k b 2P 1").unwrap();
-            assert!(!pos.is_entering_king_win()); // less than 28 point.
-
-            let pos = Position::new_from_sfen("K8/9/9/9/9/9/nn7/krrbbpppp/1P7 w p 2").unwrap();
-            assert!(pos.is_entering_king_win());
-            let pos = Position::new_from_sfen("K8/9/9/9/9/9/nn7/krrbbpppp/1P7 b p 2").unwrap();
-            assert!(!pos.is_entering_king_win()); // opponent side is entring king position. but own side is not.
-            let pos = Position::new_from_sfen("K8/9/9/9/9/9/nn7/krrbbpppp/PP7 w p 2").unwrap();
-            assert!(!pos.is_entering_king_win()); // in_check
-            let pos = Position::new_from_sfen("K8/9/9/9/9/k8/nn7/1rrbbpppp/1P7 w p 2").unwrap();
-            assert!(!pos.is_entering_king_win()); // not entering king
-            let pos = Position::new_from_sfen("K8/9/9/9/9/9/n8/krrbbpppp/1P7 w 2p 2").unwrap();
-            assert!(!pos.is_entering_king_win()); // less than 10 own pieces on the opponent field.
-            let pos = Position::new_from_sfen("K8/9/9/9/9/n8/n8/krrbbpppp/1P7 w p 2").unwrap();
-            assert!(!pos.is_entering_king_win()); // less than 27 point.
-            let pos = Position::new_from_sfen("K8/9/9/9/9/n8/n8/krrb1pppp/1Pggggs2 w p 2").unwrap();
-            assert!(!pos.is_entering_king_win()); // less than 27 point.
-
-            // check point of hand big pieces
-            let pos = Position::new_from_sfen("1p7/KRRBPPPPP/NN7/9/9/9/9/9/8k b BP 1").unwrap();
-            assert!(pos.is_entering_king_win());
-            let pos = Position::new_from_sfen("1p7/KR+RB+PPPPP/NN7/9/9/9/9/9/8k b BP 1").unwrap();
-            assert!(pos.is_entering_king_win());
-            let pos = Position::new_from_sfen("1p7/KRRBPPPPP/NN7/9/9/9/9/9/8k w BP 1").unwrap();
-            assert!(!pos.is_entering_king_win()); // opponent side is entring king position. but own side is not.
-            let pos = Position::new_from_sfen("pp7/KRRBPPPPP/NN7/9/9/9/9/9/8k b BP 1").unwrap();
-            assert!(!pos.is_entering_king_win()); // in_check
-            let pos = Position::new_from_sfen("1p7/1RRBPPPPP/NNN6/K8/9/9/9/9/8k b BP 1").unwrap();
-            assert!(!pos.is_entering_king_win()); // not entering king
-            let pos = Position::new_from_sfen("1p7/KRRBPPPPP/N8/9/9/9/9/9/8k b B2P 1").unwrap();
-            assert!(!pos.is_entering_king_win()); // less than 10 own pieces on the opponent field.
-            let pos = Position::new_from_sfen("1pGGGGS2/KR1BPPPPP/N8/N8/9/9/9/9/8k b BP 1").unwrap();
-            assert!(!pos.is_entering_king_win()); // less than 28 point.
-
-            let pos = Position::new_from_sfen("K8/9/9/9/9/9/nn7/krrbppppp/1P7 w b 2").unwrap();
-            assert!(pos.is_entering_king_win());
-            let pos = Position::new_from_sfen("K8/9/9/9/9/9/nn7/kr+rb+ppppp/1P7 w b 2").unwrap();
-            assert!(pos.is_entering_king_win());
-            let pos = Position::new_from_sfen("K8/9/9/9/9/9/nn7/krrbppppp/1P7 b b 1").unwrap();
-            assert!(!pos.is_entering_king_win()); // opponent side is entring king position. but own side is not.
-            let pos = Position::new_from_sfen("K8/9/9/9/9/9/nn7/krrbppppp/PP7 w b 2").unwrap();
-            assert!(!pos.is_entering_king_win()); // in_check
-            let pos = Position::new_from_sfen("K8/9/9/9/9/k8/nnn6/1rrbppppp/1P w b 2").unwrap();
-            assert!(!pos.is_entering_king_win()); // not entering king
-            let pos = Position::new_from_sfen("K8/9/9/9/9/9/n8/krrbppppp/1P7 w bp 2").unwrap();
-            assert!(!pos.is_entering_king_win()); // less than 10 own pieces on the opponent field.
-            let pos = Position::new_from_sfen("K8/9/9/9/9/n8/n8/kr1bppppp/1Pggggs2 w b 2").unwrap();
-            assert!(!pos.is_entering_king_win()); // less than 27 point.
-        })
-        .unwrap()
-        .join()
-        .unwrap();
-}
-
-#[test]
-fn test_pseudo_legal() {
-    let sfen = "4k4/4l4/9/9/4K4/9/9/9/9 b - 1";
-    let pos = Position::new_from_sfen(sfen).unwrap();
-    assert!(!pos.pseudo_legal::<SearchingType>(Move::new_unpromote(Square::SQ55, Square::SQ56, Piece::B_KING)));
-}
-
-#[test]
-fn test_is_repetition() {
-    std::thread::Builder::new()
-        .stack_size(crate::stack_size::STACK_SIZE)
-        .spawn(|| {
-            let sfen = "8k/9/9/9/9/9/9/9/8K b R2P 1";
-            let moves = [
-                ("P*1b", Repetition::Not),
-                ("1a2a", Repetition::Not),
-                ("1b1a+", Repetition::Not),
-                ("2a1a", Repetition::Inferior),
-                ("P*1b", Repetition::Superior),
-                ("1a2a", Repetition::Inferior),
-                ("R*2b", Repetition::Not),
-                ("2a3a", Repetition::Not),
-                ("2b3b", Repetition::Not),
-                ("3a2a", Repetition::Not),
-                ("3b2b", Repetition::Win),
-                ("2a3a", Repetition::Lose),
-            ];
-            let mut pos = Position::new_from_sfen(sfen).unwrap();
-            for (m, r) in &moves {
-                let m = Move::new_from_usi_str(m, &pos).unwrap();
-                pos.do_move(m, pos.gives_check(m));
-                assert_eq!(pos.is_repetition(), *r);
-            }
-        })
-        .unwrap()
-        .join()
-        .unwrap();
-}
-
-#[test]
-fn test_mate_move_in_1ply() {
-    std::thread::Builder::new()
-        .stack_size(crate::stack_size::STACK_SIZE)
-        .spawn(|| {
-            fn f(sfen: &str, expected: Option<&str>) {
-                let mut pos = Position::new_from_sfen(sfen).unwrap();
-                let m = pos.mate_move_in_1ply();
-                let m = m.map(|m| m.to_usi_string());
-                let m = m.as_deref();
-                assert_eq!((sfen, m), (sfen, expected));
-            }
-            f("8k/9/8P/9/9/9/9/9/8K b G 1", Some("G*1b"));
-            f("8k/9/9/9/9/9/9/9/8K b G 1", None);
-            f("7bk/9/8P/9/9/9/9/9/8K b G 1", None);
-            f("6Rbk/9/8P/9/9/9/9/9/8K b G 1", Some("G*1b"));
-            f("8k/9/8P/9/9/9/9/9/8K b L 1", None);
-            f("7nk/7n1/8P/9/9/9/9/9/8K b L 1", Some("L*1b"));
-            f("7nk/7n1/8P/9/9/9/9/9/8K b RL 1", Some("R*1b")); // Rook is checked before Lance.
-            f("7k1/R8/9/9/9/9/9/9/8K b S 1", None);
-            f("7pk/7bp/9/9/9/9/9/9/8K b N 1", Some("N*2c"));
-            f("7pk/7bs/9/9/9/9/9/8L/8K b N 1", Some("N*2c"));
-            f("7pk/7bs/9/9/9/9/9/9/8K b N 1", None);
-            f("7pk/7nn/9/9/8N/9/9/9/8K b - 1", Some("1e2c"));
-            f("7pk/7nn/9/8s/8N/9/9/9/8K b - 1", None);
-            f("7pk/7nn/9/8l/8N/9/9/9/8K b - 1", None);
-            f("8k/7nn/9/9/8N/9/9/9/8K b - 1", None);
-            f("7nk/7pn/9/9/8N/9/9/9/B7K b - 1", Some("1e2c"));
-            f("8k/9/8P/8L/9/9/9/9/8K b - 1", Some("1c1b+"));
-            f("7k1/9/7P1/7L1/9/9/9/9/1K7 b - 1", Some("2c2b+"));
-            f("7k1/8g/7P1/7L1/9/9/9/9/1K7 b - 1", None);
-            f("7k1/8b/7P1/7L1/9/9/9/9/1K7 b - 1", None);
-            f("7p1/7lk/7ll/8L/9/9/9/9/8K b - 1", None);
-            f("7p1/7lk/7ll/7BL/9/9/9/9/8K b - 1", Some("1d1c"));
-            f(
-                "ln5nl/4g2G1/pr1p1skpp/2P2psR1/1SpPp3B/Pp4G1P/N3PbN2/2G6/L3K3L b Ps4p 1",
-                Some("2d2c+"),
-            );
-            f(
-                "+L7R/3pp4/1bSk5/+B2+n3n1/1K1L1s3/1PG6/2+ng1+n2P/2+p6/1+pL2+p1+p1 b R3P2g2sl7p 1",
-                None,
-            );
-            f(
-                "3+rn4/RP6+S/2p2+Pp1p/4P2k1/4K+P3/p1P+p2PP1/+p4+pB2/S+p1+p+n+b2P/4S3+p w 3G2N2Lgs2l 1",
-                None,
-            );
-            f(
-                "4l1l1p/G+P2+L4/2+P1+PpS+S+S/l3p1K2/1G+p3+P1k/+p+bp1+p2P+p/5g2+p/G2+BP2S1/1+p1+p1PN2 w RNr2n 1",
-                None,
-            );
-            f(
-                "2g1+Pp3/+P2+Pn1g2/1gkLK1n2/9/+P1+PS1P3/pl1P2+p2/1LP1N+s+pp1/PP2P2SL/N2S2PPg b 2R2B 1",
-                None,
-            );
-            f(
-                "5pp2/prp1l2+Pl/1SSpnk3/1K7/3+P+p2+P1/1P7/P1g+lpNR2/1p2PL2P/3+p1P1P1 b G2SN2b2gn 1",
-                Some("4g5e"),
-            );
-        })
-        .unwrap()
-        .join()
-        .unwrap();
-}
-
-#[test]
-fn test_effect_bb_of_checker_where_king_cannot_escape() {
-    std::thread::Builder::new()
-        .stack_size(crate::stack_size::STACK_SIZE)
-        .spawn(|| {
-            let sfen = "4k4/4l4/9/9/4K4/9/9/9/9 b - 1";
+    #[test]
+    fn test_position_gives_check() {
+        const CHECK: bool = true;
+        const NOT_CHECK: bool = false;
+        let array = [
+            (
+                "8k/9/9/9/9/9/9/9/K8 b Rr 1",
+                vec![("R*1b", CHECK), ("R*1h", CHECK), ("R*2b", NOT_CHECK)],
+            ),
+            (
+                "8k/9/9/9/9/9/9/9/K8 w Rr 1",
+                vec![("R*9h", CHECK), ("R*9b", CHECK), ("R*8h", NOT_CHECK)],
+            ),
+            ("8k/9/9/9/9/9/9/8G/K7L b Rr 1", vec![("1h2h", CHECK), ("1h1g", NOT_CHECK)]),
+        ];
+        for (sfen, move_candidates) in array.iter() {
             let pos = Position::new_from_sfen(sfen).unwrap();
-            let bb =
-                pos.effect_bb_of_checker_where_king_cannot_escape(Square::SQ52, pos.piece_on(Square::SQ52), &pos.occupied_bb());
-            assert!(bb.is_set(Square::SQ56));
-            assert!(bb.is_set(Square::SQ54));
-        })
-        .unwrap()
-        .join()
-        .unwrap();
+            for &(move_str, is_check) in move_candidates {
+                let m = Move::new_from_usi_str(move_str, &pos);
+                assert!(m.is_some());
+                assert_eq!(pos.gives_check(m.unwrap()), is_check);
+            }
+        }
+    }
+
+    #[test]
+    fn test_position_do_move() {
+        let sfen_and_moves_array = [
+            ("4k4/9/9/9/9/9/9/9/4K4 b Bb 1", vec!["B*5g", "B*5c"]),
+            (
+                "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1",
+                vec![
+                    "7g7f", "3c3d", "2g2f", "5c5d", "5g5f", "2b8h+", "7i8h", "B*5g", "B*5c", "8b5b", "5c8f+", "5a6b", "3i4h",
+                    "5g2d+", "8h7g", "5d5e", "2f2e", "2d3e", "5f5e", "5b5e", "P*5g", "7a7b", "7g6f", "5e5a", "3g3f", "3e4d",
+                    "2e2d", "2c2d", "2h2d", "3a3b", "5i6h", "6b7a", "4g4f", "P*5f", "5g5f", "5a5f", "4i5h", "P*2c", "2d2g",
+                    "5f5h+", "6i5h", "G*8h", "8i7g", "8h9i", "7g6e", "L*5a", "P*5e", "5a5e", "5h4g", "P*5f", "P*5h", "9i9h",
+                    "2g2h", "4a5b", "R*3a",
+                ],
+            ),
+        ];
+        for (sfen, moves) in sfen_and_moves_array.iter() {
+            let mut pos = Position::new_from_sfen(sfen).unwrap();
+            for move_str in moves {
+                let m = Move::new_from_usi_str(move_str, &pos);
+                assert!(m.is_some());
+                let m = m.unwrap();
+                let gives_check = pos.gives_check(m);
+                {
+                    // Checking Position::do_move and Position::undo_move work accurately.
+                    // (Position::do_move and Position::undo_move call is_ok().)
+                    pos.do_move(m, gives_check);
+                    pos.undo_move(m);
+                }
+                pos.do_move(m, gives_check);
+                assert!(pos.is_repetition() == Repetition::Not);
+            }
+        }
+    }
+
+    #[test]
+    fn test_check_info_new() {
+        // CheckInfo::check_squares in CheckInfo::new() depends on the following assumptions.
+        assert_eq!(0, PieceType::OCCUPIED.0);
+        assert_eq!(1, PieceType::PAWN.0);
+        assert_eq!(2, PieceType::LANCE.0);
+        assert_eq!(3, PieceType::KNIGHT.0);
+        assert_eq!(4, PieceType::SILVER.0);
+        assert_eq!(5, PieceType::BISHOP.0);
+        assert_eq!(6, PieceType::ROOK.0);
+        assert_eq!(7, PieceType::GOLD.0);
+        assert_eq!(8, PieceType::KING.0);
+        assert_eq!(9, PieceType::PRO_PAWN.0);
+        assert_eq!(10, PieceType::PRO_LANCE.0);
+        assert_eq!(11, PieceType::PRO_KNIGHT.0);
+        assert_eq!(12, PieceType::PRO_SILVER.0);
+        assert_eq!(13, PieceType::HORSE.0);
+        assert_eq!(14, PieceType::DRAGON.0);
+    }
+
+    #[test]
+    fn test_check_info_do_move() {
+        let sfen = "9/4R+P2k/9/9/9/9/9/8K/9 b - 1";
+        let mut pos = Position::new_from_sfen(sfen).unwrap();
+        let move_str = "4b4a";
+        let m = Move::new_from_usi_str(move_str, &pos).unwrap();
+        let gives_check = pos.gives_check(m);
+        assert!(gives_check);
+        pos.do_move(m, gives_check);
+        assert!(pos.checkers().is_set(Square::SQ52));
+    }
+
+    #[test]
+    fn test_huffman_code() {
+        let pos = Position::new_from_sfen(START_SFEN).unwrap();
+        let hcp = HuffmanCodedPosition::from(&pos);
+        let sfen = Position::new_from_huffman_coded_position(&hcp).map(|pos_from_hcp| pos_from_hcp.to_sfen());
+        assert!(sfen.is_ok());
+        assert_eq!(sfen.unwrap(), START_SFEN);
+    }
+
+    #[test]
+    fn test_is_entering_king_win() {
+        std::thread::Builder::new()
+            .stack_size(crate::stack_size::STACK_SIZE)
+            .spawn(|| {
+                let pos = Position::new_from_sfen("1p7/KRRBBPPPP/NN7/9/9/9/9/9/8k b 2P 1").unwrap();
+                assert!(pos.is_entering_king_win());
+                let pos = Position::new_from_sfen("1p7/KRRBBPPPP/NN7/9/9/9/9/9/8k w 2P 1").unwrap();
+                assert!(!pos.is_entering_king_win()); // opponent side is entring king position. but own side is not.
+                let pos = Position::new_from_sfen("pp7/KRRBBPPPP/NN7/9/9/9/9/9/8k b 2P 1").unwrap();
+                assert!(!pos.is_entering_king_win()); // in_check
+                let pos = Position::new_from_sfen("1p7/1RRBBPPPP/NNN6/K8/9/9/9/9/8k b 2P 1").unwrap();
+                assert!(!pos.is_entering_king_win()); // not entering king
+                let pos = Position::new_from_sfen("1p7/KRRBBPPPP/N8/9/9/9/9/9/8k b 3P 1").unwrap();
+                assert!(!pos.is_entering_king_win()); // less than 10 own pieces on the opponent field.
+                let pos = Position::new_from_sfen("1p7/KRRBBPPPP/N8/N8/9/9/9/9/8k b 2P 1").unwrap();
+                assert!(!pos.is_entering_king_win()); // less than 28 point.
+                let pos = Position::new_from_sfen("1pGGGGS2/KRRB1PPPP/N8/N8/9/9/9/9/8k b 2P 1").unwrap();
+                assert!(!pos.is_entering_king_win()); // less than 28 point.
+
+                let pos = Position::new_from_sfen("K8/9/9/9/9/9/nn7/krrbbpppp/1P7 w p 2").unwrap();
+                assert!(pos.is_entering_king_win());
+                let pos = Position::new_from_sfen("K8/9/9/9/9/9/nn7/krrbbpppp/1P7 b p 2").unwrap();
+                assert!(!pos.is_entering_king_win()); // opponent side is entring king position. but own side is not.
+                let pos = Position::new_from_sfen("K8/9/9/9/9/9/nn7/krrbbpppp/PP7 w p 2").unwrap();
+                assert!(!pos.is_entering_king_win()); // in_check
+                let pos = Position::new_from_sfen("K8/9/9/9/9/k8/nn7/1rrbbpppp/1P7 w p 2").unwrap();
+                assert!(!pos.is_entering_king_win()); // not entering king
+                let pos = Position::new_from_sfen("K8/9/9/9/9/9/n8/krrbbpppp/1P7 w 2p 2").unwrap();
+                assert!(!pos.is_entering_king_win()); // less than 10 own pieces on the opponent field.
+                let pos = Position::new_from_sfen("K8/9/9/9/9/n8/n8/krrbbpppp/1P7 w p 2").unwrap();
+                assert!(!pos.is_entering_king_win()); // less than 27 point.
+                let pos = Position::new_from_sfen("K8/9/9/9/9/n8/n8/krrb1pppp/1Pggggs2 w p 2").unwrap();
+                assert!(!pos.is_entering_king_win()); // less than 27 point.
+
+                // check point of hand big pieces
+                let pos = Position::new_from_sfen("1p7/KRRBPPPPP/NN7/9/9/9/9/9/8k b BP 1").unwrap();
+                assert!(pos.is_entering_king_win());
+                let pos = Position::new_from_sfen("1p7/KR+RB+PPPPP/NN7/9/9/9/9/9/8k b BP 1").unwrap();
+                assert!(pos.is_entering_king_win());
+                let pos = Position::new_from_sfen("1p7/KRRBPPPPP/NN7/9/9/9/9/9/8k w BP 1").unwrap();
+                assert!(!pos.is_entering_king_win()); // opponent side is entring king position. but own side is not.
+                let pos = Position::new_from_sfen("pp7/KRRBPPPPP/NN7/9/9/9/9/9/8k b BP 1").unwrap();
+                assert!(!pos.is_entering_king_win()); // in_check
+                let pos = Position::new_from_sfen("1p7/1RRBPPPPP/NNN6/K8/9/9/9/9/8k b BP 1").unwrap();
+                assert!(!pos.is_entering_king_win()); // not entering king
+                let pos = Position::new_from_sfen("1p7/KRRBPPPPP/N8/9/9/9/9/9/8k b B2P 1").unwrap();
+                assert!(!pos.is_entering_king_win()); // less than 10 own pieces on the opponent field.
+                let pos = Position::new_from_sfen("1pGGGGS2/KR1BPPPPP/N8/N8/9/9/9/9/8k b BP 1").unwrap();
+                assert!(!pos.is_entering_king_win()); // less than 28 point.
+
+                let pos = Position::new_from_sfen("K8/9/9/9/9/9/nn7/krrbppppp/1P7 w b 2").unwrap();
+                assert!(pos.is_entering_king_win());
+                let pos = Position::new_from_sfen("K8/9/9/9/9/9/nn7/kr+rb+ppppp/1P7 w b 2").unwrap();
+                assert!(pos.is_entering_king_win());
+                let pos = Position::new_from_sfen("K8/9/9/9/9/9/nn7/krrbppppp/1P7 b b 1").unwrap();
+                assert!(!pos.is_entering_king_win()); // opponent side is entring king position. but own side is not.
+                let pos = Position::new_from_sfen("K8/9/9/9/9/9/nn7/krrbppppp/PP7 w b 2").unwrap();
+                assert!(!pos.is_entering_king_win()); // in_check
+                let pos = Position::new_from_sfen("K8/9/9/9/9/k8/nnn6/1rrbppppp/1P w b 2").unwrap();
+                assert!(!pos.is_entering_king_win()); // not entering king
+                let pos = Position::new_from_sfen("K8/9/9/9/9/9/n8/krrbppppp/1P7 w bp 2").unwrap();
+                assert!(!pos.is_entering_king_win()); // less than 10 own pieces on the opponent field.
+                let pos = Position::new_from_sfen("K8/9/9/9/9/n8/n8/kr1bppppp/1Pggggs2 w b 2").unwrap();
+                assert!(!pos.is_entering_king_win()); // less than 27 point.
+            })
+            .unwrap()
+            .join()
+            .unwrap();
+    }
+
+    #[test]
+    fn test_pseudo_legal() {
+        let sfen = "4k4/4l4/9/9/4K4/9/9/9/9 b - 1";
+        let pos = Position::new_from_sfen(sfen).unwrap();
+        assert!(!pos.pseudo_legal::<SearchingType>(Move::new_unpromote(Square::SQ55, Square::SQ56, Piece::B_KING)));
+    }
+
+    #[test]
+    fn test_is_repetition() {
+        std::thread::Builder::new()
+            .stack_size(crate::stack_size::STACK_SIZE)
+            .spawn(|| {
+                let sfen = "8k/9/9/9/9/9/9/9/8K b R2P 1";
+                let moves = [
+                    ("P*1b", Repetition::Not),
+                    ("1a2a", Repetition::Not),
+                    ("1b1a+", Repetition::Not),
+                    ("2a1a", Repetition::Inferior),
+                    ("P*1b", Repetition::Superior),
+                    ("1a2a", Repetition::Inferior),
+                    ("R*2b", Repetition::Not),
+                    ("2a3a", Repetition::Not),
+                    ("2b3b", Repetition::Not),
+                    ("3a2a", Repetition::Not),
+                    ("3b2b", Repetition::Win),
+                    ("2a3a", Repetition::Lose),
+                ];
+                let mut pos = Position::new_from_sfen(sfen).unwrap();
+                for (m, r) in &moves {
+                    let m = Move::new_from_usi_str(m, &pos).unwrap();
+                    pos.do_move(m, pos.gives_check(m));
+                    assert_eq!(pos.is_repetition(), *r);
+                }
+            })
+            .unwrap()
+            .join()
+            .unwrap();
+    }
+
+    #[test]
+    fn test_mate_move_in_1ply() {
+        std::thread::Builder::new()
+            .stack_size(crate::stack_size::STACK_SIZE)
+            .spawn(|| {
+                fn f(sfen: &str, expected: Option<&str>) {
+                    let mut pos = Position::new_from_sfen(sfen).unwrap();
+                    let m = pos.mate_move_in_1ply();
+                    let m = m.map(|m| m.to_usi_string());
+                    let m = m.as_deref();
+                    assert_eq!((sfen, m), (sfen, expected));
+                }
+                f("8k/9/8P/9/9/9/9/9/8K b G 1", Some("G*1b"));
+                f("8k/9/9/9/9/9/9/9/8K b G 1", None);
+                f("7bk/9/8P/9/9/9/9/9/8K b G 1", None);
+                f("6Rbk/9/8P/9/9/9/9/9/8K b G 1", Some("G*1b"));
+                f("8k/9/8P/9/9/9/9/9/8K b L 1", None);
+                f("7nk/7n1/8P/9/9/9/9/9/8K b L 1", Some("L*1b"));
+                f("7nk/7n1/8P/9/9/9/9/9/8K b RL 1", Some("R*1b")); // Rook is checked before Lance.
+                f("7k1/R8/9/9/9/9/9/9/8K b S 1", None);
+                f("7pk/7bp/9/9/9/9/9/9/8K b N 1", Some("N*2c"));
+                f("7pk/7bs/9/9/9/9/9/8L/8K b N 1", Some("N*2c"));
+                f("7pk/7bs/9/9/9/9/9/9/8K b N 1", None);
+                f("7pk/7nn/9/9/8N/9/9/9/8K b - 1", Some("1e2c"));
+                f("7pk/7nn/9/8s/8N/9/9/9/8K b - 1", None);
+                f("7pk/7nn/9/8l/8N/9/9/9/8K b - 1", None);
+                f("8k/7nn/9/9/8N/9/9/9/8K b - 1", None);
+                f("7nk/7pn/9/9/8N/9/9/9/B7K b - 1", Some("1e2c"));
+                f("8k/9/8P/8L/9/9/9/9/8K b - 1", Some("1c1b+"));
+                f("7k1/9/7P1/7L1/9/9/9/9/1K7 b - 1", Some("2c2b+"));
+                f("7k1/8g/7P1/7L1/9/9/9/9/1K7 b - 1", None);
+                f("7k1/8b/7P1/7L1/9/9/9/9/1K7 b - 1", None);
+                f("7p1/7lk/7ll/8L/9/9/9/9/8K b - 1", None);
+                f("7p1/7lk/7ll/7BL/9/9/9/9/8K b - 1", Some("1d1c"));
+                f(
+                    "ln5nl/4g2G1/pr1p1skpp/2P2psR1/1SpPp3B/Pp4G1P/N3PbN2/2G6/L3K3L b Ps4p 1",
+                    Some("2d2c+"),
+                );
+                f(
+                    "+L7R/3pp4/1bSk5/+B2+n3n1/1K1L1s3/1PG6/2+ng1+n2P/2+p6/1+pL2+p1+p1 b R3P2g2sl7p 1",
+                    None,
+                );
+                f(
+                    "3+rn4/RP6+S/2p2+Pp1p/4P2k1/4K+P3/p1P+p2PP1/+p4+pB2/S+p1+p+n+b2P/4S3+p w 3G2N2Lgs2l 1",
+                    None,
+                );
+                f(
+                    "4l1l1p/G+P2+L4/2+P1+PpS+S+S/l3p1K2/1G+p3+P1k/+p+bp1+p2P+p/5g2+p/G2+BP2S1/1+p1+p1PN2 w RNr2n 1",
+                    None,
+                );
+                f(
+                    "2g1+Pp3/+P2+Pn1g2/1gkLK1n2/9/+P1+PS1P3/pl1P2+p2/1LP1N+s+pp1/PP2P2SL/N2S2PPg b 2R2B 1",
+                    None,
+                );
+                f(
+                    "5pp2/prp1l2+Pl/1SSpnk3/1K7/3+P+p2+P1/1P7/P1g+lpNR2/1p2PL2P/3+p1P1P1 b G2SN2b2gn 1",
+                    Some("4g5e"),
+                );
+            })
+            .unwrap()
+            .join()
+            .unwrap();
+    }
+
+    #[test]
+    fn test_effect_bb_of_checker_where_king_cannot_escape() {
+        std::thread::Builder::new()
+            .stack_size(crate::stack_size::STACK_SIZE)
+            .spawn(|| {
+                let sfen = "4k4/4l4/9/9/4K4/9/9/9/9 b - 1";
+                let pos = Position::new_from_sfen(sfen).unwrap();
+                let bb = pos.effect_bb_of_checker_where_king_cannot_escape(
+                    Square::SQ52,
+                    pos.piece_on(Square::SQ52),
+                    &pos.occupied_bb(),
+                );
+                assert!(bb.is_set(Square::SQ56));
+                assert!(bb.is_set(Square::SQ54));
+            })
+            .unwrap()
+            .join()
+            .unwrap();
+    }
 }

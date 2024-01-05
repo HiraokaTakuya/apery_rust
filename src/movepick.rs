@@ -742,367 +742,372 @@ impl MovePickerForProbCut {
     }
 }
 
-#[test]
-fn test_partial_insertion_sort() {
-    let mut ext_moves = vec![
-        ExtMove {
-            mv: Move::NULL,
-            score: 0,
-        },
-        ExtMove {
-            mv: Move::NULL,
-            score: 9,
-        },
-        ExtMove {
-            mv: Move::NULL,
-            score: 11,
-        },
-        ExtMove {
-            mv: Move::NULL,
-            score: 15,
-        },
-        ExtMove {
-            mv: Move::NULL,
-            score: 3,
-        },
-        ExtMove {
-            mv: Move::NULL,
-            score: 13,
-        },
-        ExtMove {
-            mv: Move::NULL,
-            score: 6,
-        },
-    ];
-    partial_insertion_sort(ext_moves.as_mut_slice(), 10);
-    assert_eq!(ext_moves[0].score, 15);
-    assert_eq!(ext_moves[1].score, 13);
-    assert_eq!(ext_moves[2].score, 11);
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-#[test]
-fn test_butterfly_history() {
-    unsafe {
-        let mut vec: Vec<ButterflyHistory> = vec![ButterflyHistory { v: [[0; 0xffff]; 2] }];
-        let history = vec.as_mut_ptr();
-        let bonus = 3;
-        let m = Move::new_unpromote(Square::SQ77, Square::SQ76, Piece::B_PAWN);
-        (*history).update(Color::BLACK, m, bonus);
-        let v = (*history).get(Color::BLACK, m);
-        assert_eq!(bonus, v);
+    #[test]
+    fn test_partial_insertion_sort() {
+        let mut ext_moves = vec![
+            ExtMove {
+                mv: Move::NULL,
+                score: 0,
+            },
+            ExtMove {
+                mv: Move::NULL,
+                score: 9,
+            },
+            ExtMove {
+                mv: Move::NULL,
+                score: 11,
+            },
+            ExtMove {
+                mv: Move::NULL,
+                score: 15,
+            },
+            ExtMove {
+                mv: Move::NULL,
+                score: 3,
+            },
+            ExtMove {
+                mv: Move::NULL,
+                score: 13,
+            },
+            ExtMove {
+                mv: Move::NULL,
+                score: 6,
+            },
+        ];
+        partial_insertion_sort(ext_moves.as_mut_slice(), 10);
+        assert_eq!(ext_moves[0].score, 15);
+        assert_eq!(ext_moves[1].score, 13);
+        assert_eq!(ext_moves[2].score, 11);
     }
-}
 
-#[test]
-fn test_move_list_select_best() {
-    let sfen = "k8/9/3b1l3/4s4/5pg2/4GP3/5RN2/9/K4L3 b - 1";
-    let pos = Position::new_from_sfen(sfen).unwrap();
-    let mut mlist = MoveList::new();
-    mlist.generate::<CaptureOrPawnPromotionsType>(&pos, 0);
-    let capture_history = CapturePieceToHistory::new();
-    score_captures(mlist.slice_mut(0), &pos, &capture_history);
-    let mut cur = 0;
-    let mut end_bad_captures = 0;
-    let size = mlist.size;
-    let m = select_best_good_capture(mlist.slice_mut(0), size, &mut cur, &mut end_bad_captures, &pos, None);
-    assert_eq!(m.unwrap().to_csa_string(&pos), "4645FU");
+    #[test]
+    fn test_butterfly_history() {
+        unsafe {
+            let mut vec: Vec<ButterflyHistory> = vec![ButterflyHistory { v: [[0; 0xffff]; 2] }];
+            let history = vec.as_mut_ptr();
+            let bonus = 3;
+            let m = Move::new_unpromote(Square::SQ77, Square::SQ76, Piece::B_PAWN);
+            (*history).update(Color::BLACK, m, bonus);
+            let v = (*history).get(Color::BLACK, m);
+            assert_eq!(bonus, v);
+        }
+    }
 
-    let sfen = "k8/lpppppp2/rbgsnlp2/+RPPPPPP2/9/9/9/9/K8 b - 1";
-    let pos = Position::new_from_sfen(sfen).unwrap();
-    let mut mlist = MoveList::new();
-    mlist.generate::<CaptureOrPawnPromotionsType>(&pos, 0);
-    let capture_history = CapturePieceToHistory::new();
-    score_captures(mlist.slice_mut(0), &pos, &capture_history);
-    let mut cur = 0;
-    let mut end_bad_captures = 0;
-    let size = mlist.size;
-    let m = select_best_good_capture(mlist.slice_mut(0), size, &mut cur, &mut end_bad_captures, &pos, None);
-    assert_eq!(m.unwrap().to_csa_string(&pos), "8483TO");
-}
-
-#[test]
-fn test_move_picker_for_main_search_next_move() {
-    let sfen = "k8/9/9/5b3/9/l8/p8/1B7/1K7 b - 1";
-    let pos = Position::new_from_sfen(sfen).unwrap();
-    let tt_move = Some(Move::new_unpromote(Square::SQ88, Square::SQ66, Piece::B_BISHOP));
-    let mh = ButterflyHistory::new();
-    let lph = LowPlyHistory::new();
-    let cph = CapturePieceToHistory::new();
-    let ch = [
-        PieceToHistory::new(),
-        PieceToHistory::new(),
-        PieceToHistory::new(),
-        PieceToHistory::new(),
-        PieceToHistory::new(),
-        PieceToHistory::new(),
-    ];
-    let ch = ch.iter().map(|x| x as *const PieceToHistory).collect::<Vec<_>>();
-    let killers = [
-        Some(Move::new_unpromote(Square::SQ88, Square::SQ99, Piece::B_BISHOP)),
-        Some(Move::new_unpromote(Square::SQ88, Square::SQ79, Piece::B_BISHOP)),
-    ];
-    let cm = Some(Move::new_unpromote(Square::SQ88, Square::SQ77, Piece::B_BISHOP));
-    let skip_quiets = false;
-    let mut mp = MovePickerForMainSearch::new(&pos, tt_move, Depth(5), &mh, &lph, &cph, &ch, cm, &killers, 0);
-    let moves_size;
-    {
+    #[test]
+    fn test_move_list_select_best() {
+        let sfen = "k8/9/3b1l3/4s4/5pg2/4GP3/5RN2/9/K4L3 b - 1";
+        let pos = Position::new_from_sfen(sfen).unwrap();
         let mut mlist = MoveList::new();
-        mlist.generate::<NonEvasionsType>(&pos, 0);
-        moves_size = mlist.size;
+        mlist.generate::<CaptureOrPawnPromotionsType>(&pos, 0);
+        let capture_history = CapturePieceToHistory::new();
+        score_captures(mlist.slice_mut(0), &pos, &capture_history);
+        let mut cur = 0;
+        let mut end_bad_captures = 0;
+        let size = mlist.size;
+        let m = select_best_good_capture(mlist.slice_mut(0), size, &mut cur, &mut end_bad_captures, &pos, None);
+        assert_eq!(m.unwrap().to_csa_string(&pos), "4645FU");
+
+        let sfen = "k8/lpppppp2/rbgsnlp2/+RPPPPPP2/9/9/9/9/K8 b - 1";
+        let pos = Position::new_from_sfen(sfen).unwrap();
+        let mut mlist = MoveList::new();
+        mlist.generate::<CaptureOrPawnPromotionsType>(&pos, 0);
+        let capture_history = CapturePieceToHistory::new();
+        score_captures(mlist.slice_mut(0), &pos, &capture_history);
+        let mut cur = 0;
+        let mut end_bad_captures = 0;
+        let size = mlist.size;
+        let m = select_best_good_capture(mlist.slice_mut(0), size, &mut cur, &mut end_bad_captures, &pos, None);
+        assert_eq!(m.unwrap().to_csa_string(&pos), "8483TO");
     }
-    assert_eq!(moves_size, 11); // legal: 10, illegal: 1
-    let mut move_vec = vec![];
-    for _ in 0..moves_size {
+
+    #[test]
+    fn test_move_picker_for_main_search_next_move() {
+        let sfen = "k8/9/9/5b3/9/l8/p8/1B7/1K7 b - 1";
+        let pos = Position::new_from_sfen(sfen).unwrap();
+        let tt_move = Some(Move::new_unpromote(Square::SQ88, Square::SQ66, Piece::B_BISHOP));
+        let mh = ButterflyHistory::new();
+        let lph = LowPlyHistory::new();
+        let cph = CapturePieceToHistory::new();
+        let ch = [
+            PieceToHistory::new(),
+            PieceToHistory::new(),
+            PieceToHistory::new(),
+            PieceToHistory::new(),
+            PieceToHistory::new(),
+            PieceToHistory::new(),
+        ];
+        let ch = ch.iter().map(|x| x as *const PieceToHistory).collect::<Vec<_>>();
+        let killers = [
+            Some(Move::new_unpromote(Square::SQ88, Square::SQ99, Piece::B_BISHOP)),
+            Some(Move::new_unpromote(Square::SQ88, Square::SQ79, Piece::B_BISHOP)),
+        ];
+        let cm = Some(Move::new_unpromote(Square::SQ88, Square::SQ77, Piece::B_BISHOP));
+        let skip_quiets = false;
+        let mut mp = MovePickerForMainSearch::new(&pos, tt_move, Depth(5), &mh, &lph, &cph, &ch, cm, &killers, 0);
+        let moves_size;
+        {
+            let mut mlist = MoveList::new();
+            mlist.generate::<NonEvasionsType>(&pos, 0);
+            moves_size = mlist.size;
+        }
+        assert_eq!(moves_size, 11); // legal: 10, illegal: 1
+        let mut move_vec = vec![];
+        for _ in 0..moves_size {
+            let m = mp.next_move(&pos, skip_quiets);
+            move_vec.push(m);
+        }
+        assert_eq!(move_vec[0].unwrap(), tt_move.unwrap()); // MainTT
+        assert_eq!(
+            move_vec[1].unwrap(),
+            Move::new_unpromote(Square::SQ88, Square::SQ44, Piece::B_BISHOP)
+        ); // GoodCapture
+        assert_eq!(move_vec[2].unwrap(), killers[0].unwrap()); // Refutation
+        assert_eq!(move_vec[3].unwrap(), killers[1].unwrap()); // Refutation
+        assert_eq!(move_vec[4].unwrap(), cm.unwrap()); // Refutation
+        assert!(move_vec[5..10]
+            .iter()
+            .any(|x| x.unwrap() == Move::new_unpromote(Square::SQ88, Square::SQ55, Piece::B_BISHOP))); // Quiet
+        assert!(move_vec[5..10]
+            .iter()
+            .any(|x| x.unwrap() == Move::new_unpromote(Square::SQ89, Square::SQ78, Piece::B_KING))); // Quiet
+        assert!(move_vec[5..10]
+            .iter()
+            .any(|x| x.unwrap() == Move::new_unpromote(Square::SQ89, Square::SQ79, Piece::B_KING))); // Quiet
+        assert!(move_vec[5..10]
+            .iter()
+            .any(|x| x.unwrap() == Move::new_unpromote(Square::SQ89, Square::SQ98, Piece::B_KING))); // Quiet
+        assert!(move_vec[5..10]
+            .iter()
+            .any(|x| x.unwrap() == Move::new_unpromote(Square::SQ89, Square::SQ99, Piece::B_KING))); // Quiet
+        assert_eq!(
+            move_vec[10].unwrap(),
+            Move::new_unpromote(Square::SQ88, Square::SQ97, Piece::B_BISHOP)
+        ); // BadCapture
         let m = mp.next_move(&pos, skip_quiets);
-        move_vec.push(m);
+        assert!(m.is_none());
     }
-    assert_eq!(move_vec[0].unwrap(), tt_move.unwrap()); // MainTT
-    assert_eq!(
-        move_vec[1].unwrap(),
-        Move::new_unpromote(Square::SQ88, Square::SQ44, Piece::B_BISHOP)
-    ); // GoodCapture
-    assert_eq!(move_vec[2].unwrap(), killers[0].unwrap()); // Refutation
-    assert_eq!(move_vec[3].unwrap(), killers[1].unwrap()); // Refutation
-    assert_eq!(move_vec[4].unwrap(), cm.unwrap()); // Refutation
-    assert!(move_vec[5..10]
-        .iter()
-        .any(|x| x.unwrap() == Move::new_unpromote(Square::SQ88, Square::SQ55, Piece::B_BISHOP))); // Quiet
-    assert!(move_vec[5..10]
-        .iter()
-        .any(|x| x.unwrap() == Move::new_unpromote(Square::SQ89, Square::SQ78, Piece::B_KING))); // Quiet
-    assert!(move_vec[5..10]
-        .iter()
-        .any(|x| x.unwrap() == Move::new_unpromote(Square::SQ89, Square::SQ79, Piece::B_KING))); // Quiet
-    assert!(move_vec[5..10]
-        .iter()
-        .any(|x| x.unwrap() == Move::new_unpromote(Square::SQ89, Square::SQ98, Piece::B_KING))); // Quiet
-    assert!(move_vec[5..10]
-        .iter()
-        .any(|x| x.unwrap() == Move::new_unpromote(Square::SQ89, Square::SQ99, Piece::B_KING))); // Quiet
-    assert_eq!(
-        move_vec[10].unwrap(),
-        Move::new_unpromote(Square::SQ88, Square::SQ97, Piece::B_BISHOP)
-    ); // BadCapture
-    let m = mp.next_move(&pos, skip_quiets);
-    assert!(m.is_none());
-}
 
-#[test]
-fn test_move_picker_for_main_search_next_move_evasion() {
-    let sfen = "k8/9/9/5b3/6K2/l8/p8/1B7/9 b - 1";
-    let pos = Position::new_from_sfen(sfen).unwrap();
-    let tt_move = Some(Move::new_unpromote(Square::SQ35, Square::SQ24, Piece::B_KING));
-    let mh = ButterflyHistory::new();
-    let lph = LowPlyHistory::new();
-    let cph = CapturePieceToHistory::new();
-    let ch = [
-        PieceToHistory::new(),
-        PieceToHistory::new(),
-        PieceToHistory::new(),
-        PieceToHistory::new(),
-    ];
-    let ch = ch.iter().map(|x| x as *const PieceToHistory).collect::<Vec<_>>();
-    let killers = [
-        Some(Move::new_unpromote(Square::SQ88, Square::SQ99, Piece::B_BISHOP)),
-        Some(Move::new_unpromote(Square::SQ88, Square::SQ79, Piece::B_BISHOP)),
-    ];
-    let cm = Some(Move::new_unpromote(Square::SQ88, Square::SQ77, Piece::B_BISHOP));
-    let skip_quiets = false;
-    let mut mp = MovePickerForMainSearch::new(&pos, tt_move, Depth(5), &mh, &lph, &cph, &ch, cm, &killers, 0);
-    let moves_size;
-    {
-        let mut mlist = MoveList::new();
-        mlist.generate::<LegalType>(&pos, 0);
-        moves_size = mlist.size;
-    }
-    let mut move_vec = vec![];
-    for _ in 0..moves_size {
+    #[test]
+    fn test_move_picker_for_main_search_next_move_evasion() {
+        let sfen = "k8/9/9/5b3/6K2/l8/p8/1B7/9 b - 1";
+        let pos = Position::new_from_sfen(sfen).unwrap();
+        let tt_move = Some(Move::new_unpromote(Square::SQ35, Square::SQ24, Piece::B_KING));
+        let mh = ButterflyHistory::new();
+        let lph = LowPlyHistory::new();
+        let cph = CapturePieceToHistory::new();
+        let ch = [
+            PieceToHistory::new(),
+            PieceToHistory::new(),
+            PieceToHistory::new(),
+            PieceToHistory::new(),
+        ];
+        let ch = ch.iter().map(|x| x as *const PieceToHistory).collect::<Vec<_>>();
+        let killers = [
+            Some(Move::new_unpromote(Square::SQ88, Square::SQ99, Piece::B_BISHOP)),
+            Some(Move::new_unpromote(Square::SQ88, Square::SQ79, Piece::B_BISHOP)),
+        ];
+        let cm = Some(Move::new_unpromote(Square::SQ88, Square::SQ77, Piece::B_BISHOP));
+        let skip_quiets = false;
+        let mut mp = MovePickerForMainSearch::new(&pos, tt_move, Depth(5), &mh, &lph, &cph, &ch, cm, &killers, 0);
+        let moves_size;
+        {
+            let mut mlist = MoveList::new();
+            mlist.generate::<LegalType>(&pos, 0);
+            moves_size = mlist.size;
+        }
+        let mut move_vec = vec![];
+        for _ in 0..moves_size {
+            let m = mp.next_move(&pos, skip_quiets);
+            move_vec.push(m);
+        }
+        assert_eq!(move_vec[0].unwrap(), tt_move.unwrap()); // EvasionTT
+        assert!(move_vec[1..8]
+            .iter()
+            .any(|x| x.unwrap() == Move::new_unpromote(Square::SQ35, Square::SQ25, Piece::B_KING))); // Evasion
+        assert!(move_vec[1..8]
+            .iter()
+            .any(|x| x.unwrap() == Move::new_unpromote(Square::SQ35, Square::SQ34, Piece::B_KING))); // Evasion
+        assert!(move_vec[1..8]
+            .iter()
+            .any(|x| x.unwrap() == Move::new_unpromote(Square::SQ35, Square::SQ36, Piece::B_KING))); // Evasion
+        assert!(move_vec[1..8]
+            .iter()
+            .any(|x| x.unwrap() == Move::new_unpromote(Square::SQ35, Square::SQ44, Piece::B_KING))); // Evasion
+        assert!(move_vec[1..8]
+            .iter()
+            .any(|x| x.unwrap() == Move::new_unpromote(Square::SQ35, Square::SQ45, Piece::B_KING))); // Evasion
+        assert!(move_vec[1..8]
+            .iter()
+            .any(|x| x.unwrap() == Move::new_unpromote(Square::SQ35, Square::SQ46, Piece::B_KING))); // Evasion
+        assert!(move_vec[1..8]
+            .iter()
+            .any(|x| x.unwrap() == Move::new_unpromote(Square::SQ88, Square::SQ44, Piece::B_BISHOP))); // Evasion
         let m = mp.next_move(&pos, skip_quiets);
-        move_vec.push(m);
+        assert!(m.is_none());
     }
-    assert_eq!(move_vec[0].unwrap(), tt_move.unwrap()); // EvasionTT
-    assert!(move_vec[1..8]
-        .iter()
-        .any(|x| x.unwrap() == Move::new_unpromote(Square::SQ35, Square::SQ25, Piece::B_KING))); // Evasion
-    assert!(move_vec[1..8]
-        .iter()
-        .any(|x| x.unwrap() == Move::new_unpromote(Square::SQ35, Square::SQ34, Piece::B_KING))); // Evasion
-    assert!(move_vec[1..8]
-        .iter()
-        .any(|x| x.unwrap() == Move::new_unpromote(Square::SQ35, Square::SQ36, Piece::B_KING))); // Evasion
-    assert!(move_vec[1..8]
-        .iter()
-        .any(|x| x.unwrap() == Move::new_unpromote(Square::SQ35, Square::SQ44, Piece::B_KING))); // Evasion
-    assert!(move_vec[1..8]
-        .iter()
-        .any(|x| x.unwrap() == Move::new_unpromote(Square::SQ35, Square::SQ45, Piece::B_KING))); // Evasion
-    assert!(move_vec[1..8]
-        .iter()
-        .any(|x| x.unwrap() == Move::new_unpromote(Square::SQ35, Square::SQ46, Piece::B_KING))); // Evasion
-    assert!(move_vec[1..8]
-        .iter()
-        .any(|x| x.unwrap() == Move::new_unpromote(Square::SQ88, Square::SQ44, Piece::B_BISHOP))); // Evasion
-    let m = mp.next_move(&pos, skip_quiets);
-    assert!(m.is_none());
-}
 
-#[test]
-fn test_move_picker_for_qsearch_next_move() {
-    let sfen = "k8/9/9/5b3/9/l8/p8/1B7/1K7 b - 1";
-    let pos = Position::new_from_sfen(sfen).unwrap();
-    let tt_move = Some(Move::new_unpromote(Square::SQ88, Square::SQ66, Piece::B_BISHOP));
-    let mh = ButterflyHistory::new();
-    let cph = CapturePieceToHistory::new();
-    let ch = [
-        PieceToHistory::new(),
-        PieceToHistory::new(),
-        PieceToHistory::new(),
-        PieceToHistory::new(),
-    ];
-    let ch = ch.iter().map(|x| x as *const PieceToHistory).collect::<Vec<_>>();
-    let recapture_square = Square::SQ97;
-    let mut mp = MovePickerForQSearch::new(&mh, &cph, &ch, &pos, recapture_square, tt_move, Depth(0));
-    let m = mp.next_move(&pos);
-    assert_eq!(m.unwrap(), tt_move.unwrap()); // QSearchTT
-    let m = mp.next_move(&pos);
-    assert_eq!(m.unwrap(), Move::new_unpromote(Square::SQ88, Square::SQ44, Piece::B_BISHOP)); // Capture
-    let m = mp.next_move(&pos);
-    assert_eq!(m.unwrap(), Move::new_unpromote(Square::SQ88, Square::SQ97, Piece::B_BISHOP)); // Capture
-    let m = mp.next_move(&pos);
-    assert!(m.is_none());
-}
-
-#[test]
-fn test_move_picker_for_qsearch_next_move_evasion() {
-    let sfen = "k8/9/9/5b3/6K2/l8/p8/1B7/9 b - 1";
-    let pos = Position::new_from_sfen(sfen).unwrap();
-    let tt_move = Some(Move::new_unpromote(Square::SQ35, Square::SQ24, Piece::B_KING));
-    let mh = ButterflyHistory::new();
-    let cph = CapturePieceToHistory::new();
-    let ch = [
-        PieceToHistory::new(),
-        PieceToHistory::new(),
-        PieceToHistory::new(),
-        PieceToHistory::new(),
-    ];
-    let ch = ch.iter().map(|x| x as *const PieceToHistory).collect::<Vec<_>>();
-    let recapture_square = Square::SQ97;
-    let mut mp = MovePickerForQSearch::new(&mh, &cph, &ch, &pos, recapture_square, tt_move, Depth(0));
-    let moves_size;
-    {
-        let mut mlist = MoveList::new();
-        mlist.generate::<LegalType>(&pos, 0);
-        moves_size = mlist.size;
-    }
-    let mut move_vec = vec![];
-    for _ in 0..moves_size {
+    #[test]
+    fn test_move_picker_for_qsearch_next_move() {
+        let sfen = "k8/9/9/5b3/9/l8/p8/1B7/1K7 b - 1";
+        let pos = Position::new_from_sfen(sfen).unwrap();
+        let tt_move = Some(Move::new_unpromote(Square::SQ88, Square::SQ66, Piece::B_BISHOP));
+        let mh = ButterflyHistory::new();
+        let cph = CapturePieceToHistory::new();
+        let ch = [
+            PieceToHistory::new(),
+            PieceToHistory::new(),
+            PieceToHistory::new(),
+            PieceToHistory::new(),
+        ];
+        let ch = ch.iter().map(|x| x as *const PieceToHistory).collect::<Vec<_>>();
+        let recapture_square = Square::SQ97;
+        let mut mp = MovePickerForQSearch::new(&mh, &cph, &ch, &pos, recapture_square, tt_move, Depth(0));
         let m = mp.next_move(&pos);
-        move_vec.push(m);
+        assert_eq!(m.unwrap(), tt_move.unwrap()); // QSearchTT
+        let m = mp.next_move(&pos);
+        assert_eq!(m.unwrap(), Move::new_unpromote(Square::SQ88, Square::SQ44, Piece::B_BISHOP)); // Capture
+        let m = mp.next_move(&pos);
+        assert_eq!(m.unwrap(), Move::new_unpromote(Square::SQ88, Square::SQ97, Piece::B_BISHOP)); // Capture
+        let m = mp.next_move(&pos);
+        assert!(m.is_none());
     }
-    assert_eq!(move_vec[0].unwrap(), tt_move.unwrap()); // EvasionTT
-    assert!(move_vec[1..8]
-        .iter()
-        .any(|x| x.unwrap() == Move::new_unpromote(Square::SQ35, Square::SQ25, Piece::B_KING))); // Evasion
-    assert!(move_vec[1..8]
-        .iter()
-        .any(|x| x.unwrap() == Move::new_unpromote(Square::SQ35, Square::SQ34, Piece::B_KING))); // Evasion
-    assert!(move_vec[1..8]
-        .iter()
-        .any(|x| x.unwrap() == Move::new_unpromote(Square::SQ35, Square::SQ36, Piece::B_KING))); // Evasion
-    assert!(move_vec[1..8]
-        .iter()
-        .any(|x| x.unwrap() == Move::new_unpromote(Square::SQ35, Square::SQ44, Piece::B_KING))); // Evasion
-    assert!(move_vec[1..8]
-        .iter()
-        .any(|x| x.unwrap() == Move::new_unpromote(Square::SQ35, Square::SQ45, Piece::B_KING))); // Evasion
-    assert!(move_vec[1..8]
-        .iter()
-        .any(|x| x.unwrap() == Move::new_unpromote(Square::SQ35, Square::SQ46, Piece::B_KING))); // Evasion
-    assert!(move_vec[1..8]
-        .iter()
-        .any(|x| x.unwrap() == Move::new_unpromote(Square::SQ88, Square::SQ44, Piece::B_BISHOP))); // Evasion
-    let m = mp.next_move(&pos);
-    assert!(m.is_none());
-}
 
-#[test]
-fn test_move_picker_for_qsearch_next_move_recapture() {
-    let sfen = "k8/9/9/5b3/9/l8/p8/1B7/1K7 b - 1";
-    let pos = Position::new_from_sfen(sfen).unwrap();
-    let tt_move = Some(Move::new_unpromote(Square::SQ88, Square::SQ66, Piece::B_BISHOP)); // to_square is not recapture_square. tt_move is not used.
-    let mh = ButterflyHistory::new();
-    let cph = CapturePieceToHistory::new();
-    let ch = [
-        PieceToHistory::new(),
-        PieceToHistory::new(),
-        PieceToHistory::new(),
-        PieceToHistory::new(),
-    ];
-    let ch = ch.iter().map(|x| x as *const PieceToHistory).collect::<Vec<_>>();
-    let recapture_square = Square::SQ97;
-    let mut mp = MovePickerForQSearch::new(&mh, &cph, &ch, &pos, recapture_square, tt_move, Depth::QS_RECAPTURES);
-    let m = mp.next_move(&pos);
-    assert_eq!(m.unwrap(), Move::new_unpromote(Square::SQ88, Square::SQ97, Piece::B_BISHOP)); // QRecapture
-    let m = mp.next_move(&pos);
-    assert!(m.is_none());
-}
+    #[test]
+    fn test_move_picker_for_qsearch_next_move_evasion() {
+        let sfen = "k8/9/9/5b3/6K2/l8/p8/1B7/9 b - 1";
+        let pos = Position::new_from_sfen(sfen).unwrap();
+        let tt_move = Some(Move::new_unpromote(Square::SQ35, Square::SQ24, Piece::B_KING));
+        let mh = ButterflyHistory::new();
+        let cph = CapturePieceToHistory::new();
+        let ch = [
+            PieceToHistory::new(),
+            PieceToHistory::new(),
+            PieceToHistory::new(),
+            PieceToHistory::new(),
+        ];
+        let ch = ch.iter().map(|x| x as *const PieceToHistory).collect::<Vec<_>>();
+        let recapture_square = Square::SQ97;
+        let mut mp = MovePickerForQSearch::new(&mh, &cph, &ch, &pos, recapture_square, tt_move, Depth(0));
+        let moves_size;
+        {
+            let mut mlist = MoveList::new();
+            mlist.generate::<LegalType>(&pos, 0);
+            moves_size = mlist.size;
+        }
+        let mut move_vec = vec![];
+        for _ in 0..moves_size {
+            let m = mp.next_move(&pos);
+            move_vec.push(m);
+        }
+        assert_eq!(move_vec[0].unwrap(), tt_move.unwrap()); // EvasionTT
+        assert!(move_vec[1..8]
+            .iter()
+            .any(|x| x.unwrap() == Move::new_unpromote(Square::SQ35, Square::SQ25, Piece::B_KING))); // Evasion
+        assert!(move_vec[1..8]
+            .iter()
+            .any(|x| x.unwrap() == Move::new_unpromote(Square::SQ35, Square::SQ34, Piece::B_KING))); // Evasion
+        assert!(move_vec[1..8]
+            .iter()
+            .any(|x| x.unwrap() == Move::new_unpromote(Square::SQ35, Square::SQ36, Piece::B_KING))); // Evasion
+        assert!(move_vec[1..8]
+            .iter()
+            .any(|x| x.unwrap() == Move::new_unpromote(Square::SQ35, Square::SQ44, Piece::B_KING))); // Evasion
+        assert!(move_vec[1..8]
+            .iter()
+            .any(|x| x.unwrap() == Move::new_unpromote(Square::SQ35, Square::SQ45, Piece::B_KING))); // Evasion
+        assert!(move_vec[1..8]
+            .iter()
+            .any(|x| x.unwrap() == Move::new_unpromote(Square::SQ35, Square::SQ46, Piece::B_KING))); // Evasion
+        assert!(move_vec[1..8]
+            .iter()
+            .any(|x| x.unwrap() == Move::new_unpromote(Square::SQ88, Square::SQ44, Piece::B_BISHOP))); // Evasion
+        let m = mp.next_move(&pos);
+        assert!(m.is_none());
+    }
 
-#[test]
-fn test_move_picker_for_prob_cut_next_move() {
-    let sfen = "k8/9/9/5b3/9/l8/p8/1B7/1K7 b - 1";
-    let pos = Position::new_from_sfen(sfen).unwrap();
-    let tt_move = Some(Move::new_unpromote(Square::SQ88, Square::SQ66, Piece::B_BISHOP));
-    let cph = CapturePieceToHistory::new();
-    let mut mp = MovePickerForProbCut::new(&pos, tt_move, Value(0), &cph);
-    // ProbCut::TT uses tt_move if tt_move is good capture.
-    // this tt_move is not used because it is capture move.
-    let m = mp.next_move(&pos);
-    assert_eq!(m.unwrap(), Move::new_unpromote(Square::SQ88, Square::SQ44, Piece::B_BISHOP)); // ProbCut
+    #[test]
+    fn test_move_picker_for_qsearch_next_move_recapture() {
+        let sfen = "k8/9/9/5b3/9/l8/p8/1B7/1K7 b - 1";
+        let pos = Position::new_from_sfen(sfen).unwrap();
+        let tt_move = Some(Move::new_unpromote(Square::SQ88, Square::SQ66, Piece::B_BISHOP)); // to_square is not recapture_square. tt_move is not used.
+        let mh = ButterflyHistory::new();
+        let cph = CapturePieceToHistory::new();
+        let ch = [
+            PieceToHistory::new(),
+            PieceToHistory::new(),
+            PieceToHistory::new(),
+            PieceToHistory::new(),
+        ];
+        let ch = ch.iter().map(|x| x as *const PieceToHistory).collect::<Vec<_>>();
+        let recapture_square = Square::SQ97;
+        let mut mp = MovePickerForQSearch::new(&mh, &cph, &ch, &pos, recapture_square, tt_move, Depth::QS_RECAPTURES);
+        let m = mp.next_move(&pos);
+        assert_eq!(m.unwrap(), Move::new_unpromote(Square::SQ88, Square::SQ97, Piece::B_BISHOP)); // QRecapture
+        let m = mp.next_move(&pos);
+        assert!(m.is_none());
+    }
 
-    // ProbCut uses only good capture moves.
-    // A move from SQ88 to SQ97 is not good capture.
-    let m = mp.next_move(&pos);
-    assert!(m.is_none());
-}
+    #[test]
+    fn test_move_picker_for_prob_cut_next_move() {
+        let sfen = "k8/9/9/5b3/9/l8/p8/1B7/1K7 b - 1";
+        let pos = Position::new_from_sfen(sfen).unwrap();
+        let tt_move = Some(Move::new_unpromote(Square::SQ88, Square::SQ66, Piece::B_BISHOP));
+        let cph = CapturePieceToHistory::new();
+        let mut mp = MovePickerForProbCut::new(&pos, tt_move, Value(0), &cph);
+        // ProbCut::TT uses tt_move if tt_move is good capture.
+        // this tt_move is not used because it is capture move.
+        let m = mp.next_move(&pos);
+        assert_eq!(m.unwrap(), Move::new_unpromote(Square::SQ88, Square::SQ44, Piece::B_BISHOP)); // ProbCut
 
-#[test]
-fn test_pick_best() {
-    let mut v = vec![
-        ExtMove {
-            mv: Move::new_unpromote(Square::SQ11, Square::SQ12, Piece::W_LANCE),
-            score: 200,
-        },
-        ExtMove {
-            mv: Move::new_unpromote(Square::SQ11, Square::SQ13, Piece::W_LANCE),
-            score: 0,
-        },
-        ExtMove {
-            mv: Move::new_unpromote(Square::SQ11, Square::SQ14, Piece::W_LANCE),
-            score: 400,
-        },
-        ExtMove {
-            mv: Move::new_unpromote(Square::SQ11, Square::SQ15, Piece::W_LANCE),
-            score: 300,
-        },
-        ExtMove {
-            mv: Move::new_unpromote(Square::SQ11, Square::SQ16, Piece::W_LANCE),
-            score: 100,
-        },
-        ExtMove {
-            mv: Move::new_unpromote(Square::SQ11, Square::SQ17, Piece::W_LANCE),
-            score: 500,
-        },
-    ];
-    let m = pick_best(&mut v);
-    assert_eq!(m, Move::new_unpromote(Square::SQ11, Square::SQ17, Piece::W_LANCE));
-    let m = pick_best(&mut v[1..]);
-    assert_eq!(m, Move::new_unpromote(Square::SQ11, Square::SQ14, Piece::W_LANCE));
-    let m = pick_best(&mut v[2..]);
-    assert_eq!(m, Move::new_unpromote(Square::SQ11, Square::SQ15, Piece::W_LANCE));
-    let m = pick_best(&mut v[3..]);
-    assert_eq!(m, Move::new_unpromote(Square::SQ11, Square::SQ12, Piece::W_LANCE));
-    let m = pick_best(&mut v[4..]);
-    assert_eq!(m, Move::new_unpromote(Square::SQ11, Square::SQ16, Piece::W_LANCE));
-    let m = pick_best(&mut v[5..]);
-    assert_eq!(m, Move::new_unpromote(Square::SQ11, Square::SQ13, Piece::W_LANCE));
+        // ProbCut uses only good capture moves.
+        // A move from SQ88 to SQ97 is not good capture.
+        let m = mp.next_move(&pos);
+        assert!(m.is_none());
+    }
+
+    #[test]
+    fn test_pick_best() {
+        let mut v = vec![
+            ExtMove {
+                mv: Move::new_unpromote(Square::SQ11, Square::SQ12, Piece::W_LANCE),
+                score: 200,
+            },
+            ExtMove {
+                mv: Move::new_unpromote(Square::SQ11, Square::SQ13, Piece::W_LANCE),
+                score: 0,
+            },
+            ExtMove {
+                mv: Move::new_unpromote(Square::SQ11, Square::SQ14, Piece::W_LANCE),
+                score: 400,
+            },
+            ExtMove {
+                mv: Move::new_unpromote(Square::SQ11, Square::SQ15, Piece::W_LANCE),
+                score: 300,
+            },
+            ExtMove {
+                mv: Move::new_unpromote(Square::SQ11, Square::SQ16, Piece::W_LANCE),
+                score: 100,
+            },
+            ExtMove {
+                mv: Move::new_unpromote(Square::SQ11, Square::SQ17, Piece::W_LANCE),
+                score: 500,
+            },
+        ];
+        let m = pick_best(&mut v);
+        assert_eq!(m, Move::new_unpromote(Square::SQ11, Square::SQ17, Piece::W_LANCE));
+        let m = pick_best(&mut v[1..]);
+        assert_eq!(m, Move::new_unpromote(Square::SQ11, Square::SQ14, Piece::W_LANCE));
+        let m = pick_best(&mut v[2..]);
+        assert_eq!(m, Move::new_unpromote(Square::SQ11, Square::SQ15, Piece::W_LANCE));
+        let m = pick_best(&mut v[3..]);
+        assert_eq!(m, Move::new_unpromote(Square::SQ11, Square::SQ12, Piece::W_LANCE));
+        let m = pick_best(&mut v[4..]);
+        assert_eq!(m, Move::new_unpromote(Square::SQ11, Square::SQ16, Piece::W_LANCE));
+        let m = pick_best(&mut v[5..]);
+        assert_eq!(m, Move::new_unpromote(Square::SQ11, Square::SQ13, Piece::W_LANCE));
+    }
 }

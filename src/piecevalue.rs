@@ -164,116 +164,121 @@ pub fn lva_value(pt: PieceType) -> Value {
     }
 }
 
-#[test]
-fn test_piece_value() {
-    assert_eq!(piece_type_value(PieceType::PAWN), Value(PAWN_VALUE));
-    assert_eq!(piece_type_value(PieceType::LANCE), Value(LANCE_VALUE));
-    assert_eq!(piece_type_value(PieceType::KNIGHT), Value(KNIGHT_VALUE));
-    assert_eq!(piece_type_value(PieceType::SILVER), Value(SILVER_VALUE));
-    assert_eq!(piece_type_value(PieceType::BISHOP), Value(BISHOP_VALUE));
-    assert_eq!(piece_type_value(PieceType::ROOK), Value(ROOK_VALUE));
-    assert_eq!(piece_type_value(PieceType::GOLD), Value(GOLD_VALUE));
-    assert_eq!(piece_type_value(PieceType::KING), Value(KING_VALUE));
-    assert_eq!(piece_type_value(PieceType::PRO_PAWN), Value(PRO_PAWN_VALUE));
-    assert_eq!(piece_type_value(PieceType::PRO_LANCE), Value(PRO_LANCE_VALUE));
-    assert_eq!(piece_type_value(PieceType::PRO_KNIGHT), Value(PRO_KNIGHT_VALUE));
-    assert_eq!(piece_type_value(PieceType::PRO_SILVER), Value(PRO_SILVER_VALUE));
-    assert_eq!(piece_type_value(PieceType::HORSE), Value(HORSE_VALUE));
-    assert_eq!(piece_type_value(PieceType::DRAGON), Value(DRAGON_VALUE));
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-    assert_eq!(piece_value(Piece::EMPTY), Value(0));
-    assert_eq!(piece_value(Piece::B_PAWN), Value(PAWN_VALUE));
-    assert_eq!(piece_value(Piece::B_LANCE), Value(LANCE_VALUE));
-    assert_eq!(piece_value(Piece::B_KNIGHT), Value(KNIGHT_VALUE));
-    assert_eq!(piece_value(Piece::B_SILVER), Value(SILVER_VALUE));
-    assert_eq!(piece_value(Piece::B_BISHOP), Value(BISHOP_VALUE));
-    assert_eq!(piece_value(Piece::B_ROOK), Value(ROOK_VALUE));
-    assert_eq!(piece_value(Piece::B_GOLD), Value(GOLD_VALUE));
-    assert_eq!(piece_value(Piece::B_KING), Value(KING_VALUE));
-    assert_eq!(piece_value(Piece::B_PRO_PAWN), Value(PRO_PAWN_VALUE));
-    assert_eq!(piece_value(Piece::B_PRO_LANCE), Value(PRO_LANCE_VALUE));
-    assert_eq!(piece_value(Piece::B_PRO_KNIGHT), Value(PRO_KNIGHT_VALUE));
-    assert_eq!(piece_value(Piece::B_PRO_SILVER), Value(PRO_SILVER_VALUE));
-    assert_eq!(piece_value(Piece::B_HORSE), Value(HORSE_VALUE));
-    assert_eq!(piece_value(Piece::B_DRAGON), Value(DRAGON_VALUE));
+    #[test]
+    fn test_piece_value() {
+        assert_eq!(piece_type_value(PieceType::PAWN), Value(PAWN_VALUE));
+        assert_eq!(piece_type_value(PieceType::LANCE), Value(LANCE_VALUE));
+        assert_eq!(piece_type_value(PieceType::KNIGHT), Value(KNIGHT_VALUE));
+        assert_eq!(piece_type_value(PieceType::SILVER), Value(SILVER_VALUE));
+        assert_eq!(piece_type_value(PieceType::BISHOP), Value(BISHOP_VALUE));
+        assert_eq!(piece_type_value(PieceType::ROOK), Value(ROOK_VALUE));
+        assert_eq!(piece_type_value(PieceType::GOLD), Value(GOLD_VALUE));
+        assert_eq!(piece_type_value(PieceType::KING), Value(KING_VALUE));
+        assert_eq!(piece_type_value(PieceType::PRO_PAWN), Value(PRO_PAWN_VALUE));
+        assert_eq!(piece_type_value(PieceType::PRO_LANCE), Value(PRO_LANCE_VALUE));
+        assert_eq!(piece_type_value(PieceType::PRO_KNIGHT), Value(PRO_KNIGHT_VALUE));
+        assert_eq!(piece_type_value(PieceType::PRO_SILVER), Value(PRO_SILVER_VALUE));
+        assert_eq!(piece_type_value(PieceType::HORSE), Value(HORSE_VALUE));
+        assert_eq!(piece_type_value(PieceType::DRAGON), Value(DRAGON_VALUE));
 
-    assert_eq!(piece_value(Piece::W_PAWN), Value(PAWN_VALUE));
-    assert_eq!(piece_value(Piece::W_LANCE), Value(LANCE_VALUE));
-    assert_eq!(piece_value(Piece::W_KNIGHT), Value(KNIGHT_VALUE));
-    assert_eq!(piece_value(Piece::W_SILVER), Value(SILVER_VALUE));
-    assert_eq!(piece_value(Piece::W_BISHOP), Value(BISHOP_VALUE));
-    assert_eq!(piece_value(Piece::W_ROOK), Value(ROOK_VALUE));
-    assert_eq!(piece_value(Piece::W_GOLD), Value(GOLD_VALUE));
-    assert_eq!(piece_value(Piece::W_KING), Value(KING_VALUE));
-    assert_eq!(piece_value(Piece::W_PRO_PAWN), Value(PRO_PAWN_VALUE));
-    assert_eq!(piece_value(Piece::W_PRO_LANCE), Value(PRO_LANCE_VALUE));
-    assert_eq!(piece_value(Piece::W_PRO_KNIGHT), Value(PRO_KNIGHT_VALUE));
-    assert_eq!(piece_value(Piece::W_PRO_SILVER), Value(PRO_SILVER_VALUE));
-    assert_eq!(piece_value(Piece::W_HORSE), Value(HORSE_VALUE));
-    assert_eq!(piece_value(Piece::W_DRAGON), Value(DRAGON_VALUE));
-}
+        assert_eq!(piece_value(Piece::EMPTY), Value(0));
+        assert_eq!(piece_value(Piece::B_PAWN), Value(PAWN_VALUE));
+        assert_eq!(piece_value(Piece::B_LANCE), Value(LANCE_VALUE));
+        assert_eq!(piece_value(Piece::B_KNIGHT), Value(KNIGHT_VALUE));
+        assert_eq!(piece_value(Piece::B_SILVER), Value(SILVER_VALUE));
+        assert_eq!(piece_value(Piece::B_BISHOP), Value(BISHOP_VALUE));
+        assert_eq!(piece_value(Piece::B_ROOK), Value(ROOK_VALUE));
+        assert_eq!(piece_value(Piece::B_GOLD), Value(GOLD_VALUE));
+        assert_eq!(piece_value(Piece::B_KING), Value(KING_VALUE));
+        assert_eq!(piece_value(Piece::B_PRO_PAWN), Value(PRO_PAWN_VALUE));
+        assert_eq!(piece_value(Piece::B_PRO_LANCE), Value(PRO_LANCE_VALUE));
+        assert_eq!(piece_value(Piece::B_PRO_KNIGHT), Value(PRO_KNIGHT_VALUE));
+        assert_eq!(piece_value(Piece::B_PRO_SILVER), Value(PRO_SILVER_VALUE));
+        assert_eq!(piece_value(Piece::B_HORSE), Value(HORSE_VALUE));
+        assert_eq!(piece_value(Piece::B_DRAGON), Value(DRAGON_VALUE));
 
-#[test]
-fn test_capture_piece_value() {
-    assert_eq!(capture_piece_type_value(PieceType::PAWN), Value(CAPTURE_PAWN_VALUE));
-    assert_eq!(capture_piece_type_value(PieceType::LANCE), Value(CAPTURE_LANCE_VALUE));
-    assert_eq!(capture_piece_type_value(PieceType::KNIGHT), Value(CAPTURE_KNIGHT_VALUE));
-    assert_eq!(capture_piece_type_value(PieceType::SILVER), Value(CAPTURE_SILVER_VALUE));
-    assert_eq!(capture_piece_type_value(PieceType::BISHOP), Value(CAPTURE_BISHOP_VALUE));
-    assert_eq!(capture_piece_type_value(PieceType::ROOK), Value(CAPTURE_ROOK_VALUE));
-    assert_eq!(capture_piece_type_value(PieceType::GOLD), Value(CAPTURE_GOLD_VALUE));
-    assert_eq!(capture_piece_type_value(PieceType::KING), Value(CAPTURE_KING_VALUE));
-    assert_eq!(capture_piece_type_value(PieceType::PRO_PAWN), Value(CAPTURE_PRO_PAWN_VALUE));
-    assert_eq!(capture_piece_type_value(PieceType::PRO_LANCE), Value(CAPTURE_PRO_LANCE_VALUE));
-    assert_eq!(
-        capture_piece_type_value(PieceType::PRO_KNIGHT),
-        Value(CAPTURE_PRO_KNIGHT_VALUE)
-    );
-    assert_eq!(
-        capture_piece_type_value(PieceType::PRO_SILVER),
-        Value(CAPTURE_PRO_SILVER_VALUE)
-    );
-    assert_eq!(capture_piece_type_value(PieceType::HORSE), Value(CAPTURE_HORSE_VALUE));
-    assert_eq!(capture_piece_type_value(PieceType::DRAGON), Value(CAPTURE_DRAGON_VALUE));
+        assert_eq!(piece_value(Piece::W_PAWN), Value(PAWN_VALUE));
+        assert_eq!(piece_value(Piece::W_LANCE), Value(LANCE_VALUE));
+        assert_eq!(piece_value(Piece::W_KNIGHT), Value(KNIGHT_VALUE));
+        assert_eq!(piece_value(Piece::W_SILVER), Value(SILVER_VALUE));
+        assert_eq!(piece_value(Piece::W_BISHOP), Value(BISHOP_VALUE));
+        assert_eq!(piece_value(Piece::W_ROOK), Value(ROOK_VALUE));
+        assert_eq!(piece_value(Piece::W_GOLD), Value(GOLD_VALUE));
+        assert_eq!(piece_value(Piece::W_KING), Value(KING_VALUE));
+        assert_eq!(piece_value(Piece::W_PRO_PAWN), Value(PRO_PAWN_VALUE));
+        assert_eq!(piece_value(Piece::W_PRO_LANCE), Value(PRO_LANCE_VALUE));
+        assert_eq!(piece_value(Piece::W_PRO_KNIGHT), Value(PRO_KNIGHT_VALUE));
+        assert_eq!(piece_value(Piece::W_PRO_SILVER), Value(PRO_SILVER_VALUE));
+        assert_eq!(piece_value(Piece::W_HORSE), Value(HORSE_VALUE));
+        assert_eq!(piece_value(Piece::W_DRAGON), Value(DRAGON_VALUE));
+    }
 
-    assert_eq!(capture_piece_value(Piece::EMPTY), Value(0));
-    assert_eq!(capture_piece_value(Piece::B_PAWN), Value(CAPTURE_PAWN_VALUE));
-    assert_eq!(capture_piece_value(Piece::B_LANCE), Value(CAPTURE_LANCE_VALUE));
-    assert_eq!(capture_piece_value(Piece::B_KNIGHT), Value(CAPTURE_KNIGHT_VALUE));
-    assert_eq!(capture_piece_value(Piece::B_SILVER), Value(CAPTURE_SILVER_VALUE));
-    assert_eq!(capture_piece_value(Piece::B_BISHOP), Value(CAPTURE_BISHOP_VALUE));
-    assert_eq!(capture_piece_value(Piece::B_ROOK), Value(CAPTURE_ROOK_VALUE));
-    assert_eq!(capture_piece_value(Piece::B_GOLD), Value(CAPTURE_GOLD_VALUE));
-    assert_eq!(capture_piece_value(Piece::B_KING), Value(CAPTURE_KING_VALUE));
-    assert_eq!(capture_piece_value(Piece::B_PRO_PAWN), Value(CAPTURE_PRO_PAWN_VALUE));
-    assert_eq!(capture_piece_value(Piece::B_PRO_LANCE), Value(CAPTURE_PRO_LANCE_VALUE));
-    assert_eq!(capture_piece_value(Piece::B_PRO_KNIGHT), Value(CAPTURE_PRO_KNIGHT_VALUE));
-    assert_eq!(capture_piece_value(Piece::B_PRO_SILVER), Value(CAPTURE_PRO_SILVER_VALUE));
-    assert_eq!(capture_piece_value(Piece::B_HORSE), Value(CAPTURE_HORSE_VALUE));
-    assert_eq!(capture_piece_value(Piece::B_DRAGON), Value(CAPTURE_DRAGON_VALUE));
+    #[test]
+    fn test_capture_piece_value() {
+        assert_eq!(capture_piece_type_value(PieceType::PAWN), Value(CAPTURE_PAWN_VALUE));
+        assert_eq!(capture_piece_type_value(PieceType::LANCE), Value(CAPTURE_LANCE_VALUE));
+        assert_eq!(capture_piece_type_value(PieceType::KNIGHT), Value(CAPTURE_KNIGHT_VALUE));
+        assert_eq!(capture_piece_type_value(PieceType::SILVER), Value(CAPTURE_SILVER_VALUE));
+        assert_eq!(capture_piece_type_value(PieceType::BISHOP), Value(CAPTURE_BISHOP_VALUE));
+        assert_eq!(capture_piece_type_value(PieceType::ROOK), Value(CAPTURE_ROOK_VALUE));
+        assert_eq!(capture_piece_type_value(PieceType::GOLD), Value(CAPTURE_GOLD_VALUE));
+        assert_eq!(capture_piece_type_value(PieceType::KING), Value(CAPTURE_KING_VALUE));
+        assert_eq!(capture_piece_type_value(PieceType::PRO_PAWN), Value(CAPTURE_PRO_PAWN_VALUE));
+        assert_eq!(capture_piece_type_value(PieceType::PRO_LANCE), Value(CAPTURE_PRO_LANCE_VALUE));
+        assert_eq!(
+            capture_piece_type_value(PieceType::PRO_KNIGHT),
+            Value(CAPTURE_PRO_KNIGHT_VALUE)
+        );
+        assert_eq!(
+            capture_piece_type_value(PieceType::PRO_SILVER),
+            Value(CAPTURE_PRO_SILVER_VALUE)
+        );
+        assert_eq!(capture_piece_type_value(PieceType::HORSE), Value(CAPTURE_HORSE_VALUE));
+        assert_eq!(capture_piece_type_value(PieceType::DRAGON), Value(CAPTURE_DRAGON_VALUE));
 
-    assert_eq!(capture_piece_value(Piece::W_PAWN), Value(CAPTURE_PAWN_VALUE));
-    assert_eq!(capture_piece_value(Piece::W_LANCE), Value(CAPTURE_LANCE_VALUE));
-    assert_eq!(capture_piece_value(Piece::W_KNIGHT), Value(CAPTURE_KNIGHT_VALUE));
-    assert_eq!(capture_piece_value(Piece::W_SILVER), Value(CAPTURE_SILVER_VALUE));
-    assert_eq!(capture_piece_value(Piece::W_BISHOP), Value(CAPTURE_BISHOP_VALUE));
-    assert_eq!(capture_piece_value(Piece::W_ROOK), Value(CAPTURE_ROOK_VALUE));
-    assert_eq!(capture_piece_value(Piece::W_GOLD), Value(CAPTURE_GOLD_VALUE));
-    assert_eq!(capture_piece_value(Piece::W_KING), Value(CAPTURE_KING_VALUE));
-    assert_eq!(capture_piece_value(Piece::W_PRO_PAWN), Value(CAPTURE_PRO_PAWN_VALUE));
-    assert_eq!(capture_piece_value(Piece::W_PRO_LANCE), Value(CAPTURE_PRO_LANCE_VALUE));
-    assert_eq!(capture_piece_value(Piece::W_PRO_KNIGHT), Value(CAPTURE_PRO_KNIGHT_VALUE));
-    assert_eq!(capture_piece_value(Piece::W_PRO_SILVER), Value(CAPTURE_PRO_SILVER_VALUE));
-    assert_eq!(capture_piece_value(Piece::W_HORSE), Value(CAPTURE_HORSE_VALUE));
-    assert_eq!(capture_piece_value(Piece::W_DRAGON), Value(CAPTURE_DRAGON_VALUE));
-}
+        assert_eq!(capture_piece_value(Piece::EMPTY), Value(0));
+        assert_eq!(capture_piece_value(Piece::B_PAWN), Value(CAPTURE_PAWN_VALUE));
+        assert_eq!(capture_piece_value(Piece::B_LANCE), Value(CAPTURE_LANCE_VALUE));
+        assert_eq!(capture_piece_value(Piece::B_KNIGHT), Value(CAPTURE_KNIGHT_VALUE));
+        assert_eq!(capture_piece_value(Piece::B_SILVER), Value(CAPTURE_SILVER_VALUE));
+        assert_eq!(capture_piece_value(Piece::B_BISHOP), Value(CAPTURE_BISHOP_VALUE));
+        assert_eq!(capture_piece_value(Piece::B_ROOK), Value(CAPTURE_ROOK_VALUE));
+        assert_eq!(capture_piece_value(Piece::B_GOLD), Value(CAPTURE_GOLD_VALUE));
+        assert_eq!(capture_piece_value(Piece::B_KING), Value(CAPTURE_KING_VALUE));
+        assert_eq!(capture_piece_value(Piece::B_PRO_PAWN), Value(CAPTURE_PRO_PAWN_VALUE));
+        assert_eq!(capture_piece_value(Piece::B_PRO_LANCE), Value(CAPTURE_PRO_LANCE_VALUE));
+        assert_eq!(capture_piece_value(Piece::B_PRO_KNIGHT), Value(CAPTURE_PRO_KNIGHT_VALUE));
+        assert_eq!(capture_piece_value(Piece::B_PRO_SILVER), Value(CAPTURE_PRO_SILVER_VALUE));
+        assert_eq!(capture_piece_value(Piece::B_HORSE), Value(CAPTURE_HORSE_VALUE));
+        assert_eq!(capture_piece_value(Piece::B_DRAGON), Value(CAPTURE_DRAGON_VALUE));
 
-#[test]
-fn test_promote_piece_value() {
-    assert_eq!(promote_piece_type_value(PieceType::PAWN), Value(PROMOTE_PAWN_VALUE));
-    assert_eq!(promote_piece_type_value(PieceType::LANCE), Value(PROMOTE_LANCE_VALUE));
-    assert_eq!(promote_piece_type_value(PieceType::KNIGHT), Value(PROMOTE_KNIGHT_VALUE));
-    assert_eq!(promote_piece_type_value(PieceType::SILVER), Value(PROMOTE_SILVER_VALUE));
-    assert_eq!(promote_piece_type_value(PieceType::BISHOP), Value(PROMOTE_BISHOP_VALUE));
-    assert_eq!(promote_piece_type_value(PieceType::ROOK), Value(PROMOTE_ROOK_VALUE));
+        assert_eq!(capture_piece_value(Piece::W_PAWN), Value(CAPTURE_PAWN_VALUE));
+        assert_eq!(capture_piece_value(Piece::W_LANCE), Value(CAPTURE_LANCE_VALUE));
+        assert_eq!(capture_piece_value(Piece::W_KNIGHT), Value(CAPTURE_KNIGHT_VALUE));
+        assert_eq!(capture_piece_value(Piece::W_SILVER), Value(CAPTURE_SILVER_VALUE));
+        assert_eq!(capture_piece_value(Piece::W_BISHOP), Value(CAPTURE_BISHOP_VALUE));
+        assert_eq!(capture_piece_value(Piece::W_ROOK), Value(CAPTURE_ROOK_VALUE));
+        assert_eq!(capture_piece_value(Piece::W_GOLD), Value(CAPTURE_GOLD_VALUE));
+        assert_eq!(capture_piece_value(Piece::W_KING), Value(CAPTURE_KING_VALUE));
+        assert_eq!(capture_piece_value(Piece::W_PRO_PAWN), Value(CAPTURE_PRO_PAWN_VALUE));
+        assert_eq!(capture_piece_value(Piece::W_PRO_LANCE), Value(CAPTURE_PRO_LANCE_VALUE));
+        assert_eq!(capture_piece_value(Piece::W_PRO_KNIGHT), Value(CAPTURE_PRO_KNIGHT_VALUE));
+        assert_eq!(capture_piece_value(Piece::W_PRO_SILVER), Value(CAPTURE_PRO_SILVER_VALUE));
+        assert_eq!(capture_piece_value(Piece::W_HORSE), Value(CAPTURE_HORSE_VALUE));
+        assert_eq!(capture_piece_value(Piece::W_DRAGON), Value(CAPTURE_DRAGON_VALUE));
+    }
+
+    #[test]
+    fn test_promote_piece_value() {
+        assert_eq!(promote_piece_type_value(PieceType::PAWN), Value(PROMOTE_PAWN_VALUE));
+        assert_eq!(promote_piece_type_value(PieceType::LANCE), Value(PROMOTE_LANCE_VALUE));
+        assert_eq!(promote_piece_type_value(PieceType::KNIGHT), Value(PROMOTE_KNIGHT_VALUE));
+        assert_eq!(promote_piece_type_value(PieceType::SILVER), Value(PROMOTE_SILVER_VALUE));
+        assert_eq!(promote_piece_type_value(PieceType::BISHOP), Value(PROMOTE_BISHOP_VALUE));
+        assert_eq!(promote_piece_type_value(PieceType::ROOK), Value(PROMOTE_ROOK_VALUE));
+    }
 }

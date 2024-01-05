@@ -1210,76 +1210,80 @@ impl Key {
     }
 }
 
-#[test]
-fn test_color_inverse() {
-    assert_eq!(Color::BLACK.inverse(), Color::WHITE);
-    assert_eq!(Color::WHITE.inverse(), Color::BLACK);
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-#[test]
-fn test_square_new() {
-    assert_eq!(Square::new(File::FILE3, Rank::RANK4), Square::SQ34);
-}
-
-#[test]
-fn test_square_inverse() {
-    assert_eq!(Square::SQ11.inverse(), Square::SQ99);
-    assert_eq!(Square::SQ12.inverse(), Square::SQ98);
-    assert_eq!(Square::SQ21.inverse(), Square::SQ89);
-    assert_eq!(Square::SQ99.inverse(), Square::SQ11);
-    for i in 0..(Square::NUM as i32) {
-        let sq = Square(i);
-        assert_eq!(sq.inverse().inverse(), sq);
+    #[test]
+    fn test_color_inverse() {
+        assert_eq!(Color::BLACK.inverse(), Color::WHITE);
+        assert_eq!(Color::WHITE.inverse(), Color::BLACK);
     }
-}
 
-#[test]
-fn test_square_inverse_file() {
-    assert_eq!(Square::SQ11.inverse_file(), Square::SQ91);
-    assert_eq!(Square::SQ12.inverse_file(), Square::SQ92);
-    assert_eq!(Square::SQ21.inverse_file(), Square::SQ81);
-    assert_eq!(Square::SQ99.inverse_file(), Square::SQ19);
-    for i in 0..(Square::NUM as i32) {
-        let sq = Square(i);
-        assert_eq!(sq.inverse_file().inverse_file(), sq);
+    #[test]
+    fn test_square_new() {
+        assert_eq!(Square::new(File::FILE3, Rank::RANK4), Square::SQ34);
     }
-}
 
-#[test]
-fn test_file_new_and_rank_new() {
-    for i in 0..(Square::NUM as i32) {
-        let sq = Square(i);
-        let file = File::new(sq);
-        let rank = Rank::new(sq);
-        assert_eq!(Square::new(file, rank), sq);
+    #[test]
+    fn test_square_inverse() {
+        assert_eq!(Square::SQ11.inverse(), Square::SQ99);
+        assert_eq!(Square::SQ12.inverse(), Square::SQ98);
+        assert_eq!(Square::SQ21.inverse(), Square::SQ89);
+        assert_eq!(Square::SQ99.inverse(), Square::SQ11);
+        for i in 0..(Square::NUM as i32) {
+            let sq = Square(i);
+            assert_eq!(sq.inverse().inverse(), sq);
+        }
     }
-}
 
-#[test]
-fn test_file_inverse() {
-    assert_eq!(File::FILE1.inverse(), File::FILE9);
-    assert_eq!(File::FILE2.inverse(), File::FILE8);
-    for i in 0..(File::NUM as i32) {
-        let f = File(i);
-        assert_eq!(f.inverse().inverse(), f);
+    #[test]
+    fn test_square_inverse_file() {
+        assert_eq!(Square::SQ11.inverse_file(), Square::SQ91);
+        assert_eq!(Square::SQ12.inverse_file(), Square::SQ92);
+        assert_eq!(Square::SQ21.inverse_file(), Square::SQ81);
+        assert_eq!(Square::SQ99.inverse_file(), Square::SQ19);
+        for i in 0..(Square::NUM as i32) {
+            let sq = Square(i);
+            assert_eq!(sq.inverse_file().inverse_file(), sq);
+        }
     }
-}
 
-#[test]
-fn test_rank_inverse() {
-    assert_eq!(Rank::RANK1.inverse(), Rank::RANK9);
-    assert_eq!(Rank::RANK2.inverse(), Rank::RANK8);
-    for i in 0..(Rank::NUM as i32) {
-        let r = Rank(i);
-        assert_eq!(r.inverse().inverse(), r);
+    #[test]
+    fn test_file_new_and_rank_new() {
+        for i in 0..(Square::NUM as i32) {
+            let sq = Square(i);
+            let file = File::new(sq);
+            let rank = Rank::new(sq);
+            assert_eq!(Square::new(file, rank), sq);
+        }
     }
-}
 
-#[test]
-fn test_file_new() {
-    for sq in Square::ALL.iter() {
-        use crate::types::Square as S;
-        #[rustfmt::skip]
+    #[test]
+    fn test_file_inverse() {
+        assert_eq!(File::FILE1.inverse(), File::FILE9);
+        assert_eq!(File::FILE2.inverse(), File::FILE8);
+        for i in 0..(File::NUM as i32) {
+            let f = File(i);
+            assert_eq!(f.inverse().inverse(), f);
+        }
+    }
+
+    #[test]
+    fn test_rank_inverse() {
+        assert_eq!(Rank::RANK1.inverse(), Rank::RANK9);
+        assert_eq!(Rank::RANK2.inverse(), Rank::RANK8);
+        for i in 0..(Rank::NUM as i32) {
+            let r = Rank(i);
+            assert_eq!(r.inverse().inverse(), r);
+        }
+    }
+
+    #[test]
+    fn test_file_new() {
+        for sq in Square::ALL.iter() {
+            use crate::types::Square as S;
+            #[rustfmt::skip]
         let ans = match *sq {
             S::SQ11 | S::SQ12 | S::SQ13 | S::SQ14 | S::SQ15 | S::SQ16 | S::SQ17 | S::SQ18 | S::SQ19 => File::FILE1,
             S::SQ21 | S::SQ22 | S::SQ23 | S::SQ24 | S::SQ25 | S::SQ26 | S::SQ27 | S::SQ28 | S::SQ29 => File::FILE2,
@@ -1292,15 +1296,15 @@ fn test_file_new() {
             S::SQ91 | S::SQ92 | S::SQ93 | S::SQ94 | S::SQ95 | S::SQ96 | S::SQ97 | S::SQ98 | S::SQ99 => File::FILE9,
             _ => unreachable!(),
         };
-        assert_eq!(File::new(*sq), ans);
+            assert_eq!(File::new(*sq), ans);
+        }
     }
-}
 
-#[test]
-fn test_rank_new() {
-    for sq in Square::ALL.iter() {
-        use crate::types::Square as S;
-        #[rustfmt::skip]
+    #[test]
+    fn test_rank_new() {
+        for sq in Square::ALL.iter() {
+            use crate::types::Square as S;
+            #[rustfmt::skip]
         let ans = match *sq {
             S::SQ11 | S::SQ21 | S::SQ31 | S::SQ41 | S::SQ51 | S::SQ61 | S::SQ71 | S::SQ81 | S::SQ91 => Rank::RANK1,
             S::SQ12 | S::SQ22 | S::SQ32 | S::SQ42 | S::SQ52 | S::SQ62 | S::SQ72 | S::SQ82 | S::SQ92 => Rank::RANK2,
@@ -1313,236 +1317,237 @@ fn test_rank_new() {
             S::SQ19 | S::SQ29 | S::SQ39 | S::SQ49 | S::SQ59 | S::SQ69 | S::SQ79 | S::SQ89 | S::SQ99 => Rank::RANK9,
             _ => unreachable!(),
         };
-        assert_eq!(Rank::new(*sq), ans);
+            assert_eq!(Rank::new(*sq), ans);
+        }
     }
-}
 
-#[test]
-fn test_piece_type_new() {
-    assert_eq!(PieceType::PAWN, PieceType::new(Piece::B_PAWN));
-    assert_eq!(PieceType::PAWN, PieceType::new(Piece::W_PAWN));
-    assert_eq!(PieceType::LANCE, PieceType::new(Piece::B_LANCE));
-    assert_eq!(PieceType::LANCE, PieceType::new(Piece::W_LANCE));
-    assert_eq!(PieceType::DRAGON, PieceType::new(Piece::B_DRAGON));
-    assert_eq!(PieceType::DRAGON, PieceType::new(Piece::W_DRAGON));
-}
+    #[test]
+    fn test_piece_type_new() {
+        assert_eq!(PieceType::PAWN, PieceType::new(Piece::B_PAWN));
+        assert_eq!(PieceType::PAWN, PieceType::new(Piece::W_PAWN));
+        assert_eq!(PieceType::LANCE, PieceType::new(Piece::B_LANCE));
+        assert_eq!(PieceType::LANCE, PieceType::new(Piece::W_LANCE));
+        assert_eq!(PieceType::DRAGON, PieceType::new(Piece::B_DRAGON));
+        assert_eq!(PieceType::DRAGON, PieceType::new(Piece::W_DRAGON));
+    }
 
-#[test]
-fn test_piece_new() {
-    assert_eq!(Piece::B_KING, Piece::new(Color::BLACK, PieceType::KING));
-    assert_eq!(Piece::W_KING, Piece::new(Color::WHITE, PieceType::KING));
-    assert_eq!(Piece::B_DRAGON, Piece::new(Color::BLACK, PieceType::DRAGON));
-    assert_eq!(Piece::W_DRAGON, Piece::new(Color::WHITE, PieceType::DRAGON));
-}
+    #[test]
+    fn test_piece_new() {
+        assert_eq!(Piece::B_KING, Piece::new(Color::BLACK, PieceType::KING));
+        assert_eq!(Piece::W_KING, Piece::new(Color::WHITE, PieceType::KING));
+        assert_eq!(Piece::B_DRAGON, Piece::new(Color::BLACK, PieceType::DRAGON));
+        assert_eq!(Piece::W_DRAGON, Piece::new(Color::WHITE, PieceType::DRAGON));
+    }
 
-#[test]
-fn test_piece_inverse() {
-    assert_eq!(Piece::B_PAWN.inverse(), Piece::W_PAWN);
-    assert_eq!(Piece::B_LANCE.inverse(), Piece::W_LANCE);
-    assert_eq!(Piece::B_KNIGHT.inverse(), Piece::W_KNIGHT);
-    assert_eq!(Piece::B_SILVER.inverse(), Piece::W_SILVER);
-    assert_eq!(Piece::B_BISHOP.inverse(), Piece::W_BISHOP);
-    assert_eq!(Piece::B_ROOK.inverse(), Piece::W_ROOK);
-    assert_eq!(Piece::B_GOLD.inverse(), Piece::W_GOLD);
-    assert_eq!(Piece::B_KING.inverse(), Piece::W_KING);
-    assert_eq!(Piece::B_PRO_PAWN.inverse(), Piece::W_PRO_PAWN);
-    assert_eq!(Piece::B_PRO_LANCE.inverse(), Piece::W_PRO_LANCE);
-    assert_eq!(Piece::B_PRO_KNIGHT.inverse(), Piece::W_PRO_KNIGHT);
-    assert_eq!(Piece::B_PRO_SILVER.inverse(), Piece::W_PRO_SILVER);
-    assert_eq!(Piece::B_HORSE.inverse(), Piece::W_HORSE);
-    assert_eq!(Piece::B_DRAGON.inverse(), Piece::W_DRAGON);
-}
+    #[test]
+    fn test_piece_inverse() {
+        assert_eq!(Piece::B_PAWN.inverse(), Piece::W_PAWN);
+        assert_eq!(Piece::B_LANCE.inverse(), Piece::W_LANCE);
+        assert_eq!(Piece::B_KNIGHT.inverse(), Piece::W_KNIGHT);
+        assert_eq!(Piece::B_SILVER.inverse(), Piece::W_SILVER);
+        assert_eq!(Piece::B_BISHOP.inverse(), Piece::W_BISHOP);
+        assert_eq!(Piece::B_ROOK.inverse(), Piece::W_ROOK);
+        assert_eq!(Piece::B_GOLD.inverse(), Piece::W_GOLD);
+        assert_eq!(Piece::B_KING.inverse(), Piece::W_KING);
+        assert_eq!(Piece::B_PRO_PAWN.inverse(), Piece::W_PRO_PAWN);
+        assert_eq!(Piece::B_PRO_LANCE.inverse(), Piece::W_PRO_LANCE);
+        assert_eq!(Piece::B_PRO_KNIGHT.inverse(), Piece::W_PRO_KNIGHT);
+        assert_eq!(Piece::B_PRO_SILVER.inverse(), Piece::W_PRO_SILVER);
+        assert_eq!(Piece::B_HORSE.inverse(), Piece::W_HORSE);
+        assert_eq!(Piece::B_DRAGON.inverse(), Piece::W_DRAGON);
+    }
 
-#[test]
-fn test_is_slider() {
-    assert!(!PieceType::OCCUPIED.is_slider());
-    assert!(!PieceType::PAWN.is_slider());
-    assert!(PieceType::LANCE.is_slider());
-    assert!(!PieceType::KNIGHT.is_slider());
-    assert!(!PieceType::SILVER.is_slider());
-    assert!(!PieceType::GOLD.is_slider());
-    assert!(PieceType::BISHOP.is_slider());
-    assert!(PieceType::ROOK.is_slider());
-    assert!(!PieceType::KING.is_slider());
-    assert!(!PieceType::PRO_PAWN.is_slider());
-    assert!(!PieceType::PRO_LANCE.is_slider());
-    assert!(!PieceType::PRO_KNIGHT.is_slider());
-    assert!(!PieceType::PRO_SILVER.is_slider());
-    assert!(PieceType::HORSE.is_slider());
-    assert!(PieceType::DRAGON.is_slider());
-}
+    #[test]
+    fn test_is_slider() {
+        assert!(!PieceType::OCCUPIED.is_slider());
+        assert!(!PieceType::PAWN.is_slider());
+        assert!(PieceType::LANCE.is_slider());
+        assert!(!PieceType::KNIGHT.is_slider());
+        assert!(!PieceType::SILVER.is_slider());
+        assert!(!PieceType::GOLD.is_slider());
+        assert!(PieceType::BISHOP.is_slider());
+        assert!(PieceType::ROOK.is_slider());
+        assert!(!PieceType::KING.is_slider());
+        assert!(!PieceType::PRO_PAWN.is_slider());
+        assert!(!PieceType::PRO_LANCE.is_slider());
+        assert!(!PieceType::PRO_KNIGHT.is_slider());
+        assert!(!PieceType::PRO_SILVER.is_slider());
+        assert!(PieceType::HORSE.is_slider());
+        assert!(PieceType::DRAGON.is_slider());
+    }
 
-#[test]
-fn test_relation_new() {
-    assert_eq!(Relation::new(Square::SQ11, Square::SQ15), Relation::FILE_NS);
-    assert_eq!(Relation::new(Square::SQ15, Square::SQ11), Relation::FILE_SN);
-    assert_eq!(Relation::new(Square::SQ11, Square::SQ71), Relation::RANK_EW);
-    assert_eq!(Relation::new(Square::SQ71, Square::SQ11), Relation::RANK_WE);
-    assert_eq!(Relation::new(Square::SQ11, Square::SQ33), Relation::DIAG_NESW);
-    assert_eq!(Relation::new(Square::SQ33, Square::SQ11), Relation::DIAG_SWNE);
-    assert_eq!(Relation::new(Square::SQ11, Square::SQ23), Relation::MISC);
-    assert_eq!(Relation::new(Square::SQ91, Square::SQ19), Relation::DIAG_NWSE);
-    assert_eq!(Relation::new(Square::SQ19, Square::SQ91), Relation::DIAG_SENW);
-    for sq0 in Square::ALL.iter() {
-        let f1 = File::new(*sq0);
-        for r1 in Rank::ALL.iter() {
-            let sq1 = Square::new(f1, *r1);
-            if *sq0 == sq1 {
-                assert_eq!(Relation::new(*sq0, sq1), Relation::MISC);
-            } else {
-                assert!(Relation::new(*sq0, sq1).is_file());
+    #[test]
+    fn test_relation_new() {
+        assert_eq!(Relation::new(Square::SQ11, Square::SQ15), Relation::FILE_NS);
+        assert_eq!(Relation::new(Square::SQ15, Square::SQ11), Relation::FILE_SN);
+        assert_eq!(Relation::new(Square::SQ11, Square::SQ71), Relation::RANK_EW);
+        assert_eq!(Relation::new(Square::SQ71, Square::SQ11), Relation::RANK_WE);
+        assert_eq!(Relation::new(Square::SQ11, Square::SQ33), Relation::DIAG_NESW);
+        assert_eq!(Relation::new(Square::SQ33, Square::SQ11), Relation::DIAG_SWNE);
+        assert_eq!(Relation::new(Square::SQ11, Square::SQ23), Relation::MISC);
+        assert_eq!(Relation::new(Square::SQ91, Square::SQ19), Relation::DIAG_NWSE);
+        assert_eq!(Relation::new(Square::SQ19, Square::SQ91), Relation::DIAG_SENW);
+        for sq0 in Square::ALL.iter() {
+            let f1 = File::new(*sq0);
+            for r1 in Rank::ALL.iter() {
+                let sq1 = Square::new(f1, *r1);
+                if *sq0 == sq1 {
+                    assert_eq!(Relation::new(*sq0, sq1), Relation::MISC);
+                } else {
+                    assert!(Relation::new(*sq0, sq1).is_file());
+                }
+            }
+        }
+        for sq0 in Square::ALL.iter() {
+            let r1 = Rank::new(*sq0);
+            for f1 in File::ALL.iter() {
+                let sq1 = Square::new(*f1, r1);
+                if *sq0 == sq1 {
+                    assert_eq!(Relation::new(*sq0, sq1), Relation::MISC);
+                } else {
+                    assert!(Relation::new(*sq0, sq1).is_rank());
+                }
             }
         }
     }
-    for sq0 in Square::ALL.iter() {
-        let r1 = Rank::new(*sq0);
-        for f1 in File::ALL.iter() {
-            let sq1 = Square::new(*f1, r1);
-            if *sq0 == sq1 {
-                assert_eq!(Relation::new(*sq0, sq1), Relation::MISC);
-            } else {
-                assert!(Relation::new(*sq0, sq1).is_rank());
-            }
-        }
+
+    #[test]
+    fn test_square_to_usi_string() {
+        assert_eq!(Square::SQ11.to_usi_string(), "1a");
+        assert_eq!(Square::SQ99.to_usi_string(), "9i");
+        assert_eq!(Square::SQ35.to_usi_string(), "3e");
     }
-}
 
-#[test]
-fn test_square_to_usi_string() {
-    assert_eq!(Square::SQ11.to_usi_string(), "1a");
-    assert_eq!(Square::SQ99.to_usi_string(), "9i");
-    assert_eq!(Square::SQ35.to_usi_string(), "3e");
-}
+    #[test]
+    fn test_square_to_csa_string() {
+        assert_eq!(Square::SQ11.to_csa_string(), "11");
+        assert_eq!(Square::SQ99.to_csa_string(), "99");
+        assert_eq!(Square::SQ35.to_csa_string(), "35");
+    }
 
-#[test]
-fn test_square_to_csa_string() {
-    assert_eq!(Square::SQ11.to_csa_string(), "11");
-    assert_eq!(Square::SQ99.to_csa_string(), "99");
-    assert_eq!(Square::SQ35.to_csa_string(), "35");
-}
+    #[test]
+    fn test_is_opponent_field() {
+        assert!(Rank::RANK1.is_opponent_field(Color::BLACK));
+        assert!(Rank::RANK2.is_opponent_field(Color::BLACK));
+        assert!(Rank::RANK3.is_opponent_field(Color::BLACK));
+        assert!(!Rank::RANK4.is_opponent_field(Color::BLACK));
+        assert!(!Rank::RANK5.is_opponent_field(Color::BLACK));
+        assert!(!Rank::RANK6.is_opponent_field(Color::BLACK));
+        assert!(!Rank::RANK7.is_opponent_field(Color::BLACK));
+        assert!(!Rank::RANK8.is_opponent_field(Color::BLACK));
+        assert!(!Rank::RANK9.is_opponent_field(Color::BLACK));
+        assert!(!Rank::RANK1.is_opponent_field(Color::WHITE));
+        assert!(!Rank::RANK2.is_opponent_field(Color::WHITE));
+        assert!(!Rank::RANK3.is_opponent_field(Color::WHITE));
+        assert!(!Rank::RANK4.is_opponent_field(Color::WHITE));
+        assert!(!Rank::RANK5.is_opponent_field(Color::WHITE));
+        assert!(!Rank::RANK6.is_opponent_field(Color::WHITE));
+        assert!(Rank::RANK7.is_opponent_field(Color::WHITE));
+        assert!(Rank::RANK8.is_opponent_field(Color::WHITE));
+        assert!(Rank::RANK9.is_opponent_field(Color::WHITE));
+    }
 
-#[test]
-fn test_is_opponent_field() {
-    assert!(Rank::RANK1.is_opponent_field(Color::BLACK));
-    assert!(Rank::RANK2.is_opponent_field(Color::BLACK));
-    assert!(Rank::RANK3.is_opponent_field(Color::BLACK));
-    assert!(!Rank::RANK4.is_opponent_field(Color::BLACK));
-    assert!(!Rank::RANK5.is_opponent_field(Color::BLACK));
-    assert!(!Rank::RANK6.is_opponent_field(Color::BLACK));
-    assert!(!Rank::RANK7.is_opponent_field(Color::BLACK));
-    assert!(!Rank::RANK8.is_opponent_field(Color::BLACK));
-    assert!(!Rank::RANK9.is_opponent_field(Color::BLACK));
-    assert!(!Rank::RANK1.is_opponent_field(Color::WHITE));
-    assert!(!Rank::RANK2.is_opponent_field(Color::WHITE));
-    assert!(!Rank::RANK3.is_opponent_field(Color::WHITE));
-    assert!(!Rank::RANK4.is_opponent_field(Color::WHITE));
-    assert!(!Rank::RANK5.is_opponent_field(Color::WHITE));
-    assert!(!Rank::RANK6.is_opponent_field(Color::WHITE));
-    assert!(Rank::RANK7.is_opponent_field(Color::WHITE));
-    assert!(Rank::RANK8.is_opponent_field(Color::WHITE));
-    assert!(Rank::RANK9.is_opponent_field(Color::WHITE));
-}
+    #[test]
+    fn test_is_in_front_of() {
+        assert_eq!(
+            Rank::RANK1,
+            Rank::new_from_color_and_rank_as_black(Color::BLACK, RankAsBlack::RANK1)
+        );
+        assert_eq!(
+            Rank::RANK9,
+            Rank::new_from_color_and_rank_as_black(Color::WHITE, RankAsBlack::RANK1)
+        );
 
-#[test]
-fn test_is_in_front_of() {
-    assert_eq!(
-        Rank::RANK1,
-        Rank::new_from_color_and_rank_as_black(Color::BLACK, RankAsBlack::RANK1)
-    );
-    assert_eq!(
-        Rank::RANK9,
-        Rank::new_from_color_and_rank_as_black(Color::WHITE, RankAsBlack::RANK1)
-    );
+        assert!(!Rank::RANK1.is_in_front_of(Color::BLACK, RankAsBlack::RANK1));
+        assert!(Rank::RANK1.is_in_front_of(Color::BLACK, RankAsBlack::RANK2));
 
-    assert!(!Rank::RANK1.is_in_front_of(Color::BLACK, RankAsBlack::RANK1));
-    assert!(Rank::RANK1.is_in_front_of(Color::BLACK, RankAsBlack::RANK2));
+        assert!(!Rank::RANK9.is_in_front_of(Color::WHITE, RankAsBlack::RANK1));
+        assert!(Rank::RANK9.is_in_front_of(Color::WHITE, RankAsBlack::RANK2));
+    }
 
-    assert!(!Rank::RANK9.is_in_front_of(Color::WHITE, RankAsBlack::RANK1));
-    assert!(Rank::RANK9.is_in_front_of(Color::WHITE, RankAsBlack::RANK2));
-}
+    #[test]
+    fn test_is_aligned_and_sq2_is_not_between_sq0_and_sq1() {
+        assert!(is_aligned_and_sq2_is_not_between_sq0_and_sq1(
+            Square::SQ11,
+            Square::SQ12,
+            Square::SQ13
+        ));
+        assert!(!is_aligned_and_sq2_is_not_between_sq0_and_sq1(
+            Square::SQ11,
+            Square::SQ13,
+            Square::SQ12
+        ));
+        assert!(is_aligned_and_sq2_is_not_between_sq0_and_sq1(
+            Square::SQ11,
+            Square::SQ22,
+            Square::SQ33
+        ));
+        assert!(is_aligned_and_sq2_is_not_between_sq0_and_sq1(
+            Square::SQ22,
+            Square::SQ11,
+            Square::SQ33
+        ));
+        assert!(!is_aligned_and_sq2_is_not_between_sq0_and_sq1(
+            Square::SQ33,
+            Square::SQ11,
+            Square::SQ22
+        ));
+        assert!(is_aligned_and_sq2_is_not_between_sq0_and_sq1(
+            Square::SQ99,
+            Square::SQ88,
+            Square::SQ77
+        ));
+        assert!(is_aligned_and_sq2_is_not_between_sq0_and_sq1(
+            Square::SQ99,
+            Square::SQ98,
+            Square::SQ97
+        ));
+        assert!(is_aligned_and_sq2_is_not_between_sq0_and_sq1(
+            Square::SQ91,
+            Square::SQ82,
+            Square::SQ73
+        ));
+        assert!(is_aligned_and_sq2_is_not_between_sq0_and_sq1(
+            Square::SQ73,
+            Square::SQ82,
+            Square::SQ91
+        ));
+        assert!(is_aligned_and_sq2_is_not_between_sq0_and_sq1(
+            Square::SQ91,
+            Square::SQ81,
+            Square::SQ71
+        ));
+        assert!(is_aligned_and_sq2_is_not_between_sq0_and_sq1(
+            Square::SQ71,
+            Square::SQ81,
+            Square::SQ91
+        ));
+        assert!(!is_aligned_and_sq2_is_not_between_sq0_and_sq1(
+            Square::SQ71,
+            Square::SQ91,
+            Square::SQ81
+        ));
+        assert!(!is_aligned_and_sq2_is_not_between_sq0_and_sq1(
+            Square::SQ11,
+            Square::SQ21,
+            Square::SQ42
+        ));
+        assert!(!is_aligned_and_sq2_is_not_between_sq0_and_sq1(
+            Square::SQ11,
+            Square::SQ32,
+            Square::SQ53
+        ));
+    }
 
-#[test]
-fn test_is_aligned_and_sq2_is_not_between_sq0_and_sq1() {
-    assert!(is_aligned_and_sq2_is_not_between_sq0_and_sq1(
-        Square::SQ11,
-        Square::SQ12,
-        Square::SQ13
-    ));
-    assert!(!is_aligned_and_sq2_is_not_between_sq0_and_sq1(
-        Square::SQ11,
-        Square::SQ13,
-        Square::SQ12
-    ));
-    assert!(is_aligned_and_sq2_is_not_between_sq0_and_sq1(
-        Square::SQ11,
-        Square::SQ22,
-        Square::SQ33
-    ));
-    assert!(is_aligned_and_sq2_is_not_between_sq0_and_sq1(
-        Square::SQ22,
-        Square::SQ11,
-        Square::SQ33
-    ));
-    assert!(!is_aligned_and_sq2_is_not_between_sq0_and_sq1(
-        Square::SQ33,
-        Square::SQ11,
-        Square::SQ22
-    ));
-    assert!(is_aligned_and_sq2_is_not_between_sq0_and_sq1(
-        Square::SQ99,
-        Square::SQ88,
-        Square::SQ77
-    ));
-    assert!(is_aligned_and_sq2_is_not_between_sq0_and_sq1(
-        Square::SQ99,
-        Square::SQ98,
-        Square::SQ97
-    ));
-    assert!(is_aligned_and_sq2_is_not_between_sq0_and_sq1(
-        Square::SQ91,
-        Square::SQ82,
-        Square::SQ73
-    ));
-    assert!(is_aligned_and_sq2_is_not_between_sq0_and_sq1(
-        Square::SQ73,
-        Square::SQ82,
-        Square::SQ91
-    ));
-    assert!(is_aligned_and_sq2_is_not_between_sq0_and_sq1(
-        Square::SQ91,
-        Square::SQ81,
-        Square::SQ71
-    ));
-    assert!(is_aligned_and_sq2_is_not_between_sq0_and_sq1(
-        Square::SQ71,
-        Square::SQ81,
-        Square::SQ91
-    ));
-    assert!(!is_aligned_and_sq2_is_not_between_sq0_and_sq1(
-        Square::SQ71,
-        Square::SQ91,
-        Square::SQ81
-    ));
-    assert!(!is_aligned_and_sq2_is_not_between_sq0_and_sq1(
-        Square::SQ11,
-        Square::SQ21,
-        Square::SQ42
-    ));
-    assert!(!is_aligned_and_sq2_is_not_between_sq0_and_sq1(
-        Square::SQ11,
-        Square::SQ32,
-        Square::SQ53
-    ));
-}
-
-#[test]
-fn test_bound() {
-    assert!(!Bound::BOUND_NONE.include_lower());
-    assert!(!Bound::BOUND_NONE.include_upper());
-    assert!(Bound::LOWER.include_lower());
-    assert!(!Bound::LOWER.include_upper());
-    assert!(!Bound::UPPER.include_lower());
-    assert!(Bound::UPPER.include_upper());
-    assert!(Bound::EXACT.include_lower());
-    assert!(Bound::EXACT.include_upper());
+    #[test]
+    fn test_bound() {
+        assert!(!Bound::BOUND_NONE.include_lower());
+        assert!(!Bound::BOUND_NONE.include_upper());
+        assert!(Bound::LOWER.include_lower());
+        assert!(!Bound::LOWER.include_upper());
+        assert!(!Bound::UPPER.include_lower());
+        assert!(Bound::UPPER.include_upper());
+        assert!(Bound::EXACT.include_lower());
+        assert!(Bound::EXACT.include_upper());
+    }
 }

@@ -652,20 +652,22 @@ pub fn cmd_loop() {
     }
 }
 
-#[test]
-fn test_csa_record_to_sfne() {
-    use std::fs::File;
-    use std::io::prelude::*;
-    let mut f = File::open("test/example.csa").unwrap();
-    let mut buf = Vec::new();
-    f.read_to_end(&mut buf).unwrap();
-    if let Ok(sfen) = csa_record_to_sfen(&buf) {
-        assert_eq!(
-            sfen,
-            "sfen lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1 moves 2g2f 3c3d"
-        );
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_csa_record_to_sfne() {
+        use std::fs::File;
+        use std::io::prelude::*;
+        let mut f = File::open("test/example.csa").unwrap();
+        let mut buf = Vec::new();
+        f.read_to_end(&mut buf).unwrap();
+        if let Ok(sfen) = csa_record_to_sfen(&buf) {
+            assert_eq!(
+                sfen,
+                "sfen lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1 moves 2g2f 3c3d"
+            );
+        }
     }
 }
-
-#[test]
-fn test_usi() {}
