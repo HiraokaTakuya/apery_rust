@@ -21,7 +21,7 @@ impl TimeManagement {
         self.start_time = limits.start_time;
         let moves_to_go = 50;
         let move_overhead = 10;
-        let slow_mover = usi_optoins.get_i64(UsiOptions::SLOW_MOVER) as i64;
+        let slow_mover = usi_optoins.get_i64(UsiOptions::SLOW_MOVER);
         let time_left = std::cmp::max(
             1,
             limits.time[us.0 as usize].as_millis() as i64 + limits.inc[us.0 as usize].as_millis() as i64 * (moves_to_go - 1)

@@ -757,7 +757,7 @@ impl Value {
         -Value::MATE + Value(ply)
     }
     pub fn abs(self) -> Self {
-        Value(self.0.abs() as i32)
+        Value(self.0.abs())
     }
 }
 

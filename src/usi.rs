@@ -338,7 +338,7 @@ fn read_sfen_and_output_hcp(args: &[&str]) {
         let output_path = args[1];
         let mut set = std::collections::HashSet::new();
         let mut v = Vec::new();
-        let input_file = std::fs::File::open(&input_path).map_err(|e| anyhow!("{}: {}", e, input_path))?;
+        let input_file = std::fs::File::open(input_path).map_err(|e| anyhow!("{}: {}", e, input_path))?;
         for line in std::io::BufReader::new(input_file).lines() {
             let line = line.unwrap();
             let args = line.split_whitespace().collect::<Vec<&str>>();
@@ -398,7 +398,7 @@ fn read_sfen_and_output_hcp(args: &[&str]) {
             }
         }
         let mut output_file =
-            std::io::BufWriter::new(std::fs::File::create(&output_path).map_err(|e| anyhow!("{}: {}", e, output_path))?);
+            std::io::BufWriter::new(std::fs::File::create(output_path).map_err(|e| anyhow!("{}: {}", e, output_path))?);
         let slice: &[u8] = unsafe {
             std::slice::from_raw_parts(
                 v.as_slice().as_ptr() as *const u8,
@@ -427,7 +427,7 @@ fn read_hcp(args: &[&str]) {
         let output_path = args[1];
         let v = file_to_vec(input_path).map_err(|e| anyhow!("{}: {}", e, input_path))?;
         let mut output_file =
-            std::io::BufWriter::new(std::fs::File::create(&output_path).map_err(|e| anyhow!("{}: {}", e, output_path))?);
+            std::io::BufWriter::new(std::fs::File::create(output_path).map_err(|e| anyhow!("{}: {}", e, output_path))?);
         for item in v {
             let pos = Position::new_from_huffman_coded_position(&item)?;
             writeln!(output_file, "{}", pos.to_sfen())?;

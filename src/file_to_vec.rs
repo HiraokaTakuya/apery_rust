@@ -3,12 +3,12 @@ use std::io::Read;
 
 #[allow(dead_code)]
 pub fn as_u8_slice<T>(p: &[T]) -> &[u8] {
-    unsafe { std::slice::from_raw_parts(p.as_ptr() as *const u8, std::mem::size_of::<T>() * p.len()) }
+    unsafe { std::slice::from_raw_parts(p.as_ptr() as *const u8, std::mem::size_of_val(p)) }
 }
 
 #[allow(dead_code)]
 pub fn as_u8_mut_slice<T>(p: &mut [T]) -> &mut [u8] {
-    unsafe { std::slice::from_raw_parts_mut(p.as_mut_ptr() as *mut u8, std::mem::size_of::<T>() * p.len()) }
+    unsafe { std::slice::from_raw_parts_mut(p.as_mut_ptr() as *mut u8, std::mem::size_of_val(p)) }
 }
 
 pub fn file_to_vec<P, T>(input_file: P) -> Result<Vec<T>>

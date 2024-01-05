@@ -433,7 +433,7 @@ impl PositionBase {
             });
         }
         for (rank_idx, rank) in Rank::ALL_FROM_UPPER.iter().enumerate() {
-            let rank_str = rank_str_vec[rank_idx as usize];
+            let rank_str = rank_str_vec[rank_idx];
             let mut file_idx: usize = 0;
             let re = regex::Regex::new(r"(\d+|\+?[[:alpha:]])").unwrap();
             for cap in re.captures_iter(rank_str) {

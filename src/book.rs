@@ -22,7 +22,7 @@ impl Book {
     }
     #[allow(dead_code)]
     fn insert(&mut self, sfen: String, mv: Move, info: Info) {
-        let set = self.0.entry(sfen).or_insert_with(std::collections::BTreeMap::new);
+        let set = self.0.entry(sfen).or_default();
         set.insert(mv.to_usi(), info);
     }
     #[allow(dead_code)]

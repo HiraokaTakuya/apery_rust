@@ -703,7 +703,7 @@ impl<'a> Magic<'a> {
     }
 }
 
-pub struct LanceAttackTable([[[Bitboard; LanceAttackTable::MASK_TABLE_NUM as usize]; Color::NUM]; Square::NUM]);
+pub struct LanceAttackTable([[[Bitboard; LanceAttackTable::MASK_TABLE_NUM]; Color::NUM]; Square::NUM]);
 
 impl LanceAttackTable {
     const MASK_BITS: u32 = (File::NUM - 2) as u32;
@@ -746,7 +746,7 @@ impl LanceAttackTable {
                 };
                 for i in 0..(Self::MASK_TABLE_NUM) {
                     let occupied = Self::index_to_occupied(i, Self::MASK_BITS, &mask);
-                    ret.0[sq.0 as usize][c.0 as usize][i as usize] = sliding_attacks(&deltas, *sq, &occupied);
+                    ret.0[sq.0 as usize][c.0 as usize][i] = sliding_attacks(&deltas, *sq, &occupied);
                 }
             }
         }
