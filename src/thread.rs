@@ -1671,7 +1671,11 @@ impl ThreadPool {
             })
             .collect();
         // Main thread has other thread's nodes.
-        self.thread_pool_base.lock().unwrap().threads[0].lock().unwrap().nodess = self.nodess.clone();
+        self.thread_pool_base.lock().unwrap().threads[0]
+            .lock()
+            .unwrap()
+            .nodess
+            .clone_from(&self.nodess);
     }
     pub fn start_thinking(
         &mut self,

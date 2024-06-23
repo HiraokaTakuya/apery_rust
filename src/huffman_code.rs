@@ -156,7 +156,7 @@ impl std::convert::TryFrom<&HuffmanCode> for Piece {
             HuffmanCode::W_HORSE => Ok(Piece::W_HORSE),
             HuffmanCode::W_DRAGON => Ok(Piece::W_DRAGON),
             HuffmanCode {
-                bit_length: HuffmanCode::MAX_BIT_LENGTH_FOR_FIELD..=std::u8::MAX,
+                bit_length: HuffmanCode::MAX_BIT_LENGTH_FOR_FIELD..=u8::MAX,
                 ..
             } => Err(Self::Error::OverMaxBitLength),
             _ => Err(Self::Error::UndecidedYet),
@@ -184,7 +184,7 @@ impl std::convert::TryFrom<&HuffmanCode> for ColorAndPieceTypeForHand {
             HuffmanCode::B_HAND_ROOK => Ok((Color::BLACK, PieceType::ROOK)),
             HuffmanCode::W_HAND_ROOK => Ok((Color::BLACK, PieceType::ROOK)),
             HuffmanCode {
-                bit_length: HuffmanCode::MAX_BIT_LENGTH_FOR_HAND..=std::u8::MAX,
+                bit_length: HuffmanCode::MAX_BIT_LENGTH_FOR_HAND..=u8::MAX,
                 ..
             } => Err(Self::Error::OverMaxBitLength),
             _ => Err(Self::Error::UndecidedYet),

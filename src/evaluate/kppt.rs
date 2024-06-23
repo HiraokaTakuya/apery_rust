@@ -634,18 +634,14 @@ pub fn load_evaluate_files(eval_dir: &str) -> Result<()> {
         path.push("KPP.bin");
         path.as_path().as_os_str().to_str().unwrap().to_string()
     };
-    unsafe { &mut EVALUATOR }
-        .load_kpp(&kpp_file_name)
-        .map_err(|e| anyhow!("{}: {}", e, kpp_file_name))?;
+    unsafe { EVALUATOR.load_kpp(&kpp_file_name) }.map_err(|e| anyhow!("{}: {}", e, kpp_file_name))?;
 
     let kkp_file_name = {
         let mut path = std::path::PathBuf::from(eval_dir);
         path.push("KKP.bin");
         path.as_path().as_os_str().to_str().unwrap().to_string()
     };
-    unsafe { &mut EVALUATOR }
-        .load_kkp(&kkp_file_name)
-        .map_err(|e| anyhow!("{}: {}", e, kkp_file_name))?;
+    unsafe { EVALUATOR.load_kkp(&kkp_file_name) }.map_err(|e| anyhow!("{}: {}", e, kkp_file_name))?;
 
     Ok(())
 }
@@ -653,12 +649,8 @@ pub fn load_evaluate_files(eval_dir: &str) -> Result<()> {
 pub fn write_evaluate_files() -> Result<()> {
     let kpp_file_name = "KPP.bin";
     let kkp_file_name = "KKP.bin";
-    unsafe { &mut EVALUATOR }
-        .write_kpp(kpp_file_name)
-        .map_err(|e| anyhow!("{}: {}", e, kpp_file_name))?;
-    unsafe { &mut EVALUATOR }
-        .write_kkp(kkp_file_name)
-        .map_err(|e| anyhow!("{}: {}", e, kkp_file_name))?;
+    unsafe { EVALUATOR.write_kpp(kpp_file_name) }.map_err(|e| anyhow!("{}: {}", e, kpp_file_name))?;
+    unsafe { EVALUATOR.write_kkp(kkp_file_name) }.map_err(|e| anyhow!("{}: {}", e, kkp_file_name))?;
     Ok(())
 }
 
@@ -725,7 +717,7 @@ impl std::ops::SubAssign for EvalSum {
 }
 
 impl EvalSum {
-    const NOT_EVALUATED: i32 = i32::max_value();
+    const NOT_EVALUATED: i32 = i32::MAX;
     #[cfg(target_feature = "avx2")]
     pub fn new() -> EvalSum {
         EvalSum {

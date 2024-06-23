@@ -860,14 +860,14 @@ mod tests {
             let m = mp.next_move(&pos, skip_quiets);
             move_vec.push(m);
         }
-        assert_eq!(move_vec[0].unwrap(), tt_move.unwrap()); // MainTT
+        assert_eq!(move_vec[0], tt_move); // MainTT
         assert_eq!(
             move_vec[1].unwrap(),
             Move::new_unpromote(Square::SQ88, Square::SQ44, Piece::B_BISHOP)
         ); // GoodCapture
         assert_eq!(move_vec[2].unwrap(), killers[0].unwrap()); // Refutation
         assert_eq!(move_vec[3].unwrap(), killers[1].unwrap()); // Refutation
-        assert_eq!(move_vec[4].unwrap(), cm.unwrap()); // Refutation
+        assert_eq!(move_vec[4], cm); // Refutation
         assert!(move_vec[5..10]
             .iter()
             .any(|x| x.unwrap() == Move::new_unpromote(Square::SQ88, Square::SQ55, Piece::B_BISHOP))); // Quiet
@@ -924,7 +924,7 @@ mod tests {
             let m = mp.next_move(&pos, skip_quiets);
             move_vec.push(m);
         }
-        assert_eq!(move_vec[0].unwrap(), tt_move.unwrap()); // EvasionTT
+        assert_eq!(move_vec[0], tt_move); // EvasionTT
         assert!(move_vec[1..8]
             .iter()
             .any(|x| x.unwrap() == Move::new_unpromote(Square::SQ35, Square::SQ25, Piece::B_KING))); // Evasion
@@ -967,7 +967,7 @@ mod tests {
         let recapture_square = Square::SQ97;
         let mut mp = MovePickerForQSearch::new(&mh, &cph, &ch, &pos, recapture_square, tt_move, Depth(0));
         let m = mp.next_move(&pos);
-        assert_eq!(m.unwrap(), tt_move.unwrap()); // QSearchTT
+        assert_eq!(m, tt_move); // QSearchTT
         let m = mp.next_move(&pos);
         assert_eq!(m.unwrap(), Move::new_unpromote(Square::SQ88, Square::SQ44, Piece::B_BISHOP)); // Capture
         let m = mp.next_move(&pos);
@@ -1003,7 +1003,7 @@ mod tests {
             let m = mp.next_move(&pos);
             move_vec.push(m);
         }
-        assert_eq!(move_vec[0].unwrap(), tt_move.unwrap()); // EvasionTT
+        assert_eq!(move_vec[0], tt_move); // EvasionTT
         assert!(move_vec[1..8]
             .iter()
             .any(|x| x.unwrap() == Move::new_unpromote(Square::SQ35, Square::SQ25, Piece::B_KING))); // Evasion
